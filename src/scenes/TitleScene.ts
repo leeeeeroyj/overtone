@@ -61,7 +61,8 @@ export class TitleScene extends Phaser.Scene {
       label(this, x - 3, 150, keys, 6, TEXT.ink, { align: 'right' }).setLineSpacing(1).setDepth(5);
       label(this, x + 3, 150, actions, 6, TEXT.dim).setLineSpacing(1).setDepth(5);
     };
-    column(120, 'KEYBOARD + MOUSE', 'ARROWS / WASD\nZ / SPACE / CLICK\nX / RIGHT-CLICK\nC / SHIFT\nP\nM', 'FLY\nFIRE\nCHARGE\nECHO\nPAUSE\nSOUND');
+    if (touchScreen) column(120, 'TOUCH', 'LEFT THUMB\nAUTOMATIC\nHOLD CHARGE\nTAP ECHO\nTAP II\nTAP SPEAKER', 'FLY\nFIRE\nCHARGE\nECHO\nPAUSE\nSOUND');
+    else column(120, 'KEYBOARD + MOUSE', 'ARROWS / WASD\nZ / SPACE / CLICK\nX / RIGHT-CLICK\nC / SHIFT\nP\nM', 'FLY\nFIRE\nCHARGE\nECHO\nPAUSE\nSOUND');
     column(300, 'CONTROLLER', 'L-STICK / D-PAD\nA\nX / RT\nB / RB\nSTART\nY', 'FLY\nFIRE\nCHARGE\nECHO\nPAUSE\nSOUND');
     this.padStatus = text(cx, 214, '', 6, TEXT.dim);
   }
@@ -86,7 +87,23 @@ export class TitleScene extends Phaser.Scene {
   private begin() {
     if (this.leaving) return;
     this.leaving = true;
+    landscapeLock();
     this.cameras.main.fadeOut(250);
     this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => this.scene.start('stage'));
   }
+}
+
+/**
+ * On a phone, starting a run goes full screen and holds the screen sideways where the browser allows it (Android;
+ * an iPhone ignores both, and the page asks you to turn it if it's upright).
+ */
+function landscapeLock() {
+  if (!window.matchMedia?.('(pointer: coarse)').matches || document.fullscreenElement) return;
+  const orientation = screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> };
+  document.documentElement
+    .requestFullscreen?.({ navigationUI: 'hide' })
+    .then(() => orientation.lock?.('landscape'))
+    .catch(() => {
+      // Not allowed here: the rotate notice covers it.
+    });
 }

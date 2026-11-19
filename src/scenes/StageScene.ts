@@ -20,6 +20,7 @@ import { Sfx } from '../sfx';
 import { Synth, toggleMute } from '../synth';
 import { label } from '../text';
 import { blockedAt, terrainFor, type Terrain } from '../terrain';
+import { touchControls } from '../touch';
 import { fitCamera } from '../view';
 
 /** What the HUD scene draws, published to the registry every frame. */
@@ -171,6 +172,11 @@ export class StageScene extends Phaser.Scene {
   private readonly onHidden = () => {
     if (document.hidden) this.setPaused(true);
   };
+  /** A phone turned upright (the page asks you to turn it back) pauses too. */
+  private readonly upright = window.matchMedia?.('(orientation: portrait) and (pointer: coarse)');
+  private readonly onTurn = () => {
+    if (this.upright?.matches) this.setPaused(true);
+  };
 
   constructor() {
     super('stage');
@@ -212,10 +218,15 @@ export class StageScene extends Phaser.Scene {
     this.echo = new Echo(this);
     this.controls = this.attract === undefined ? new Controls(this) : undefined;
     // A phone call, a tab switch or the screen locking pauses the run.
-    if (this.attract === undefined) document.addEventListener('visibilitychange', this.onHidden);
+    if (this.attract === undefined) {
+      document.addEventListener('visibilitychange', this.onHidden);
+      this.upright?.addEventListener('change', this.onTurn);
+    }
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.sfx.chargeStop();
+      touchControls.show(false);
       document.removeEventListener('visibilitychange', this.onHidden);
+      this.upright?.removeEventListener('change', this.onTurn);
     });
     this.showBanner();
     this.publish('kbm');
@@ -225,6 +236,7 @@ export class StageScene extends Phaser.Scene {
 
   update(_time: number, delta: number) {
     const dt = Math.min(0.05, delta / 1000);
+    touchControls.show(this.attract === undefined && !this.paused && !this.leaving && this.gameOver < 0 && this.ending < 0);
     const input = this.controls?.read() ?? IDLE;
     if (input.mute) toggleMute(this);
     if (this.paused) {

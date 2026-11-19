@@ -4,7 +4,7 @@
 
 **A shooter that keeps time.**
 
-A side-scrolling shooter through a neon cosmos where everything moves to the beat. It runs in the browser with a keyboard, mouse or controller.
+A side-scrolling shooter through a neon cosmos where everything moves to the beat. It runs in the browser with a keyboard, mouse, controller or touch screen.
 
 ### [▶ Play it now](https://leeeeeroyj.github.io/overtone/)
 
@@ -84,19 +84,21 @@ Couriers drop pickups in turn: a crystal, a Harmonic, speed, then the tuning for
 
 ## Controls
 
-| | Keyboard + mouse | Controller |
-| --- | --- | --- |
-| Fly | Arrows or W A S D | Left stick or D-pad |
-| Fire | Hold Z, Space, J or left click | Hold A |
-| Charge | Hold X, K or right click, then let go | Hold X or RT, then let go |
-| Echo: send out or call back | C, L, Shift or middle click | B or RB |
-| Pause / resume | P, or click II (top right) | Start |
-| Sound on / off | M, or click the speaker (top right) | Y |
-| Game over: choose, select | ← → and Enter, or click | D-pad and A |
-| Start | Enter or Space, or click **START** | A or Start |
-| Back to the title | Esc | Back |
+| | Keyboard + mouse | Controller | Touch |
+| --- | --- | --- | --- |
+| Fly | Arrows or W A S D | Left stick or D-pad | Left thumb: put it down anywhere on the left of the screen and push |
+| Fire | Hold Z, Space, J or left click | Hold A | Automatic |
+| Charge | Hold X, K or right click, then let go | Hold X or RT, then let go | Hold **CHARGE** (bottom right), then let go |
+| Echo: send out or call back | C, L, Shift or middle click | B or RB | Tap **ECHO** |
+| Pause / resume | P, or click II (top right) | Start | Tap II, then **RESUME** |
+| Sound on / off | M, or click the speaker (top right) | Y | Tap the speaker |
+| Game over: choose, select | ← → and Enter, or click | D-pad and A | Tap a button |
+| Start | Enter or Space, or click **START** | A or Start | Tap **START** |
+| Back to the title | Esc | Back | **TITLE** on the pause panel |
 
 Controllers show up once you press a button. The game pauses itself when you switch tabs or the page goes to the background.
+
+On a phone, play it sideways. Starting a run goes full screen and holds the screen sideways where the browser allows it (Android). Turn the phone upright and the game pauses and asks you to turn it back. A touch anywhere on the right of the screen takes the nearer of CHARGE and ECHO, and you can slide your thumb between them.
 
 If your system asks for reduced motion, the screen doesn't shake or flash, the glows keep one colour, and the landscape and enemies stop bouncing to the beat.
 
@@ -130,6 +132,7 @@ src/
   land/bake.ts       sky and instrument city, baked once as pixel art
   land/Landscape.ts  every layer, drawn each frame in time with the beat
   controls.ts        keyboard, mouse and gamepad input
+  touch.ts           the on-screen stick and buttons
   text.ts            crisp text in the game's fonts
   hi.ts              the high score, kept in localStorage
   attract.ts         the ?attract demo mode's settings

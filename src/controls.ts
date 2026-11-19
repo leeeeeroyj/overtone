@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { touchControls } from './touch';
 
 export type Device = 'kbm' | 'pad' | 'touch';
 
@@ -118,6 +119,18 @@ export class Controls {
       mute ||= edges.has(BTN.Y);
       pause ||= edges.has(BTN.START);
     }
+
+    // Touch: the floating stick, CHARGE held, ECHO tapped, and fire on by itself while the controls are up.
+    touchControls.render();
+    const thumb = touchControls.stick();
+    if (thumb && (thumb.x || thumb.y)) {
+      move.x = thumb.x;
+      move.y = thumb.y;
+    }
+    charge ||= touchControls.pressed('charge');
+    echo ||= touchControls.took('echo');
+    if (touchControls.active) this.device = 'touch';
+    if (touchControls.visible && this.device === 'touch') fire = true;
 
     const len = Math.hypot(move.x, move.y);
     if (len > 1) {

@@ -182,6 +182,10 @@ Pure modules (`beat.ts`, `script.ts`, `terrain.ts`, `land/bake.ts`) are tested b
 - **2026-11-18 The boss's core is heard as well as seen:** a bell as it opens, a clank as it shuts.
 - **2026-11-18 Sparks and rings draw under the craft, the Echo and enemy notes** (still over enemies and pickups), so a burst never hides the craft or anything that can hurt you. Enemy notes get a halo on each beat (not under reduced motion), and enemies stop hopping on the beat under reduced motion.
 - **2026-11-18 Key presses are kept until the next frame reads them.** Phaser forgets a press once the key is up again, so a tap shorter than a frame was lost (the cause of the occasional test timeouts, and a real risk on a slow device). Menus step on a latched `nav` input for the same reason.
+- **2026-11-18 A floating stick, not a fixed one in the bar.** At 844×390 the bars beside the game are only 66 px wide, too narrow for a thumb-sized stick. A touch anywhere on the left 40% of the screen centres the stick where it lands; its ring rests in the bottom-left corner. A touch on the right 40% takes the nearer of CHARGE (bottom right) and ECHO (above it), and the thumb can slide between them. Touches in the top bar are left to the II and the speaker. Every control is at least 48 px across.
+- **2026-11-18 Fire is automatic while the touch controls are up;** CHARGE stops it, as it does with keys.
+- **2026-11-18 Landscape on phones:** starting a run on a touch screen asks for full screen and a landscape lock (Android allows both; an iPhone ignores them). Upright, the page shows TURN YOUR PHONE SIDEWAYS TO PLAY and the run pauses. The II and speaker tap targets now fill the top-right corner (18 × 16 and 20 × 16 design px, about 31 × 27 CSS px on an 844×390 phone, so still under the usual 44 px; the phone test will say if that's a problem).
+- **2026-11-18 The test harness lifts one finger with a `touchEnd` listing just that finger.** Leaving a finger out of a `touchMove`, as before, doesn't release it in Chrome, so a two-thumb test (stick held, CHARGE let go) never let go.
 - **2026-11-17 Information never depends on hue** (the user is colour blind). Enemy notes are white-cored diamonds; player shots are dashes, beads, triangles of lines and arcs. Pickups carry glyphs; the beat lamp is filled vs outlined, with a taller downbeat; the charge ring counts segments and goes solid to say "now".
 
 ## Open questions
@@ -189,7 +193,7 @@ Pure modules (`beat.ts`, `script.ts`, `terrain.ts`, `land/bake.ts`) are tested b
 - **Craft sprite.** All eight craft candidates are drawn from above, nose up, and turned to face right. If that reads wrong, the slot can be re-searched for side-view ships.
 - **Boss balance.** A test pilot with starting power kills the bosses in about 17, 33 and 38 seconds. The user's play decides whether that's right.
 
-## Status (2026-11-18: milestone 6 built and verified)
+## Status (2026-11-18: milestone 7 built and verified in emulation; the phone test is the user's)
 
 - **Done:** Part A (concept sheet v0.3 and this plan, approved by the user). Live at https://leeeeeroyj.github.io/overtone/, every deploy green.
   - **Milestone 1** `3b83749`: title, scrolling landscape, Equalizer frame and flight. Repo settings per C3 and C5 applied and verified.
@@ -197,7 +201,7 @@ Pure modules (`beat.ts`, `script.ts`, `terrain.ts`, `land/bake.ts`) are tested b
   - **Milestone 3** `d2d0739`: all eight enemies, pickups, PRISM, SONAR, the CHORD and edge chevrons.
   - **Milestone 4** `760348b`: three movements, scripts, ENCOREs, pause, game over and the high score.
   - **Milestone 5** `2e58bd4`: the Halo, the Great Eel and the Conductor, with the open core, warnings and the boss bar.
-  - **Milestone 6:**
+  - **Milestone 6** `142fdf2`:
     - `beat.ts` follows the audio clock and re-anchors on jumps; `StageScene` moves the world by the beat's advance in steps of at most 1/30 s.
     - `synth.ts`: a shared limiter, attack, filter sweeps and vibrato on voices, filtered noise for drums and rumbles; times are absolute on the audio clock.
     - `music.ts`: a tune per movement (I dark, II hypnotic, III triumphant), arranged by bar, with a boss arrangement, a bell as the core opens and a clank as it shuts.
@@ -205,6 +209,11 @@ Pure modules (`beat.ts`, `script.ts`, `terrain.ts`, `land/bake.ts`) are tested b
     - Losing a ship takes speed and grace notes too.
     - Sparks and rings under the craft, the Echo and enemy notes; a beat halo on enemy notes; no hops under reduced motion.
     - Controls keep key presses until the next frame; menus step on `nav`.
+  - **Milestone 7** (`touch.ts`):
+    - The floating stick on the left, CHARGE and ECHO on the right, drawn as page elements so they can sit in the bars beside the game. Held buttons fill and get a bold outline.
+    - Fire is automatic while they're up; they hide on the title, while paused, at game over and after a movement ends.
+    - Bigger II and speaker tap targets; a TOUCH column on the title on touch screens; touch hints in the HUD.
+    - Full screen and a landscape lock when a run starts on a phone; upright pauses.
 - **Verified (milestone 6):** `npx tsc` clean.
   - `m6-test` 25/25:
     - The audio clock runs headless and the beat follows it. Over 121 s of Movement I, every beat event lands on the kick scheduled for it (243 of 259 beats had kicks, the rest are the break; worst error 0.00 ms, no re-anchors). While locked this is exact by construction, so the check is really that nothing drifts or re-anchors in two minutes.
@@ -219,4 +228,17 @@ Pure modules (`beat.ts`, `script.ts`, `terrain.ts`, `land/bake.ts`) are tested b
   - Mix levels, metered at the master over 8–10 s each in all three movements (intro, full band, boss): peaks 0.79 to 0.95, RMS 0.08 to 0.09, so no clipping and an even level.
   - Still passing: `m1-test` 27/27, `m2-test` 23/23, `m3-test` 31/31, `m4-test` 37/37, `m5-test` 23/23 (kills in 17.3, 32.9 and 38.4 s; shortest warnings 0.77, 0.62 and 0.68 beats), `pause-hi-test` 22/22.
   - Screenshots looked at: three mid-burst frames in Movement III with the screen full of notes (the craft, its speakers and every note stay on top), and reduced motion.
-- **Next:** milestone 7: touch and mobile. It needs the user's phone at the end.
+- **Verified (milestone 7):** `npx tsc` clean. `m7-test` 45/45, at 844×390 and 932×430 with touch emulation and a coarse pointer:
+  - The title shows the touch controls; tapping START starts a run.
+  - The stick, CHARGE and ECHO show, all fully on screen, below the top bar, not overlapping, at least 44 px across.
+  - The stick flies right and up; the hints switch to touch; fire is automatic.
+  - With the stick held, holding CHARGE charges past tier 2 and letting go fires the beam (two thumbs).
+  - ECHO launches the Echo, calls it back, and it comes home.
+  - Tapping II pauses without pressing CHARGE or ECHO; the controls hide while paused; RESUME brings them back.
+  - At game over they hide and the hint is for touch; tapping RETRY starts again.
+  - Upright (390×844), the page asks to be turned and the run pauses.
+  - Screenshots looked at: the title, flying, charging (the ring where the thumb landed, CHARGE filled), paused.
+  - Still passing: `m1-test` 27/27, `m2-test` 23/23, `m3-test` 31/31, `m4-test` 37/37, `m5-test` 23/23, `pause-hi-test` 22/22, `m6-test` 25/25.
+- **Next:**
+  - The real-phone test (the user): the controls, how it feels, the tap targets, and the frame rate.
+  - Milestone 8: attract mode.

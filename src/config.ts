@@ -217,6 +217,13 @@ export const CHORD = { bonus: 1000, size: 5 };
 export const NOTES = { speed: 84, hit: 4.5 };
 
 /** Scoring, ships and hits. A hit costs a Harmonic, then a weapon level, then knocks the Echo loose, then a ship. */
+/**
+ * Touch controls: their size in design px (shown at least thumb-sized, whatever the scale). `grab` is how far
+ * outside a button (in radii) a touch still takes it; `deadzone` is the stick's, as a share of its radius; `side` is
+ * the share of the screen's width, from each edge, where a touch takes the stick (left) or a button (right).
+ */
+export const TOUCH = { stick: { r: 26 }, charge: { r: 20 }, echo: { r: 13 }, grab: 1.5, deadzone: 0.15, side: 0.4 };
+
 export const PLAY = {
   ships: 3,
   extraShip: 50000,

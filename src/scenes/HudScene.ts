@@ -15,7 +15,7 @@ const H = HEIGHT * U;
 const HINTS = {
   kbm: 'ARROWS FLY  ·  Z FIRE  ·  X CHARGE  ·  C ECHO  ·  P PAUSE  ·  M SOUND  ·  ESC TITLE',
   pad: 'STICK FLY  ·  A FIRE  ·  X CHARGE  ·  B ECHO  ·  START PAUSE  ·  Y SOUND',
-  touch: 'TOUCH CONTROLS ARRIVE SOON',
+  touch: 'LEFT THUMB FLY  ·  FIRE IS AUTOMATIC  ·  HOLD CHARGE  ·  TAP ECHO  ·  TAP II TO PAUSE',
 };
 const PAUSE_HINTS = { kbm: 'P OR ENTER RESUME  ·  ESC TITLE', pad: 'START OR A RESUME  ·  BACK TITLE', touch: 'TAP RESUME OR TITLE' };
 const OVER_HINTS = { kbm: '← → CHOOSE  ·  ENTER SELECT  ·  ESC TITLE', pad: 'D-PAD CHOOSE  ·  A SELECT  ·  BACK TITLE', touch: 'TAP TO CHOOSE' };
@@ -80,10 +80,11 @@ export class HudScene extends Phaser.Scene {
     this.bossName = t(W / 2 - 206, H - 15, '', 10, TEXT.gold);
     this.bossState = t(W / 2 + 210, H - 15, '', 10, TEXT.ink);
     // The speaker toggles sound.
-    this.add.zone(810, 16, 28, 28).setInteractive({ useHandCursor: true }).on('pointerdown', () => toggleMute(this));
+    // Tap targets as big as the corner allows: the speaker to the right edge, the II up to it.
+    this.add.zone(812, 16, 40, 32).setInteractive({ useHandCursor: true }).on('pointerdown', () => toggleMute(this));
     this.ships = Array.from({ length: 5 }, (_, i) => this.add.image(516 + i * 18, 22, 'player').setAngle(90).setDepth(2));
     // The pause icon (II) pauses.
-    this.pauseTap = this.add.zone(774, 16, 28, 28).setInteractive({ useHandCursor: true }).on('pointerdown', () => this.stage().setPaused(true));
+    this.pauseTap = this.add.zone(774, 16, 36, 32).setInteractive({ useHandCursor: true }).on('pointerdown', () => this.stage().setPaused(true));
     this.panelG = this.add.graphics().setDepth(5);
     this.buildPause();
     this.buildOver();

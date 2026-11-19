@@ -4,6 +4,7 @@ import { HEIGHT, RENDER_SCALE, WIDTH } from './config';
 import { HudScene } from './scenes/HudScene';
 import { StageScene } from './scenes/StageScene';
 import { TitleScene } from './scenes/TitleScene';
+import { touchControls } from './touch';
 
 /** Loads the self-hosted fonts (relative URLs, so they work under any base path). */
 function loadFonts() {
@@ -33,7 +34,7 @@ async function start() {
     scene: [TitleScene, StageScene, HudScene],
   });
   // Dev-only handle for poking at the running game from the console or a test script.
-  if (import.meta.env.DEV) Object.assign(window, { __overtone: game });
+  if (import.meta.env.DEV) Object.assign(window, { __overtone: game, __touch: touchControls });
 }
 
 void start();

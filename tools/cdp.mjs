@@ -77,15 +77,17 @@ export async function session({ project, out, port, debugPort, width = 1664, hei
     }
   };
 
-  // Every touch event carries every finger still down: start when one is added, move when one moves or one of
-  // several lifts, end only when the last one lifts.
+  // Start and move carry every finger still down. A lift is a touchEnd listing only the finger that lifts: Chrome
+  // releases the points a touchEnd lists, but leaving a finger out of a touchMove doesn't release it.
   const fingers = new Map();
-  const points = () => [...fingers].map(([fid, p]) => ({ x: p.x, y: p.y, id: fid, radiusX: 4, radiusY: 4, force: 1 }));
+  const point = (fid, p) => ({ x: p.x, y: p.y, id: fid, radiusX: 4, radiusY: 4, force: 1 });
+  const points = () => [...fingers].map(([fid, p]) => point(fid, p));
   const press = (fid, x, y) => { fingers.set(fid, { x, y }); return send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: points() }); };
   const move = (fid, x, y) => { fingers.set(fid, { x, y }); return send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: points() }); };
   const lift = (fid) => {
+    const p = fingers.get(fid);
     fingers.delete(fid);
-    return send('Input.dispatchTouchEvent', { type: fingers.size ? 'touchMove' : 'touchEnd', touchPoints: points() });
+    return send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [point(fid, p)] });
   };
 
   const check = (name, ok, detail = '') => {
