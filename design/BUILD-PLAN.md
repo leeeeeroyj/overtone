@@ -162,6 +162,9 @@ Pure modules (`beat.ts`, `script.ts`, `terrain.ts`, `land/bake.ts`) are tested b
 - **2026-11-18 Echo and Harmonics at half size (8 px),** at the user's request when approving the build.
 - **2026-11-18 Plan approved; build started.** The user said "Build it." Per the playbook, each milestone is shown before it's committed, and the repo isn't created until the user OKs the first push.
 - **2026-11-18 Commit and push after each milestone without asking,** at the user's word ("go ahead and keep working, committing after each milestone"), once its tests pass and the C1 checks are clean. The empty public repo `leeeeeroyj/overtone` already existed (created earlier that day), so C2 set its description, homepage and Pages instead of creating it.
+- **2026-11-18 Losing a ship keeps speed and grace notes.** The ladder has already taken the Harmonics and weapon levels by then; the plan didn't say, so this follows "hits cost power, not lives". Easy to change after the user plays it.
+- **2026-11-18 A CHORD needs all five of a formation shot down;** if one leaves the screen alive the formation is broken and pays nothing (the mockup paid out when the last one died, however the others went).
+- **2026-11-18 The Harmonic pickup is drawn like the companion,** at half size with its glow, to match the user's half-size request; the glyph above it keeps it easy to spot.
 - **2026-11-18 Sound is synthesised live with oscillators** (`synth.ts`) on Phaser's audio context, through its mute node, as in the mockup, instead of Sentinel's pre-rendered sfxr buffers: the band has to be scheduled on the audio clock anyway, and the shot and kill sounds are pitched per event. `music.ts` schedules each beat 0.12 s ahead at the moment the beat clock will reach it; the full audio-clock lock is still milestone 6's.
 - **2026-11-17 Information never depends on hue** (the user is colour blind). Enemy notes are white-cored diamonds; player shots are dashes, beads, triangles of lines and arcs. Pickups carry glyphs; the beat lamp is filled vs outlined, with a taller downbeat; the charge ring counts segments and goes solid to say "now".
 
@@ -171,12 +174,12 @@ Pure modules (`beat.ts`, `script.ts`, `terrain.ts`, `land/bake.ts`) are tested b
 - **Music for Movements II and III.** I stays dark minor; II and III could brighten or stay.
 - **Scope of bosses.** Three bosses is the biggest single chunk of work. If time is tight, Movement II's boss could reuse the Eel entity at boss scale.
 
-## Status (2026-11-18: milestone 2 built and verified)
+## Status (2026-11-18: milestone 3 built and verified)
 
 - **Done:**
   - Part A: concept sheet v0.3 (with the half-size Echo and Harmonics) and this plan, approved by the user.
   - **Milestone 1,** pushed as `3b83749` and live at https://leeeeeroyj.github.io/overtone/ (deploy green). Repo settings per C3 and C5 applied and verified: MIT detected; wiki and projects off; topics; Dependabot alerts; GitHub-owned actions only; "Protect main" ruleset; secret scanning and push protection on; read-only workflow token; Pages HTTPS; leeeeeroyj the only collaborator; no keys, hooks, secrets or variables.
-  - **Milestone 2:**
+  - **Milestone 2,** pushed as `1e3d5cd` (deploy green):
     - `BeatClock` drives a band (kick, off-beat hat, bass, pad chord per bar) scheduled ahead on the audio clock.
     - FIRE (notes), CHARGE (a tier per beat held, ring of three arcs, solid white when a release would resonate), the beam (piercing; resonant 1.5× width and damage, double points, +1 Harmony).
     - The Echo at half size: front and back, launch, hover and follow, repeat shots, recall, catch on either end, block notes, contact damage, knocked loose and recaught. SPIRAL at levels 1–3 from the attached Echo.
@@ -187,6 +190,14 @@ Pure modules (`beat.ts`, `script.ts`, `terrain.ts`, `land/bake.ts`) are tested b
     - HUD: ECHO glyph (dims and blinks when loose) and level pips, HARM notes, sound icon (clickable), new hints. M toggles sound everywhere (`overtone-muted`).
     - Dev hooks on the stage scene: `spawn`, `clearField`, `setBeatPhase`, `grant`, `addNote`, `landOnly`.
     - Placeholders until later milestones: the spawn script is a loop of Sentry pairs every 8 beats (milestone 4 writes the real one); the last ship lost shows GAME OVER for 3 s and returns to the title (milestone 4's panel); P and Start do nothing yet, so the title and hints leave pause out.
+  - **Milestone 3:**
+    - All eight enemies (`entities/foes.ts`): Flutter formations (surge on the beat, CHORD), Jelly (pulses up, 6-note ring every 4 beats), Sentry, Strider (hops every 2 beats, 2 notes up and back every 4), Saw (flies in at your height, spinning, quarter turns), Snapper (floor or ceiling, 5-note fan every 4 beats), Eel (head + 7 drawn orbs; the body follows the head's path by time, so it looks the same at any frame rate; the head's death takes the body), Courier (drops pickups in order: crystal, Harmonic, speed, fork).
+    - Pickups (`entities/pickups.ts`) with shape glyphs above (`glyphs.ts`); crystals cycle SPIRAL → PRISM → SONAR every 1.5 s, the same weapon levels up, another switches at the same level.
+    - PRISM (1/3/5 beams, two bounces off the terrain) and SONAR (arcs grow at 40 px/s to 16/22/28 px, pass through terrain, hit each enemy once); grace notes (two homing notes a second).
+    - Every arrival is announced by a blinking gold chevron at the right edge, at its height, one beat ahead (`stage.arrive`).
+    - The HUD's ECHO slot shows the current weapon's glyph.
+    - The placeholder script loops through every pattern, one every 4 beats (`script.ts`; milestone 4 writes the real ones).
+    - New dev hooks: `drop`, `pattern`, `frozen`, `noteFire`; `grant` takes `weapon` and `fork`.
 - **Verified:** `npx tsc` clean.
   - `m1-test` 27/27 (it now clears the field first and uses `landOnly` for the landscape shot).
   - `m2-test` 23/23:
@@ -199,4 +210,16 @@ Pure modules (`beat.ts`, `script.ts`, `terrain.ts`, `land/bake.ts`) are tested b
     - the floor is a hit and bounces you;
     - a resonant kill pays 800 at ×2 and a plain one 400; the HUD shows them; real shots kill a Sentry.
   - Screenshots looked at: resonant beam, Sentries on floor and ceiling (flush with the stepped edge), half-size Echo and speakers, busy play, hero shot.
-- **Next:** milestone 3, the full roster.
+  - `m3-test` 31/31:
+    - contact sheet of every enemy and pickup on the floor, ceiling and in the air;
+    - each shooter's volley size (Sentry 1, Jelly 6, Strider 2, Snapper 5); Striders hop on the beat;
+    - a chevron a beat before an arrival, at its height; Saws fly in at -185 px/s toward your height, spinning;
+    - Eel = head + 7, head kill takes the body (850); a Courier drops a crystal;
+    - CHORD pays 5 × 100 + 1,000 and Harmony ×2, and nothing if one got away;
+    - crystals give spiral, prism, sonar by phase and level up the same weapon; Harmonics cap at 2, speed at 3 (152 px/s); the fork's grace notes home;
+    - every weapon at every level kills a target with the Echo's fire alone (volleys 2/2/2, 1/3/5, 1/1/1); SPIRAL widens 7/10/13 and SONAR grows 16/22/28;
+    - PRISM bounces off the floor; SONAR kills a target buried in the floor and SPIRAL can't;
+    - the HUD shows weapon, level and Harmonics.
+  - `m1-test` 27/27 and `m2-test` 23/23 still pass.
+  - Screenshots looked at: the contact sheet (every sprite reads; ceiling ones flipped), busy PRISM play, and a staged hero shot.
+- **Next:** milestone 4: Movements I–III with authored scripts and terrain, loop modifiers, lives, game over with CONTINUE / RETRY, pause and the high score.

@@ -1,19 +1,20 @@
 import Phaser from 'phaser';
 import { BeatClock } from '../beat';
 import {
-  BEAT_WINDOW, CHARGE, COLORS, CRAFT, FIRE, FOES, HARMONIC, MAX_LEVEL, MOVEMENTS, PLAY, RENDER_SCALE, TEXT,
-  WEAPONS, WIDTH, type FoeKind, type Weapon,
+  BEAT_WINDOW, CHARGE, CHORD, COLORS, CRAFT, FIRE, FOES, GRACE, HARMONIC, MAX_LEVEL, MOVEMENTS, PICKUPS, PLAY,
+  RENDER_SCALE, TEXT, WEAPONS, WIDTH, type FoeKind, type PickupKind, type Weapon,
 } from '../config';
 import { Controls, type ControlState, type Device } from '../controls';
 import { Effects, hsl } from '../effects';
 import { Echo } from '../entities/echo';
 import { drawFoes, foesOnBeat, spawnFoe, updateFoes, type Foe, type SpawnOptions } from '../entities/foes';
+import { crystalWeapon, drawPickups, dropPickup, updatePickups, type Pickup } from '../entities/pickups';
 import { drawBeams, drawNotes, drawShots, makeShot, updateNotes, updateShots, type Beam, type Note, type Shot } from '../entities/shots';
 import { loadHi } from '../hi';
 import { clamp } from '../land/bake';
 import { Landscape, REDUCED } from '../land/Landscape';
 import { Band } from '../music';
-import { patternsAt, runPattern } from '../script';
+import { patternsAt, runPattern, type Pattern } from '../script';
 import { Sfx } from '../sfx';
 import { Synth, toggleMute } from '../synth';
 import { label } from '../text';
@@ -47,10 +48,12 @@ const IDLE: ControlState = {
 const newCraft = () => ({
   x: CRAFT.startX, y: CRAFT.startY, vx: 0, vy: 0, bank: 1, invuln: 0, speed: 1,
   weapon: 'spiral' as Weapon, level: 1, harm: 0,
+  /** Grace notes (from the tuning fork). */
+  fork: false,
   /** Seconds the charge has been held, and whether it's held now. */
   charge: 0, charging: false,
-  /** Cooldowns, s: shots, the Echo's weapon, the Harmonics. */
-  cool: 0, wcool: 0, hcool: 0,
+  /** Cooldowns, s: shots, the Echo's weapon, the Harmonics, grace notes. */
+  cool: 0, wcool: 0, hcool: 0, gcool: 0,
 });
 
 /** One movement: the beat, the scroll, the landscape, the craft and its Echo, enemies, scoring and sound. */
@@ -69,6 +72,9 @@ export class StageScene extends Phaser.Scene {
   shots: Shot[] = [];
   beams: Beam[] = [];
   notes: Note[] = [];
+  pickups: Pickup[] = [];
+  /** Arrivals announced by a chevron at the right edge: seconds to go, the height, and what arrives. */
+  warns: { y: number; t: number; spawn: () => void }[] = [];
   score = 0;
   /** Harmony: the multiplier on every point, x1 to x8. */
   mult = 1;
@@ -84,6 +90,14 @@ export class StageScene extends Phaser.Scene {
   scripted = true;
   /** Dev: show the landscape alone (for screenshots). */
   landOnly = false;
+  /** Dev: enemies and pickups hold still and don't fire (for the contact sheet and weapon tests). */
+  frozen = false;
+  /** Dev: false stops the craft's own notes, so the Echo's weapon can be tested alone. */
+  noteFire = true;
+  /** Couriers' drops so far (they come in PICKUPS.drops order). */
+  private drops = 0;
+  /** Flutter formations: members shot down, and whether one got away (then there's no CHORD). */
+  private formations = new Map<number, { killed: number; broken: boolean }>();
   private band!: Band;
   private controls: Controls | undefined;
   private ship!: Phaser.GameObjects.Image;
@@ -91,6 +105,7 @@ export class StageScene extends Phaser.Scene {
   private gBack!: Phaser.GameObjects.Graphics;
   private gMid!: Phaser.GameObjects.Graphics;
   private gFront!: Phaser.GameObjects.Graphics;
+  private gFoe!: Phaser.GameObjects.Graphics;
   private camBase = { x: 0, y: 0 };
   private kick = 0;
   private gameOver = 0;
@@ -116,9 +131,11 @@ export class StageScene extends Phaser.Scene {
     this.band = new Band(this.synth);
     this.fx = new Effects(this);
     this.craft = newCraft();
-    Object.assign(this, { foes: [], shots: [], beams: [], notes: [], score: 0, mult: 1, ships: PLAY.ships });
+    Object.assign(this, { foes: [], shots: [], beams: [], notes: [], pickups: [], warns: [], score: 0, mult: 1, ships: PLAY.ships });
     Object.assign(this, { frameHits: 0, hits: 0, blocked: 0, lastRelease: undefined, scripted: true, gameOver: 0, kick: 0 });
+    Object.assign(this, { landOnly: false, frozen: false, noteFire: true, drops: 0, formations: new Map() });
     this.gBack = this.add.graphics().setDepth(5);
+    this.gFoe = this.add.graphics().setDepth(7.5);
     this.gMid = this.add.graphics().setDepth(8.5);
     this.gFront = this.add.graphics().setDepth(14);
     // The craft is drawn from above, nose up: turned a quarter it faces right.
@@ -151,12 +168,18 @@ export class StageScene extends Phaser.Scene {
     }
     this.echo.update(dt);
     updateShots(this, dt);
-    updateFoes(this, dt);
+    if (!this.frozen) {
+      updateFoes(this, dt);
+      updatePickups(this, dt);
+    }
     updateNotes(this, dt);
+    this.arrivals(dt);
     this.contact();
     this.foes = this.foes.filter((e) => {
-      if (e.dead) e.img.destroy();
-      return !e.dead;
+      if (!e.dead) return true;
+      e.img?.destroy();
+      if (e.escaped && e.group) this.formation(e.group).broken = true;
+      return false;
     });
     this.fx.update(dt);
     this.kick = Math.max(0, this.kick - dt);
@@ -166,8 +189,31 @@ export class StageScene extends Phaser.Scene {
     this.publish(input.device);
   }
 
+  /** Design px per second the world scrolls. */
+  get scrollSpeed() {
+    return MOVEMENTS[this.movement].scroll;
+  }
+
+  /** The last ship is gone and the game is ending. */
+  get over() {
+    return this.gameOver > 0;
+  }
+
+  /** Announces something arriving at height y a beat from now, with a chevron at the right edge. */
+  arrive(y: number, spawn: () => void) {
+    this.warns.push({ y, t: this.beat.spb, spawn });
+  }
+
+  private arrivals(dt: number) {
+    for (const w of this.warns) {
+      w.t -= dt;
+      if (w.t <= 0) w.spawn();
+    }
+    this.warns = this.warns.filter((w) => w.t > 0);
+  }
+
   private onBeat(b: number) {
-    foesOnBeat(this, b);
+    if (!this.frozen) foesOnBeat(this, b);
     if (this.scripted && this.gameOver <= 0) for (const p of patternsAt(this.movement, b)) runPattern(this, p);
   }
 
@@ -217,7 +263,8 @@ export class StageScene extends Phaser.Scene {
       this.sfx.chargeTo(this.tier(), (c.charge % this.beat.spb) / this.beat.spb);
     } else if (c.charging) this.release();
     if (!input.fire || c.charging) return;
-    if (c.cool <= 0) {
+    c.gcool -= dt;
+    if (this.noteFire && c.cool <= 0) {
       c.cool = FIRE.cool;
       this.shots.push(makeShot('note', c.x + 9, c.y, FIRE.speed));
       this.sfx.shot(c.y);
@@ -235,16 +282,34 @@ export class StageScene extends Phaser.Scene {
         this.shots.push(makeShot('quaver', h.x + 6, h.y + 1, HARMONIC.noteSpeed, { ph: Math.random() * Math.PI * 2 }));
       }
     }
+    if (c.fork && c.gcool <= 0) {
+      c.gcool = GRACE.every;
+      for (const sgn of [-1, 1]) {
+        this.shots.push(makeShot('grace', c.x, c.y + sgn * 6, GRACE.speed, { vy: sgn * GRACE.spread, life: GRACE.life, damage: GRACE.damage }));
+      }
+    }
   }
 
   /** The attached Echo fires the crystal weapon from whichever end it's on. */
   private fireWeapon(dir: number) {
     const c = this.craft;
-    const w = WEAPONS[c.weapon];
-    c.wcool = w.cool;
     const x = this.echo.x + dir * 4;
-    for (const ph of [0, Math.PI]) {
-      this.shots.push(makeShot('helix', x, this.echo.y, w.speed * dir, { amp: w.amp(c.level), ph, damage: w.damage }));
+    const y = this.echo.y;
+    const L = c.level;
+    if (c.weapon === 'spiral') {
+      const w = WEAPONS.spiral;
+      c.wcool = w.cool;
+      for (const ph of [0, Math.PI]) this.shots.push(makeShot('helix', x, y, w.speed * dir, { amp: w.amp(L), ph, damage: w.damage }));
+    } else if (c.weapon === 'prism') {
+      const w = WEAPONS.prism;
+      c.wcool = w.cool;
+      for (const a of w.angles[L - 1]) {
+        this.shots.push(makeShot('prism', x, y, Math.cos(a) * w.speed * dir, { vy: Math.sin(a) * w.speed, bounces: w.bounces, damage: w.damage }));
+      }
+    } else {
+      const w = WEAPONS.sonar;
+      c.wcool = w.cool;
+      this.shots.push(makeShot('sonar', x, y, w.speed * dir, { r: 3, rmax: w.size(L), hit: new Set(), damage: w.damage }));
     }
   }
 
@@ -383,8 +448,53 @@ export class StageScene extends Phaser.Scene {
     this.fx.burst(e.x, e.y, 18, hue + e.kind.length * 40);
     this.fx.ring(e.x, e.y, 2, 120, 0.4, hue + 180, 1.5);
     if (resonant) this.fx.ring(e.x, e.y, 2, 70, 0.6, hue + 60, 1);
-    this.fx.shake(1, 0.12);
+    const big = e.kind === 'horn' || e.kind === 'eelhead' || e.kind === 'carrier';
+    if (big) this.fx.burst(e.x, e.y, 22, hue + 90, 1.4);
+    this.fx.shake(big ? 2.5 : 1, big ? 0.3 : 0.12);
     this.sfx.kill(e.y);
+    if (e.kind === 'carrier') dropPickup(this, PICKUPS.drops[this.drops++ % PICKUPS.drops.length], e.x, e.y);
+    if (e.kind === 'eelhead') for (const f of this.foes) if (f.head === e && !f.dead) this.kill(f, false);
+    // The last of a whole formation: a CHORD.
+    const f = e.group ? this.formation(e.group) : undefined;
+    if (f && ++f.killed === CHORD.size && !f.broken) {
+      const bonus = CHORD.bonus * this.mult;
+      this.mult = Math.min(PLAY.harmonyMax, this.mult + 1);
+      this.addScore(bonus);
+      this.fx.popup(e.x, e.y - 26, `CHORD ${bonus}`, TEXT.magenta);
+      this.fx.ring(e.x, e.y, 4, 200, 0.6, hue + 90, 2);
+    }
+  }
+
+  private formation(g: number) {
+    let f = this.formations.get(g);
+    if (!f) this.formations.set(g, (f = { killed: 0, broken: false }));
+    return f;
+  }
+
+  /** A pickup caught: a crystal switches or levels the weapon, the rest add a Harmonic, speed or grace notes. */
+  collect(p: Pickup) {
+    const c = this.craft;
+    const hue = this.land.hue;
+    this.fx.burst(p.x, p.y, 12, hue + 60, 0.6);
+    this.fx.ring(p.x, p.y, 16, -30, 0.4, hue + 60);
+    let msg: string;
+    if (p.kind === 'crystal') {
+      const w = crystalWeapon(p);
+      if (w === c.weapon) c.level = Math.min(MAX_LEVEL, c.level + 1);
+      else c.weapon = w;
+      msg = `${w.toUpperCase()} ${c.level}`;
+    } else if (p.kind === 'harmonic') {
+      c.harm = Math.min(HARMONIC.max, c.harm + 1);
+      msg = 'HARMONIC';
+    } else if (p.kind === 'speed') {
+      c.speed = Math.min(PICKUPS.maxSpeed, c.speed + 1);
+      msg = `SPEED ${c.speed}`;
+    } else {
+      c.fork = true;
+      msg = 'GRACE NOTES';
+    }
+    this.fx.popup(p.x, p.y - 12, msg, TEXT.beam);
+    this.sfx.blip(990);
   }
 
   addScore(n: number) {
@@ -399,16 +509,18 @@ export class StageScene extends Phaser.Scene {
   private draw() {
     const c = this.craft;
     const hue = this.land.hue;
-    const { gBack, gMid, gFront } = this;
+    const { gBack, gMid, gFront, gFoe } = this;
     gBack.clear();
     gMid.clear();
     gFront.clear();
+    gFoe.clear();
     if (this.landOnly) {
       for (const o of this.children.list) if (o !== this.land.image) (o as unknown as Phaser.GameObjects.Components.Visible).setVisible(false);
       return;
     }
     this.fx.drawSparks(gBack, false);
-    drawFoes(this);
+    drawFoes(this, gFoe);
+    drawPickups(this, gBack, gMid);
     drawShots(gMid, this, false);
 
     const alive = this.gameOver <= 0;
@@ -437,8 +549,21 @@ export class StageScene extends Phaser.Scene {
     if (c.charging && alive) this.drawCharge(gFront);
     this.fx.drawSparks(gFront, true);
     this.fx.drawRings(gFront);
+    this.drawChevrons(gFront);
     const o = this.fx.offset;
     this.cameras.main.setScroll(this.camBase.x + o.x, this.camBase.y + o.y);
+  }
+
+  /** A double chevron blinking at the right edge where something will arrive a beat from now. */
+  private drawChevrons(g: Phaser.GameObjects.Graphics) {
+    if (Math.floor(this.beat.time * 8) % 2) return;
+    for (const w of this.warns) {
+      for (let i = 0; i < 2; i++) {
+        const x = WIDTH - 10 + i * 4;
+        g.fillStyle(0x000000).fillTriangle(x + 4, w.y - 5, x - 1, w.y, x + 4, w.y + 5);
+        g.fillStyle(COLORS.gold).fillTriangle(x + 3, w.y - 4, x, w.y, x + 3, w.y + 4);
+      }
+    }
   }
 
   /** Three arcs that fill one per beat held, and a ring closing in on the next; solid white when a release would resonate. */
@@ -466,10 +591,13 @@ export class StageScene extends Phaser.Scene {
     return spawnFoe(this, kind, x, opts);
   }
 
-  /** Removes every enemy, shot and note, and stops the spawn script. */
+  /** Removes every enemy, shot, note, pickup and arrival, and stops the spawn script. */
   clearField() {
-    for (const e of this.foes) e.img.destroy();
+    for (const e of this.foes) e.img?.destroy();
+    for (const p of this.pickups) p.img.destroy();
     this.foes = [];
+    this.pickups = [];
+    this.warns = [];
     this.shots = [];
     this.beams = [];
     this.notes = [];
@@ -484,8 +612,20 @@ export class StageScene extends Phaser.Scene {
     this.band.seek(this.beat);
   }
 
-  grant(p: { harm?: number; level?: number; ships?: number; speed?: number }) {
+  /** Drops a pickup; `t` sets how far through its cycle a crystal starts. */
+  drop(kind: PickupKind, x: number, y: number, t = 0) {
+    return dropPickup(this, kind, x, y, t);
+  }
+
+  /** Runs a spawn pattern now (its arrivals come a beat later). */
+  pattern(p: Pattern) {
+    runPattern(this, p);
+  }
+
+  grant(p: { harm?: number; level?: number; ships?: number; speed?: number; weapon?: Weapon; fork?: boolean }) {
     const c = this.craft;
+    if (p.weapon !== undefined) c.weapon = p.weapon;
+    if (p.fork !== undefined) c.fork = p.fork;
     if (p.harm !== undefined) c.harm = clamp(p.harm, 0, HARMONIC.max);
     if (p.level !== undefined) c.level = clamp(p.level, 1, MAX_LEVEL);
     if (p.speed !== undefined) c.speed = clamp(p.speed, 1, 3);

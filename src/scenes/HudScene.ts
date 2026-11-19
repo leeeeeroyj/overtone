@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { COLORS, HUD_SCALE, TEXT, TOP, WIDTH, HEIGHT } from '../config';
+import { glyph } from '../glyphs';
 import { toggleMute } from '../synth';
 import { label } from '../text';
 import { fitCamera } from '../view';
@@ -78,7 +79,7 @@ export class HudScene extends Phaser.Scene {
     }
     // ECHO: the weapon's glyph and its level. Loose, the glyph dims and blinks.
     const loose = s.echo === 'loose';
-    if (!(loose && Math.floor(this.time.now / 250) % 2)) spiral(g, 376, 21, loose ? COLORS.dim : COLORS.beam);
+    if (!(loose && Math.floor(this.time.now / 250) % 2)) glyph(g, s.weapon, 376, 21, loose ? COLORS.dim : COLORS.beam, 2);
     pips(g, 392, 17, s.level, 3, COLORS.gold);
     // HARM: a note per Harmonic, bright when you have it.
     for (let i = 0; i < 2; i++) note(g, 434 + i * 14, 21, i < s.harm ? COLORS.beam : COLORS.off);
@@ -101,18 +102,6 @@ function pips(g: Phaser.GameObjects.Graphics, x: number, y: number, n: number, o
   for (let i = 0; i < of; i++) {
     if (i < n) g.fillStyle(color).fillRect(x + i * 8, y, 6, 8);
     else g.lineStyle(1, COLORS.dim).strokeRect(x + i * 8 + 0.5, y + 0.5, 5, 7);
-  }
-}
-
-/** SPIRAL's glyph: two strands crossing, outlined in black. */
-function spiral(g: Phaser.GameObjects.Graphics, x: number, y: number, color: number) {
-  for (const [w, c] of [[4.4, 0x000000], [2, color]] as const) {
-    g.lineStyle(w, c);
-    for (const sgn of [1, -1]) {
-      const pts: Phaser.Types.Math.Vector2Like[] = [];
-      for (let i = 0; i <= 12; i++) pts.push({ x: x - 8 + (i / 12) * 16, y: y + sgn * 4.8 * Math.sin((i / 12) * Math.PI * 2) });
-      g.strokePoints(pts as Phaser.Math.Vector2[]);
-    }
   }
 }
 

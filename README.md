@@ -14,7 +14,7 @@ A side-scrolling shooter through a neon cosmos where everything moves to the bea
 ![Vite](https://img.shields.io/badge/Vite-8-646cff?logo=vite&logoColor=white)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-![Overtone: the craft, with the Echo orb on its nose and a small speaker above and below it, dodges diamond-shaped notes fired by Sentries on the LED-meter floor and ceiling, under a speaker-cone moon](docs/screenshot.png)
+![Overtone: the craft, with the Echo orb on its nose and a small speaker above and below it, fires notes and a double helix at a formation of moths, a jellyfish, a saucer and a rainbow eel, between an LED-meter floor and ceiling under a speaker-cone moon](docs/screenshot.png)
 
 </div>
 
@@ -24,8 +24,8 @@ Overtone is an original arcade game inspired by the mechanics of Irem's 1987 arc
 
 - **Movement I, Pulse.** A dusk over a city of instruments at 128 beats a minute. A speaker-cone moon ripples on every kick, spectrum-analyser mountains bounce with the music, and the city's lights play in turn through each bar.
 - **Charge on the beat.** Hold CHARGE for a beat per tier, then let go for a piercing beam. Let go right on the beat and it's **resonant**: wider, harder, worth double and it raises your Harmony.
-- **The Echo.** A living orb of sound rides on your nose. It blocks shots, hurts whatever it touches and fires a spiralling double helix. Send it out ahead and it hovers there, repeating your shots, until you call it back.
-- **Hits cost power, not lives.** A hit knocks the Echo loose before it costs you a ship, and you can fly back and grab it.
+- **The Echo.** A living orb of sound rides on your nose. It blocks shots, hurts whatever it touches and fires your weapon: a spiralling double helix, bouncing prism beams or sonar arcs that pass through walls. Send it out ahead and it hovers there, repeating your shots, until you call it back.
+- **Hits cost power, not lives.** A hit takes a speaker, then a weapon level, then knocks the Echo loose, before it costs you a ship.
 - **A frame that keeps time.** The floor and ceiling are walls of LED cells that jump on every beat. They're solid: touch one and it bounces you off, and that counts as a hit.
 - **Drawn and played in code.** Every layer of the landscape is pixel art generated when the game loads, and the music and sound effects are synthesised as you play, in a minor key.
 
@@ -37,12 +37,35 @@ Fly through Movement I, shoot what's in your way and keep off the walls. The bea
 - **CHARGE** (hold) stops your fire and fills a tier for each beat you hold it, up to three: a ring of three arcs round the craft fills as you go. Let go for a beam that sweeps across the screen and pierces everything in its path. Let go at tier 2 or 3 within 0.09 s of a beat (the ring turns solid white) and the beam is **resonant**: half as wide again, half as strong again, and each kill pays double and adds one to your Harmony.
 - **Harmony** multiplies every point, from ×1 up to ×8. Any hit drops it back to ×1.
 - **ECHO** sends the Echo out ahead (or behind, if it's on your tail). It hovers there, drifting toward your height and repeating your shots. Press ECHO again to call it back. It attaches to whichever end of the craft touches it.
-- **Getting hit.** A shot, an enemy or the floor or ceiling knocks the Echo loose: it drifts and blinks until you fly into it. Hit again without it and you lose a ship, respawn on the spot with the Echo back on your nose, and blink for 2 seconds. You start with 3 ships and earn another every 50,000 points. Lose the last and it's game over.
-- **Anything about to fire flashes white** for the half-beat before it does.
+- **Getting hit.** A shot, an enemy, or the floor or ceiling costs you a Harmonic if you have one, otherwise a weapon level, otherwise it knocks the Echo loose: it drifts and blinks until you fly into it. Hit again without it and you lose a ship, respawn on the spot with the Echo back on your nose, and blink for 2 seconds. You start with 3 ships and earn another every 50,000 points. Lose the last and it's game over.
+- **Fair warning.** Anything about to fire flashes white for the half-beat before it does, and a gold chevron blinks at the right edge, at the height something will arrive, a beat before it does.
+- **CHORD.** Shoot down all five Flutters in a formation for 1,000 × your Harmony, and +1 Harmony. If one gets away, there's no bonus.
 
 | Enemy | Points | Hits | Behaviour |
 | --- | ---: | ---: | --- |
+| Flutter | 100 | 1 | Flies in formations of five, weaving on a wave and surging on each beat. |
+| Jelly | 150 | 3 | Drifts along, pulsing upward on each beat. Fires six notes in a ring every four beats. |
 | Sentry | 200 | 3 | Sits on the floor or ceiling and fires a note at you every two beats. |
+| Strider | 150 | 2 | Hops along the floor every two beats and fires two notes up and back every four. |
+| Saw | 120 | 2 | Spins in fast at the height you were when it arrived. Doesn't shoot. |
+| Snapper | 400 | 8 | Sits on the floor or ceiling and fires a fan of five notes at you every four beats. |
+| Eel | 500 head, 50 each segment | 6 head, 2 each segment | A head and seven segments winding through the air. Kill the head and the whole body goes with it. |
+| Courier | 300 | 4 | Drifts through and drops a pickup when you destroy it. |
+
+Couriers drop pickups in turn: a crystal, a Harmonic, speed, then the tuning fork. Each drifts slowly left with a glyph above it showing what it gives.
+
+| Pickup | What it does |
+| --- | --- |
+| Crystal | Shows each weapon for 1.5 seconds in turn: SPIRAL (two crossing strands), PRISM (a triangle), SONAR (two arcs). Catch the weapon you already have and it goes up a level, to 3; catch another and you switch to it at the same level. |
+| Harmonic | A small speaker above or below the craft, up to two. Each blocks shots and plays a stream of notes on every half-beat while you fire. |
+| Speed | One step faster, up to speed 3 (the SPD pips in the top bar). |
+| Tuning fork | Grace notes: while you fire, two notes a second that home in on the nearest enemy. |
+
+| Weapon | Level 1 → 3 |
+| --- | --- |
+| SPIRAL | A double helix; its strands swing wider with each level. |
+| PRISM | 1, 3 or 5 beams in a fan. Each bounces off the floor or ceiling twice. |
+| SONAR | Arcs that grow as they fly, taller each level, and pass through the floor and ceiling. Each arc hits an enemy once and keeps going. |
 
 ## Controls
 
@@ -79,7 +102,8 @@ src/
   beat.ts            the beat clock everything keeps time to
   terrain.ts         the floor and ceiling, as functions of distance
   script.ts          what arrives on which beat
-  entities/          the Echo, enemies, shots, beams and enemy notes
+  entities/          the Echo, enemies, pickups, shots, beams and enemy notes
+  glyphs.ts          the weapon and pickup icons
   effects.ts         sparks, rings, score popups, shake and flash
   synth.ts           oscillator voices and the sound switch
   music.ts           the band, scheduled ahead on the audio clock

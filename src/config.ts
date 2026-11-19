@@ -119,21 +119,58 @@ export const ECHO = {
 /** Harmonics: up to `max` speakers at half size, `offset` px above and below the craft, firing a note every half-beat. */
 export const HARMONIC = { scale: 0.5, max: 2, offset: 11, block: 4, noteSpeed: 220 };
 
-/** The Echo's weapons, levels 1-3. SPIRAL: a double helix whose amplitude grows with level. */
+/**
+ * The Echo's weapons, levels 1-3, fired from whichever end it's on. SPIRAL: a double helix whose beads swing in
+ * front of and behind the craft, wider each level. PRISM: 1, 3 or 5 beams that bounce off the terrain twice.
+ * SONAR: arcs that grow as they fly and pass through terrain, hitting each enemy once.
+ */
 export const WEAPONS = {
   spiral: { cool: 0.2, speed: 250, amp: (level: number) => 4 + 3 * level, damage: 1 },
+  prism: { cool: 0.28, speed: 280, angles: [[0], [0, -0.35, 0.35], [0, -0.35, 0.35, -0.7, 0.7]], bounces: 2, damage: 1 },
+  sonar: { cool: 0.42, speed: 170, grow: 40, size: (level: number) => 10 + 6 * level, damage: 1.5 },
 };
 export type Weapon = keyof typeof WEAPONS;
+/** The order a crystal cycles through. */
+export const WEAPON_ORDER: Weapon[] = ['spiral', 'prism', 'sonar'];
 export const MAX_LEVEL = 3;
 
+/** Grace notes (from the tuning fork): two homing notes every `every` s while firing. */
+export const GRACE = { every: 1, speed: 120, spread: 60, turn: 600, max: 190, life: 2.5, damage: 1.5 };
+
 /**
- * Enemies. `r` is the hit radius (a little smaller than the art). Sentries sit on the floor or ceiling and fire
- * an aimed note every `every` beats; they flash white for the half-beat before.
+ * Pickups drift left at `drift` px/s and are caught within `catch` px. A crystal shows each weapon for `cycle` s
+ * in turn: catch the one you have and it levels up, catch another and you switch. Couriers drop them in `drops` order.
+ */
+export const PICKUPS = { drift: 30, catch: 11, cycle: 1.5, maxSpeed: 3, drops: ['crystal', 'harmonic', 'speed', 'fork'] as const };
+export type PickupKind = (typeof PICKUPS.drops)[number];
+
+/**
+ * Enemies, by sprite slot. `r` is the hit radius (a little smaller than the art). Each fires every `every` beats
+ * (0: never), on beats where (beat - phase) is a multiple of it, and flashes white for the half-beat before.
+ * - Flutter (chirp): formations of five weaving on a sine, surging on each beat. Kill all five for a CHORD.
+ * - Jelly: drifts and pulses up on each beat; six notes in a ring every 4 beats.
+ * - Sentry (drummer): on the floor or ceiling; an aimed note every 2 beats.
+ * - Strider (metronome): hops along the floor every 2 beats; two notes up and back every 4.
+ * - Saw (cymbal): announced a beat ahead, then flies in fast at your height, spinning. Doesn't fire.
+ * - Snapper (horn): on the floor or ceiling, 8 hits; a five-note fan every 4 beats.
+ * - Eel: a head and seven segments winding through the air. Kill the head and the body goes with it.
+ * - Courier (carrier): drifts through and drops a pickup when it's destroyed.
  */
 export const FOES = {
-  drummer: { name: 'SENTRY', points: 200, hp: 3, r: 6, every: 2 },
+  chirp: { name: 'FLUTTER', sprite: 'chirp', points: 100, hp: 1, r: 6, every: 0, phase: 0 },
+  jelly: { name: 'JELLY', sprite: 'jelly', points: 150, hp: 3, r: 6, every: 4, phase: 0 },
+  drummer: { name: 'SENTRY', sprite: 'drummer', points: 200, hp: 3, r: 6, every: 2, phase: 0 },
+  metronome: { name: 'STRIDER', sprite: 'metronome', points: 150, hp: 2, r: 6, every: 4, phase: 3 },
+  cymbal: { name: 'SAW', sprite: 'cymbal', points: 120, hp: 2, r: 6, every: 0, phase: 0 },
+  horn: { name: 'SNAPPER', sprite: 'horn', points: 400, hp: 8, r: 7, every: 4, phase: 1 },
+  eel: { name: 'EEL', sprite: 'eel', points: 50, hp: 2, r: 5, every: 0, phase: 0 },
+  eelhead: { name: 'EEL HEAD', sprite: 'eel', points: 500, hp: 6, r: 7, every: 0, phase: 0 },
+  carrier: { name: 'COURIER', sprite: 'carrier', points: 300, hp: 4, r: 6, every: 0, phase: 0 },
 } as const;
 export type FoeKind = keyof typeof FOES;
+
+/** A full Flutter formation shot down: bonus points (times Harmony) and +1 Harmony. */
+export const CHORD = { bonus: 1000, size: 5 };
 
 /** Enemy notes: speed in px/s; they hit the craft within `hit` px of its centre. */
 export const NOTES = { speed: 84, hit: 4.5 };
