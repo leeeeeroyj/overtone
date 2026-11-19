@@ -184,7 +184,8 @@ Pure modules (`beat.ts`, `script.ts`, `terrain.ts`, `land/bake.ts`) are tested b
 - **2026-11-18 Key presses are kept until the next frame reads them.** Phaser forgets a press once the key is up again, so a tap shorter than a frame was lost (the cause of the occasional test timeouts, and a real risk on a slow device). Menus step on a latched `nav` input for the same reason.
 - **2026-11-18 A floating stick, not a fixed one in the bar.** At 844×390 the bars beside the game are only 66 px wide, too narrow for a thumb-sized stick. A touch anywhere on the left 40% of the screen centres the stick where it lands; its ring rests in the bottom-left corner. A touch on the right 40% takes the nearer of CHARGE (bottom right) and ECHO (above it), and the thumb can slide between them. Touches in the top bar are left to the II and the speaker. Every control is at least 48 px across.
 - **2026-11-18 Fire is automatic while the touch controls are up;** CHARGE stops it, as it does with keys.
-- **2026-11-18 Landscape on phones:** starting a run on a touch screen asks for full screen and a landscape lock (Android allows both; an iPhone ignores them). Upright, the page shows TURN YOUR PHONE SIDEWAYS TO PLAY and the run pauses. The II and speaker tap targets now fill the top-right corner (18 × 16 and 20 × 16 design px, about 31 × 27 CSS px on an 844×390 phone, so still under the usual 44 px; the phone test will say if that's a problem).
+- **2026-11-18 Landscape on phones:** starting a run on a touch screen asks for full screen and a landscape lock (Android allows both; an iPhone ignores them). Upright, the page shows TURN YOUR PHONE SIDEWAYS TO PLAY and the run pauses. The II and speaker tap targets now fill the top-right corner (18 × 16 and 20 × 16 design px, about 31 × 27 CSS px on an 844×390 phone, under the usual 44 px, but fine in the user's phone test).
+- **2026-11-18 Touch passed the real-phone test.** The user played it on their phone: "it works great on mobile!" No frame-rate fixes were needed. Milestone 7 is done.
 - **2026-11-18 The test harness lifts one finger with a `touchEnd` listing just that finger.** Leaving a finger out of a `touchMove`, as before, doesn't release it in Chrome, so a two-thumb test (stick held, CHARGE let go) never let go.
 - **2026-11-18 Each demo seed picks a movement, a start and some power:** movement = seed mod 3, an ENCORE one time in five, the boss one time in four (otherwise a bar from 4 to 59), a random weapon at level 2–3, up to two Harmonics, speed 2 and sometimes grace notes, so a demo shows the game at its best. The next demo takes the next seed.
 - **2026-11-18 Demos play the first 2.5 s unseen** (behind the fade-in), so enemies are on screen when the demo appears; they last 40 s on the wall clock (headless runs slower than real time, so game time would have stretched them past a minute). A demo that beats its boss, or loses its last ship, makes way for the next one. A demo boss starts at half health, so there's time to see it fall.
@@ -196,7 +197,7 @@ Pure modules (`beat.ts`, `script.ts`, `terrain.ts`, `land/bake.ts`) are tested b
 - **Craft sprite.** All eight craft candidates are drawn from above, nose up, and turned to face right. If that reads wrong, the slot can be re-searched for side-view ships.
 - **Boss balance.** A test pilot with starting power kills the bosses in about 17, 33 and 38 seconds. The user's play decides whether that's right.
 
-## Status (2026-11-18: milestones 1–8 done; milestone 7's phone test and milestone 9 need the user)
+## Status (2026-11-18: milestones 1–8 done, including the phone test; paused before milestone 9)
 
 - **Done:** Part A (concept sheet v0.3 and this plan, approved by the user). Live at https://leeeeeroyj.github.io/overtone/, every deploy green.
   - **Milestone 1** `3b83749`: title, scrolling landscape, Equalizer frame and flight. Repo settings per C3 and C5 applied and verified.
@@ -249,6 +250,6 @@ Pure modules (`beat.ts`, `script.ts`, `terrain.ts`, `land/bake.ts`) are tested b
   - Demo probe, about 4 minutes each from seeds 3 and 11 (14 demos: all three movements, ENCOREs and all three bosses): no ships lost; 0–4 hits a demo; the first kill within 0.3–5.3 s except two boss demos (22 and 29 s, where the body's armour pays nothing until the core falls); the longest still spell 1.25 s (once 3.75 s, in the first demo of a run while the page was still loading; it didn't recur).
   - Screenshots looked at: demos in Movements II and III and the Great Eel ENCORE.
   - Still passing: `m4-test` 37/37, `m1-test` 27/27 and `pause-hi-test` 22/22 (the finish and leave flows changed).
-- **Next:**
-  - The real-phone test (the user): the controls, how it feels, the tap targets, and the frame rate.
-  - Milestone 9: polish, balance from the user's play, the hero screenshot.
+- **Verified on a real phone (milestone 7):** the user played it on their phone and reported that it works great. No changes were needed.
+- **Paused here** at the user's word ("this is a good stopping point").
+- **Next:** milestone 9: polish, balance from the user's play (boss kill times are the open question), a new hero screenshot for the README (the current one predates the bosses and Movements II and III), and a final README pass. Arcadia's own updates are being handled separately.
