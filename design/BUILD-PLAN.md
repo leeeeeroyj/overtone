@@ -196,7 +196,7 @@ Pure modules (`beat.ts`, `script.ts`, `terrain.ts`, `land/bake.ts`) are tested b
 - **Craft sprite.** All eight craft candidates are drawn from above, nose up, and turned to face right. If that reads wrong, the slot can be re-searched for side-view ships.
 - **Boss balance.** A test pilot with starting power kills the bosses in about 17, 33 and 38 seconds. The user's play decides whether that's right.
 
-## Status (2026-11-18: milestone 8 built and verified; milestone 7's phone test is the user's)
+## Status (2026-11-18: milestones 1–8 done; milestone 7's phone test and milestone 9 need the user)
 
 - **Done:** Part A (concept sheet v0.3 and this plan, approved by the user). Live at https://leeeeeroyj.github.io/overtone/, every deploy green.
   - **Milestone 1** `3b83749`: title, scrolling landscape, Equalizer frame and flight. Repo settings per C3 and C5 applied and verified.
@@ -242,7 +242,7 @@ Pure modules (`beat.ts`, `script.ts`, `terrain.ts`, `land/bake.ts`) are tested b
   - Upright (390×844), the page asks to be turned and the run pauses.
   - Screenshots looked at: the title, flying, charging (the ring where the thumb landed, CHARGE filled), paused.
   - Still passing: `m1-test` 27/27, `m2-test` 23/23, `m3-test` 31/31, `m4-test` 37/37, `m5-test` 23/23, `pause-hi-test` 22/22, `m6-test` 25/25.
-  - **Milestone 8** (`pilot.ts`):
+  - **Milestone 8** `885ffdb` (`pilot.ts`), and the Arcadia cabinet (arcadia `40f4420`: `"attract": true`, `"hiKey": "overtone-hi"`, a still of the Great Eel ENCORE, and a loop recorded from the live build with seed 7, 1.8 MB, the largest of the eight because everything moves):
     - The concept sheet's pilot, driving the real game through the same inputs: it grabs pickups and a loose Echo, lines up with the nearest enemy (leading the boss's core), sidesteps the note that will pass closest soonest and enemies about to ram it, keeps off the frame, weaves so it never sits still, launches the Echo on beat 18 of every 32 and recalls it on beat 26, and charges on beats 4–5 of every 8 to let go on the beat (resonant).
     - Seeded demos (above), restarting with the next seed; no speaker or II in the HUD during a demo.
 - **Verified (milestone 8):** `npx tsc` clean. `attract-test` 14/14 (`?attract&seed=7`): gameplay at 1.0 s; shots near an enemy at 2.4 s; never still more than 0.75 s; a new demo after the first; no sound and no AudioContext; keys, a click and a gamepad change nothing and the pad is never read; focus stays on the body; nothing written to storage; heap 22.5 → 23.2 MB from 10 s to 60 s; the full game area at 320 × 176 and 832 × 456.
@@ -251,5 +251,4 @@ Pure modules (`beat.ts`, `script.ts`, `terrain.ts`, `land/bake.ts`) are tested b
   - Still passing: `m4-test` 37/37, `m1-test` 27/27 and `pause-hi-test` 22/22 (the finish and leave flows changed).
 - **Next:**
   - The real-phone test (the user): the controls, how it feels, the tap targets, and the frame rate.
-  - Arcadia: the Overtone cabinet (`games.json` with `"attract": true` and `"hiKey": "overtone-hi"`, a still, and a loop recorded from the live build).
   - Milestone 9: polish, balance from the user's play, the hero screenshot.
