@@ -1,11 +1,12 @@
 import Phaser from 'phaser';
 import { BeatClock } from '../beat';
 import {
-  BEAT_WINDOW, CHARGE, CHORD, COLORS, CRAFT, FIRE, FOES, GRACE, HARMONIC, MAX_LEVEL, MOVEMENTS, noteScale, PICKUPS,
-  PLAY, RENDER_SCALE, tempo, TEXT, WEAPONS, WIDTH, type FoeKind, type PickupKind, type Weapon,
+  BEAT_WINDOW, BOSS, CHARGE, CHORD, COLORS, CRAFT, FIRE, FOES, GRACE, HARMONIC, MAX_LEVEL, MOVEMENTS, noteScale, PICKUPS,
+  HEIGHT, PLAY, RENDER_SCALE, tempo, TEXT, TOP, WEAPONS, WIDTH, type FoeKind, type PickupKind, type Weapon,
 } from '../config';
 import { Controls, type ControlState, type Device } from '../controls';
 import { Effects, hsl } from '../effects';
+import { Boss } from '../entities/boss';
 import { Echo } from '../entities/echo';
 import { drawFoes, foesOnBeat, spawnFoe, updateFoes, type Foe, type SpawnOptions } from '../entities/foes';
 import { crystalWeapon, drawPickups, dropPickup, updatePickups, type Pickup } from '../entities/pickups';
@@ -48,6 +49,8 @@ export interface HudState {
   newHi: boolean;
   /** This run can set the high score (it started at Movement I and never continued). */
   eligible: boolean;
+  /** The boss, while one is on: its name, the core's health (0 to 1), and whether the core is open. */
+  boss: { name: string; hp: number; open: boolean } | null;
 }
 
 /** Power the craft carries from one movement to the next. */
@@ -121,6 +124,9 @@ export class StageScene extends Phaser.Scene {
   paused = false;
   /** The game-over panel's selection: 0 CONTINUE, 1 RETRY, 2 TITLE. */
   choice = 0;
+  /** The movement's boss, once it arrives; `bossDue` stops it coming twice. */
+  boss: Boss | undefined;
+  private bossDue = true;
   newHi = false;
   /** Counters the tests read: hits taken from the frame, hits taken in all, enemy notes blocked. */
   frameHits = 0;
@@ -188,7 +194,7 @@ export class StageScene extends Phaser.Scene {
     if (run.power) Object.assign(this.craft, run.power);
     Object.assign(this, { foes: [], shots: [], beams: [], notes: [], pickups: [], warns: [], score: run.score, mult: run.mult, ships: run.ships });
     Object.assign(this, { frameHits: 0, hits: 0, blocked: 0, lastRelease: undefined, scripted: true, gameOver: -1, ending: -1, kick: 0 });
-    Object.assign(this, { paused: false, choice: 0, newHi: false, lastMoveX: 0 });
+    Object.assign(this, { paused: false, choice: 0, newHi: false, lastMoveX: 0, boss: undefined, bossDue: true });
     Object.assign(this, { landOnly: false, frozen: false, noteFire: true, drops: 0, formations: new Map() });
     this.gBack = this.add.graphics().setDepth(5);
     this.gFoe = this.add.graphics().setDepth(7.5);
@@ -240,8 +246,10 @@ export class StageScene extends Phaser.Scene {
     updateShots(this, dt);
     if (!this.frozen) {
       updateFoes(this, dt);
+      this.boss?.update(dt);
       updatePickups(this, dt);
     }
+    this.bossOutro(dt);
     updateNotes(this, dt);
     this.arrivals(dt);
     this.contact();
@@ -274,15 +282,47 @@ export class StageScene extends Phaser.Scene {
     return this.gameOver >= 0;
   }
 
-  /** The movement's name, shown as it starts. */
-  private showBanner() {
+  /** The movement's name as it starts (or the boss's as it arrives). */
+  private showBanner(small?: string, big?: string) {
     const m = MOVEMENTS[this.movement];
     const encore = this.loop > 0 ? `  ·  ENCORE${this.loop > 1 ? ` ${this.loop}` : ''}` : '';
+    this.banner.forEach((t) => t.destroy());
     this.banner = [
-      label(this, WIDTH / 2, 74, `MOVEMENT ${m.numeral}${encore}`, 8, TEXT.dim, { align: 'center' }).setDepth(20),
-      label(this, WIDTH / 2, 86, m.name, 20, TEXT.gold, { align: 'center' }).setDepth(20),
+      label(this, WIDTH / 2, 74, small ?? `MOVEMENT ${m.numeral}${encore}`, 8, TEXT.dim, { align: 'center' }).setDepth(20),
+      label(this, WIDTH / 2, 86, big ?? m.name, 20, TEXT.gold, { align: 'center' }).setDepth(20),
     ];
     this.bannerTime = PLAY.banner;
+  }
+
+  /** The script is done: the boss flies in, announced by a chevron and its name. */
+  startBoss() {
+    if (this.boss || this.gameOver >= 0 || this.ending >= 0) return;
+    this.bossDue = false;
+    this.scripted = false;
+    this.arrive((TOP + HEIGHT) / 2, () => {
+      if (this.gameOver >= 0 || this.leaving) return;
+      this.boss = new Boss(this, this.movement);
+      this.showBanner(`MOVEMENT ${MOVEMENTS[this.movement].numeral}  ·  FINALE`, this.boss.name);
+    });
+  }
+
+  /** After the core dies: explosions across the boss for a moment, then MOVEMENT COMPLETE. */
+  private bossOutro(dt: number) {
+    const b = this.boss;
+    if (!b || b.dying < 0) return;
+    const before = Math.floor((b.dying - dt) * 10);
+    if (Math.floor(b.dying * 10) > before && b.dying < BOSS.outro) {
+      const k = Math.floor(b.dying * 10);
+      const x = b.core.x + Math.sin(k * 2.3) * 30;
+      const y = b.core.y + Math.cos(k * 1.7) * 26;
+      this.fx.burst(x, y, 14, this.land.hue + k * 30, 1.2);
+      this.fx.ring(x, y, 2, 90, 0.4, this.land.hue + k * 30 + 180, 1.5);
+      if (k % 4 === 0) this.fx.shake(3, 0.25);
+    }
+    if (b.dying >= BOSS.outro) {
+      this.boss = undefined;
+      this.finish();
+    }
   }
 
   /** The script has run out: the movement is complete, and the next one (or an ENCORE) follows. */
@@ -290,6 +330,7 @@ export class StageScene extends Phaser.Scene {
     if (this.ending >= 0 || this.gameOver >= 0) return;
     this.ending = 2.5;
     this.scripted = false;
+    this.bossDue = false;
     const m = MOVEMENTS[this.movement];
     this.banner.forEach((t) => t.destroy());
     this.banner = [
@@ -360,10 +401,13 @@ export class StageScene extends Phaser.Scene {
   }
 
   private onBeat(b: number) {
-    if (!this.frozen) foesOnBeat(this, b);
+    if (!this.frozen) {
+      foesOnBeat(this, b);
+      this.boss?.onBeat(b);
+    }
     if (!this.scripted || this.gameOver >= 0) return;
     for (const w of wavesAt(this.movement, b)) runPattern(this, w.pattern, w.variant);
-    if (b >= (scriptBars(this.movement) + PLAY.outro) * 4) this.finish();
+    if (this.bossDue && b >= (scriptBars(this.movement) + PLAY.outro) * 4) this.startBoss();
   }
 
   /** Direct 8-way flight. The craft squashes (a bank) while climbing or diving; the frame is a hit and bounces it back. */
@@ -580,6 +624,7 @@ export class StageScene extends Phaser.Scene {
 
   damage(e: Foe, d: number, resonant = false) {
     if (e.dead) return;
+    if (e.boss && !e.boss.vulnerable(e)) return e.boss.glance(e);
     e.hp -= d;
     e.flash = 0.08;
     if (e.hp <= 0) this.kill(e, resonant);
@@ -591,19 +636,27 @@ export class StageScene extends Phaser.Scene {
       this.mult = Math.min(PLAY.harmonyMax, this.mult + 1);
       this.fx.popup(e.x, e.y - 18, 'RESONANT', TEXT.beam);
     }
-    const pts = FOES[e.kind].points * this.mult * (resonant ? 2 : 1);
+    const core = e.boss && e === e.boss.core;
+    const pts = (core ? e.boss!.points : FOES[e.kind].points) * this.mult * (resonant ? 2 : 1);
     this.addScore(pts);
     this.fx.popup(e.x, e.y - 10, String(pts), TEXT.gold);
     const hue = this.land.hue;
     this.fx.burst(e.x, e.y, 18, hue + e.kind.length * 40);
     this.fx.ring(e.x, e.y, 2, 120, 0.4, hue + 180, 1.5);
     if (resonant) this.fx.ring(e.x, e.y, 2, 70, 0.6, hue + 60, 1);
-    const big = e.kind === 'horn' || e.kind === 'eelhead' || e.kind === 'carrier';
+    const big = e.kind === 'horn' || e.kind === 'eelhead' || e.kind === 'carrier' || core;
     if (big) this.fx.burst(e.x, e.y, 22, hue + 90, 1.4);
     this.fx.shake(big ? 2.5 : 1, big ? 0.3 : 0.12);
     this.sfx.kill(e.y);
     if (e.kind === 'carrier') dropPickup(this, PICKUPS.drops[this.drops++ % PICKUPS.drops.length], e.x, e.y);
     if (e.kind === 'eelhead') for (const f of this.foes) if (f.head === e && !f.dead) this.kill(f, false);
+    if (core) {
+      // The boss goes with its core: every part for its points, then the outro.
+      e.boss!.defeat();
+      for (const f of e.boss!.parts) if (!f.dead) this.kill(f, false);
+      this.fx.popup(e.x, e.y - 22, e.boss!.name, TEXT.gold);
+      this.fx.flash(0.25);
+    }
     // The last of a whole formation: a CHORD.
     const f = e.group ? this.formation(e.group) : undefined;
     if (f && ++f.killed === CHORD.size && !f.broken) {
@@ -692,6 +745,7 @@ export class StageScene extends Phaser.Scene {
       img.setPosition(h.x + kick, h.y).setDepth(behind ? 9 : 12).setAlpha(behind ? 0.85 : 1);
     });
     if (alive) this.echo.draw(gMid, REDUCED);
+    this.boss?.draw(gMid);
 
     drawShots(gFront, this, true);
     drawBeams(gFront, this);
@@ -753,6 +807,7 @@ export class StageScene extends Phaser.Scene {
     this.notes = [];
     this.fx.clear();
     this.scripted = false;
+    this.boss = undefined;
   }
 
   /** Moves the beat clock to `frac` of the way through the current beat. */
@@ -838,6 +893,7 @@ export class StageScene extends Phaser.Scene {
       ready: this.gameOver >= PLAY.gameOver,
       newHi: this.newHi,
       eligible: this.eligible,
+      boss: this.boss && this.boss.dying < 0 ? { name: this.boss.name, hp: this.boss.hpFraction, open: this.boss.open } : null,
     };
     this.registry.set('hud', state);
   }

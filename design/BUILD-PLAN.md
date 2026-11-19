@@ -172,6 +172,10 @@ Pure modules (`beat.ts`, `script.ts`, `terrain.ts`, `land/bake.ts`) are tested b
 - **2026-11-18 Game-over panel ignores input for 1.2 s,** so fire held at the moment of death doesn't pick an option. Esc or Back picks TITLE. The selected button is filled and the rest are outlined.
 - **2026-11-18 Leaving a run for the title (Esc, or TITLE from pause) still saves its score as HI** if the run is eligible. The page going to the background pauses, and the game stays paused when it comes back.
 - **2026-11-18 The reachability check holds the craft at its start x** (stricter than the real game, where it can also move sideways). It treats Sentries and Snappers as walls and leaves out things that fly, since those move and can be shot.
+- **2026-11-18 Boss parts are ordinary enemies owned by the boss.** The boss moves and fires them, so shots, beams, the Echo and contact work on them unchanged. The Halo's Sentries and the Conductor's instruments take twice their usual hits and pay their usual points. The Great Eel's body is armoured: shots glance off it.
+- **2026-11-18 The core is open for the first two beats of each bar** and fires on the second. Hit points are 80, 100 and 120, plus a quarter per ENCORE. The first test showed the bob was fastest exactly while the core was open, which made it hard to hit for anyone, not just the test pilot. Now the Halo and the Conductor sit at the end of their swing while open, and the Great Eel slows to about a third of its speed.
+- **2026-11-18 Boss warnings start a quarter into the beat before an attack** (so at least ¾ of a beat less a frame), longer than ordinary enemies' half-beat. The plan asks for at least half a beat even at low frame rates.
+- **2026-11-18 The boss arrives after the script's 4-bar outro,** announced like any arrival (a chevron, then MOVEMENT n · FINALE and its name). The terrain keeps scrolling. CONTINUE still restarts the movement from its first bar.
 - **2026-11-17 Information never depends on hue** (the user is colour blind). Enemy notes are white-cored diamonds; player shots are dashes, beads, triangles of lines and arcs. Pickups carry glyphs; the beat lamp is filled vs outlined, with a taller downbeat; the charge ring counts segments and goes solid to say "now".
 
 ## Open questions
@@ -180,7 +184,7 @@ Pure modules (`beat.ts`, `script.ts`, `terrain.ts`, `land/bake.ts`) are tested b
 - **Music for Movements II and III.** I stays dark minor; II and III could brighten or stay. Until milestone 6 they use I's band at their own tempo.
 - **Scope of bosses.** Three bosses is the biggest single chunk of work. If time is tight, Movement II's boss could reuse the Eel entity at boss scale.
 
-## Status (2026-11-18: milestone 4 built and verified)
+## Status (2026-11-18: milestone 5 built and verified)
 
 - **Done:**
   - Part A: concept sheet v0.3 (with the half-size Echo and Harmonics) and this plan, approved by the user.
@@ -228,7 +232,7 @@ Pure modules (`beat.ts`, `script.ts`, `terrain.ts`, `land/bake.ts`) are tested b
     - the HUD shows weapon, level and Harmonics.
   - `m1-test` 27/27 and `m2-test` 23/23 still pass.
   - Screenshots looked at: the contact sheet (every sprite reads; ceiling ones flipped), busy PRISM play, and a staged hero shot.
-  - **Milestone 4:**
+  - **Milestone 4,** pushed as `760348b` (deploy green):
     - Movements II and III have their own terrain (`TERRAINS`; a cave closer above and below, and a quicker, sharper III; both keep a gap of at least 80 px). They have their own looks (themes, see Decisions).
     - Each movement has an authored script (`script.ts`, one token per bar, see Decisions), with a `+` for two waves in a bar. The script's end shows MOVEMENT n COMPLETE and moves on to the next movement; after III comes an ENCORE.
     - Runs carry score, ships, Harmony and power. The HUD shows the numeral with ENCORE (and its count), and each movement opens with a banner.
@@ -253,4 +257,22 @@ Pure modules (`beat.ts`, `script.ts`, `terrain.ts`, `land/bake.ts`) are tested b
     - The high score is saved and shown on the panel, the HUD and the title. A lower score doesn't replace it. Pause is refused after game over. Leaving from pause keeps a better score.
   - `m1-test`, `m2-test` and `m3-test` still pass.
   - Screenshots looked at: II and III in play and as bare landscapes, the banner, COMPLETE, the ENCORE, the game-over panel, the pause panel.
-- **Next:** milestone 5: the three bosses.
+  - **Milestone 5** (`entities/boss.ts`):
+    - The Halo (I): eight Sentries in a ring that snaps round a sixteenth of a turn per beat. The ones on your side fire on beat 3.
+    - The Great Eel (II): the core is the head of twelve armoured segments on a figure of eight. Every third segment throws a pair of notes up and down on beat 4; the head spits three at you.
+    - The Conductor (III): a Sentry, a Jelly, a Snapper and a Strider orbit the core, each with its own pattern.
+    - The Halo's and the Conductor's cores fire a ring of ten notes on beat 2 while open.
+    - The core's shut state is a riveted plate with a seam; open, a ring pulses round the eye. The HUD's boss bar (name, health, OPEN/SHUT) takes the hint strip's place.
+    - Killing the core takes the parts with it (for their points), sets off explosions for 1.6 s, then MOVEMENT COMPLETE.
+    - Dev hook `startBoss()`. `clearField()` no longer cancels the boss, since stopping the script is enough.
+    - `m4-test` now expects the boss at the end of the script, and kills it to see the movement complete.
+- **Verified (milestone 5):** `npx tsc` clean.
+  - `m5-test` 23/23, for each boss:
+    - It arrives via the hook, with its name and a full bar on the HUD.
+    - A hit on the shut core (beat 3 or 4) does nothing; on the open core (beat 1) it does 5.
+    - Every attack was warned at least half a beat ahead: 22, 99 and 42 attacks, the shortest 0.75, 0.70 and 0.63 beats.
+    - A pilot that leads the core and holds FIRE with starting power (SPIRAL 1, no Harmonics) kills it in 19.0, 32.9 and 33.2 s of game time.
+    - Its death completes the movement, then the next starts. After the Conductor comes the ENCORE, whose Halo has 100 hit points.
+  - Still passing: `m1-test` 27/27, `m2-test` 23/23, `m3-test` 31/31, `m4-test` 37/37 and `pause-hi-test` 22/22.
+  - Screenshots looked at: each boss arriving (banner, bar), mid-fight (warned Eel segments white, the Conductor's notes), the shut plate and the open ring.
+- **Next:** milestone 6: full music per movement locked to the audio clock, all sound effects, and the remaining feedback.

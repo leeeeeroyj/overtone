@@ -115,11 +115,15 @@ await skipTo(0);
 await run(`s.clearField(); s.scripted = true; s.score = 4321; s.ships = 2; s.mult = 3;
   s.grant({ weapon: 'prism', level: 2, harm: 1, speed: 2, fork: true });
   s.beat.time = 84 * 4 * s.beat.spb - 0.15;`);
-const done1 = await waitFor(`return s.ending >= 0;`, 4000);
+const boss = await waitFor(`return !!s.boss;`, 6000);
+check('the end of the script (80 bars and the outro) brings the boss', boss && (await run(`return s.boss.name === 'THE HALO';`)));
+// Kill it at once (milestone 5's test fights it properly).
+await run(`s.craft.invuln = 999; s.kill(s.boss.core, false);`);
+const done1 = await waitFor(`return s.ending >= 0;`, 6000);
 await shot('4-complete');
-check('the end of the script (80 bars and the outro) completes Movement I', done1 && (await evaluate(`${G}.scene.getScene('stage').children.list.some((o) => o.text === 'COMPLETE')`)));
+check('its death completes Movement I', done1 && (await evaluate(`${G}.scene.getScene('stage').children.list.some((o) => o.text === 'COMPLETE')`)));
 const next = await waitFor(`return s.movement === 1 && s.beat.time > 0.2;`, 8000);
-const carried = await run(`const c = s.craft; return { score: s.score, ships: s.ships, mult: s.mult, weapon: c.weapon, level: c.level, harm: c.harm, speed: c.speed, fork: c.fork, loop: s.loop, eligible: s.eligible };`);
+const carried = await run(`const c = s.craft; return { score: s.score - 5000 * 3 - 8 * 200 * 3, ships: s.ships, mult: s.mult, weapon: c.weapon, level: c.level, harm: c.harm, speed: c.speed, fork: c.fork, loop: s.loop, eligible: s.eligible };`);
 check('then Movement II starts, with score, ships, Harmony and power carried', next && carried.score === 4321 && carried.ships === 2 && carried.mult === 3
   && carried.weapon === 'prism' && carried.level === 2 && carried.harm === 1 && carried.speed === 2 && carried.fork && carried.loop === 0, JSON.stringify(carried));
 check('a run that passed through from Movement I can still set the high score', carried.eligible === true);

@@ -180,8 +180,32 @@ export const FOES = {
   eel: { name: 'EEL', sprite: 'eel', points: 50, hp: 2, r: 5, every: 0, phase: 0 },
   eelhead: { name: 'EEL HEAD', sprite: 'eel', points: 500, hp: 6, r: 7, every: 0, phase: 0 },
   carrier: { name: 'COURIER', sprite: 'carrier', points: 300, hp: 4, r: 6, every: 0, phase: 0 },
+  /** A boss's core: its hit points and points come from BOSSES. */
+  core: { name: 'CORE', sprite: 'core', points: 0, hp: 1, r: 12, every: 0, phase: 0 },
 } as const;
 export type FoeKind = keyof typeof FOES;
+
+/**
+ * Bosses, one per movement, after its script. The core opens on the first beat of every bar for `open` beats and can
+ * only be hurt then. Hit points grow by `hpLoop` each ENCORE. Parts' hit points are their enemy's times `partHp`.
+ */
+export const BOSSES = [
+  { kind: 'halo', name: 'THE HALO', hp: 80, points: 5000 },
+  { kind: 'eel', name: 'GREAT EEL', hp: 100, points: 8000 },
+  { kind: 'conductor', name: 'THE CONDUCTOR', hp: 120, points: 10000 },
+] as const;
+export type BossKind = (typeof BOSSES)[number]['kind'];
+export const BOSS = {
+  open: 2,
+  /** Beats it takes to fly in, during which it can't be hurt and doesn't fire. */
+  enter: 4,
+  hpLoop: 0.25,
+  partHp: 2,
+  /** Seconds of explosions between the core's death and MOVEMENT COMPLETE. */
+  outro: 1.6,
+  /** How far into the beat before an attack its warning starts (so it shows for at least half a beat). */
+  warnFrom: 0.25,
+};
 
 /** A full Flutter formation shot down: bonus points (times Harmony) and +1 Harmony. */
 export const CHORD = { bonus: 1000, size: 5 };

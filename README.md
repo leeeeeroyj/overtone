@@ -26,6 +26,7 @@ Overtone is an original arcade game inspired by the mechanics of Irem's 1987 arc
   - **I Pulse** (128 beats a minute) is a violet dusk over a city of instruments. A speaker-cone moon ripples on every kick, spectrum-analyser mountains bounce with the music, and the city's lights play in turn through each bar.
   - **II Strings** (140) is a teal cave hung with strings that ring in turn on the beat.
   - **III Crescendo** (152) is a red-gold dusk with everything at once.
+- **A boss ends each movement.** Its core opens on the first beat of every bar, and that's the only time it can be hurt.
 - **Encores.** After III the ensemble plays again from I, 12 beats a minute faster, with enemy notes 15% quicker each time round.
 - **Charge on the beat.** Hold CHARGE for a beat per tier, then let go for a piercing beam. Let go right on the beat and it's **resonant**: wider, harder, worth double and it raises your Harmony.
 - **The Echo.** A living orb of sound rides on your nose. It blocks shots, hurts whatever it touches and fires your weapon: a spiralling double helix, bouncing prism beams or sonar arcs that pass through walls. Send it out ahead and it hovers there, repeating your shots, until you call it back.
@@ -35,7 +36,7 @@ Overtone is an original arcade game inspired by the mechanics of Irem's 1987 arc
 
 ## How to play
 
-Fly through the three movements, shoot what's in your way and keep off the walls. Each movement is 80 bars of waves; when it ends, the next starts with your score, ships, Harmony and power carried over. The beat lamp in the top bar shows where you are in the bar: the current beat is filled, and the first beat of the bar is the tall one.
+Fly through the three movements, shoot what's in your way and keep off the walls. Each movement is 80 bars of waves and then a boss. When the boss falls, the next movement starts with your score, ships, Harmony and power carried over. The beat lamp in the top bar shows where you are in the bar: the current beat is filled, and the first beat of the bar is the tall one.
 
 - **FIRE** (hold) streams notes from the craft, and the Echo fires its double helix from whichever end it's on.
 - **CHARGE** (hold) stops your fire and fills a tier for each beat you hold it, up to three: a ring of three arcs round the craft fills as you go. Let go for a beam that sweeps across the screen and pierces everything in its path. Let go at tier 2 or 3 within 0.09 s of a beat (the ring turns solid white) and the beam is **resonant**: half as wide again, half as strong again, and each kill pays double and adds one to your Harmony.
@@ -46,6 +47,14 @@ Fly through the three movements, shoot what's in your way and keep off the walls
 - **High score.** Kept in your browser. Only a run that starts at Movement I and never continues can set it.
 - **Fair warning.** Anything about to fire flashes white for the half-beat before it does, and a gold chevron blinks at the right edge, at the height something will arrive, a beat before it does.
 - **CHORD.** Shoot down all five Flutters in a formation for 1,000 × your Harmony, and +1 Harmony. If one gets away, there's no bonus.
+
+- **Bosses.** A boss's core is shut behind a riveted plate except for the first two beats of every bar, when the plate opens, a ring pulses round the eye and the boss bar at the bottom reads OPEN. Shots glance off it while it's shut. While it's open, the core holds nearly still (the Great Eel slows to a crawl) and fires on the bar's second beat. Destroy the core and the rest of the boss goes with it. The parts round it take twice their usual hits. In an ENCORE, each boss has a quarter more hit points.
+
+| Boss | Movement | Points | Hits | What it does |
+| --- | --- | ---: | ---: | --- |
+| The Halo | I | 5,000 | 80 | A ring of eight Sentries turning round the core. The ones on your side fire on the third beat of each bar. The core sends out a ring of ten notes. |
+| Great Eel | II | 8,000 | 100 | The core is its head, at the front of an armoured body of twelve segments that winds a figure of eight through the cave. Every third segment throws notes up and down on the fourth beat; the head spits three at you. |
+| The Conductor | III | 10,000 | 120 | A Sentry, a Jelly, a Snapper and a Strider orbit the core, each firing its own pattern. The core sends out a ring of ten notes. |
 
 | Enemy | Points | Hits | Behaviour |
 | --- | ---: | ---: | --- |
@@ -110,7 +119,7 @@ src/
   beat.ts            the beat clock everything keeps time to
   terrain.ts         each movement's floor and ceiling, and the reachability check
   script.ts          each movement's waves, one token per bar
-  entities/          the Echo, enemies, pickups, shots, beams and enemy notes
+  entities/          the Echo, enemies, bosses, pickups, shots, beams and enemy notes
   glyphs.ts          the weapon and pickup icons
   effects.ts         sparks, rings, score popups, shake and flash
   synth.ts           oscillator voices and the sound switch

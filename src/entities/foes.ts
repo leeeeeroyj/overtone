@@ -4,6 +4,7 @@ import { hsl } from '../effects';
 import { clamp } from '../land/bake';
 import { mod } from '../synth';
 import type { StageScene } from '../scenes/StageScene';
+import type { Boss } from './boss';
 
 export interface Foe {
   kind: FoeKind;
@@ -44,11 +45,13 @@ export interface Foe {
   dead: boolean;
   /** Eel segments are drawn orbs, not sprites. */
   img: Phaser.GameObjects.Image | undefined;
+  /** A boss's core or part: the boss moves it, fires it and warns for it. */
+  boss: Boss | undefined;
 }
 
 export interface SpawnOptions {
-  /** 1: on the floor, -1: on the ceiling. */
-  ground?: 1 | -1;
+  /** 1: on the floor, -1: on the ceiling, 0: in the air. */
+  ground?: 0 | 1 | -1;
   y?: number;
   phase?: number;
   vx?: number;
@@ -56,6 +59,7 @@ export interface SpawnOptions {
   group?: number;
   i?: number;
   head?: Foe;
+  boss?: Boss;
 }
 
 /** Eel segments follow the head's path this many seconds apart. */
@@ -72,6 +76,7 @@ export function spawnFoe(stage: StageScene, kind: FoeKind, x: number, opts: Spaw
     kind, x, y, y0: y, x0: x, vx: opts.vx ?? 0, vy: opts.vy ?? 0, hp: def.hp, r: def.r, t: 0, flash: 0,
     every: def.every, phase: opts.phase ?? def.phase, ground, warn: false, wx: stage.scrollX + x, spin: 0,
     onGround: false, group: opts.group ?? 0, i: opts.i ?? 0, head: opts.head, escaped: false, dead: false, img,
+    boss: opts.boss,
   };
   settle(stage, e);
   if (kind === 'metronome') e.y = stage.terrain.floorY(e.wx) - 8;
@@ -93,6 +98,7 @@ export function updateFoes(stage: StageScene, dt: number) {
     if (e.dead) continue;
     e.t += dt;
     e.flash = Math.max(0, e.flash - dt);
+    if (e.boss) continue;
     switch (e.kind) {
       case 'chirp':
         e.x -= (56 + 80 * beat.env) * dt;
@@ -161,7 +167,7 @@ export function updateFoes(stage: StageScene, dt: number) {
 /** On each beat: Jellies pulse, Striders hop, and anything due to fire does. */
 export function foesOnBeat(stage: StageScene, b: number) {
   for (const e of stage.foes) {
-    if (e.dead) continue;
+    if (e.dead || e.boss) continue;
     if (e.kind === 'jelly') e.vy = -34;
     if (e.kind === 'metronome' && e.onGround && mod(b, 2) === 0) {
       e.vy = -78;
@@ -197,13 +203,15 @@ export function drawFoes(stage: StageScene, g: Phaser.GameObjects.Graphics) {
     if (e.kind === 'eel') {
       const x = Math.round(e.x);
       const y = Math.round(e.y);
-      g.fillStyle(0x000000).fillCircle(x, y, 5);
-      g.fillStyle(white ? 0xffffff : hsl(hue + e.i * 40 + 30, 0.3, 0.9)).fillCircle(x, y, 4);
-      g.fillStyle(white ? 0xffffff : hsl(hue + e.i * 40, 0.62)).fillCircle(x - 1, y - 1, 2);
-      g.fillStyle(0xffffff).fillRect(x - 2, y - 2, 1, 1);
+      // Sized by the segment's radius: 5 for an Eel, more for the Great Eel.
+      const r = e.r;
+      g.fillStyle(0x000000).fillCircle(x, y, r);
+      g.fillStyle(white ? 0xffffff : hsl(hue + e.i * 40 + 30, 0.3, 0.9)).fillCircle(x, y, r - 1);
+      g.fillStyle(white ? 0xffffff : hsl(hue + e.i * 40, 0.62)).fillCircle(x - 1, y - 1, r - 3);
+      g.fillStyle(0xffffff).fillRect(x - r + 3, y - r + 3, 1, 1);
       continue;
     }
-    const grounded = e.ground !== 0 || e.kind === 'metronome' || e.kind === 'cymbal';
+    const grounded = e.ground !== 0 || e.kind === 'metronome' || e.kind === 'cymbal' || !!e.boss;
     const img = e.img!;
     img
       .setPosition(Math.round(e.x), Math.round(e.y) - (grounded ? 0 : hop))

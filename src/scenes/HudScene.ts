@@ -51,6 +51,8 @@ export class HudScene extends Phaser.Scene {
   private overNote!: Phaser.GameObjects.Text;
   private overHint!: Phaser.GameObjects.Text;
   private pauseTap!: Phaser.GameObjects.Zone;
+  private bossName!: Phaser.GameObjects.Text;
+  private bossState!: Phaser.GameObjects.Text;
 
   constructor() {
     super('hud');
@@ -75,6 +77,8 @@ export class HudScene extends Phaser.Scene {
     this.numeral = t(612, 1, '', 10, TEXT.dim);
     this.movement = t(612, 12, '', 16, TEXT.magenta);
     this.hint = t(W / 2, H - 14, '', 10, TEXT.ink, 'center');
+    this.bossName = t(W / 2 - 206, H - 15, '', 10, TEXT.gold);
+    this.bossState = t(W / 2 + 210, H - 15, '', 10, TEXT.ink);
     // The speaker toggles sound.
     this.add.zone(810, 16, 28, 28).setInteractive({ useHandCursor: true }).on('pointerdown', () => toggleMute(this));
     this.ships = Array.from({ length: 5 }, (_, i) => this.add.image(516 + i * 18, 22, 'player').setAngle(90).setDepth(2));
@@ -189,8 +193,20 @@ export class HudScene extends Phaser.Scene {
       this.overHint.setText(OVER_HINTS[s.device]).setAlpha(s.ready ? 1 : 0.4);
     }
 
-    this.hint.setVisible(!s.attract && !paused && !over).setText(HINTS[s.device]);
-    if (!s.attract && !paused && !over) {
+    // The boss bar takes the hint strip's place: its name, the core's health, and whether the core is OPEN or SHUT.
+    const boss = s.boss && !paused && !over ? s.boss : null;
+    this.bossName.setVisible(!!boss).setText(boss?.name ?? '');
+    this.bossState.setVisible(!!boss).setText(boss?.open ? 'OPEN' : 'SHUT').setColor(boss?.open ? TEXT.gold : TEXT.dim);
+    if (boss) {
+      const x = W / 2 - 90;
+      const w = 290;
+      g.fillStyle(COLORS.void, 0.85).fillRect(W / 2 - 214, H - 18, 476, 18);
+      g.lineStyle(1, COLORS.ink).strokeRect(x + 0.5, H - 13.5, w, 8);
+      g.fillStyle(COLORS.gold).fillRect(x + 2, H - 11, Math.round((w - 3) * boss.hp), 5);
+    }
+
+    this.hint.setVisible(!s.attract && !paused && !over && !boss).setText(HINTS[s.device]);
+    if (!s.attract && !paused && !over && !boss) {
       const w = this.hint.width + 16;
       g.fillStyle(COLORS.void, 0.8).fillRect(Math.round(W / 2 - w / 2), H - 16, Math.round(w), 16);
     }
