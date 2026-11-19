@@ -166,15 +166,21 @@ Pure modules (`beat.ts`, `script.ts`, `terrain.ts`, `land/bake.ts`) are tested b
 - **2026-11-18 A CHORD needs all five of a formation shot down;** if one leaves the screen alive the formation is broken and pays nothing (the mockup paid out when the last one died, however the others went).
 - **2026-11-18 The Harmonic pickup is drawn like the companion,** at half size with its glow, to match the user's half-size request; the glyph above it keeps it easy to spot.
 - **2026-11-18 Sound is synthesised live with oscillators** (`synth.ts`) on Phaser's audio context, through its mute node, as in the mockup, instead of Sentinel's pre-rendered sfxr buffers: the band has to be scheduled on the audio clock anyway, and the shot and kill sounds are pitched per event. `music.ts` schedules each beat 0.12 s ahead at the moment the beat clock will reach it; the full audio-clock lock is still milestone 6's.
+- **2026-11-18 Movement looks.** II Strings is a teal cave: no moon, spectrum or stave; stalagmites, outcrops, crystal clusters and string posts for a skyline, and seven strings across the sky, one ringing hard on each beat in turn. III Crescendo is a red-gold dusk with the moon, the spectrum, the stave, the city and four strings. Each movement has its own palette (`THEMES` in `land/bake.ts`); the Equalizer frame keeps its style.
+- **2026-11-18 Authored scripts, one token per bar,** 80 bars a movement plus a 4-bar outro (about 2.6, 2.4 and 2.2 minutes). Nothing is random: Snapper sides and Flutter heights are written into the script. Pickups come only from Couriers, so each movement has a Courier every few bars.
+- **2026-11-18 ENCORE:** after III, I again at +12 BPM per loop with enemy notes 15% faster. Scroll speed stays the same so the terrain stays passable. Score, ships, Harmony and power carry from movement to movement and into an ENCORE.
+- **2026-11-18 Game-over panel ignores input for 1.2 s,** so fire held at the moment of death doesn't pick an option. Esc or Back picks TITLE. The selected button is filled and the rest are outlined.
+- **2026-11-18 Leaving a run for the title (Esc, or TITLE from pause) still saves its score as HI** if the run is eligible. The page going to the background pauses, and the game stays paused when it comes back.
+- **2026-11-18 The reachability check holds the craft at its start x** (stricter than the real game, where it can also move sideways). It treats Sentries and Snappers as walls and leaves out things that fly, since those move and can be shot.
 - **2026-11-17 Information never depends on hue** (the user is colour blind). Enemy notes are white-cored diamonds; player shots are dashes, beads, triangles of lines and arcs. Pickups carry glyphs; the beat lamp is filled vs outlined, with a taller downbeat; the charge ring counts segments and goes solid to say "now".
 
 ## Open questions
 
 - **Craft sprite.** All eight craft candidates are drawn from above, nose up, and turned to face right. If that reads wrong, the slot can be re-searched for side-view ships.
-- **Music for Movements II and III.** I stays dark minor; II and III could brighten or stay.
+- **Music for Movements II and III.** I stays dark minor; II and III could brighten or stay. Until milestone 6 they use I's band at their own tempo.
 - **Scope of bosses.** Three bosses is the biggest single chunk of work. If time is tight, Movement II's boss could reuse the Eel entity at boss scale.
 
-## Status (2026-11-18: milestone 3 built and verified)
+## Status (2026-11-18: milestone 4 built and verified)
 
 - **Done:**
   - Part A: concept sheet v0.3 (with the half-size Echo and Harmonics) and this plan, approved by the user.
@@ -190,7 +196,7 @@ Pure modules (`beat.ts`, `script.ts`, `terrain.ts`, `land/bake.ts`) are tested b
     - HUD: ECHO glyph (dims and blinks when loose) and level pips, HARM notes, sound icon (clickable), new hints. M toggles sound everywhere (`overtone-muted`).
     - Dev hooks on the stage scene: `spawn`, `clearField`, `setBeatPhase`, `grant`, `addNote`, `landOnly`.
     - Placeholders until later milestones: the spawn script is a loop of Sentry pairs every 8 beats (milestone 4 writes the real one); the last ship lost shows GAME OVER for 3 s and returns to the title (milestone 4's panel); P and Start do nothing yet, so the title and hints leave pause out.
-  - **Milestone 3:**
+  - **Milestone 3,** pushed as `d2d0739`:
     - All eight enemies (`entities/foes.ts`): Flutter formations (surge on the beat, CHORD), Jelly (pulses up, 6-note ring every 4 beats), Sentry, Strider (hops every 2 beats, 2 notes up and back every 4), Saw (flies in at your height, spinning, quarter turns), Snapper (floor or ceiling, 5-note fan every 4 beats), Eel (head + 7 drawn orbs; the body follows the head's path by time, so it looks the same at any frame rate; the head's death takes the body), Courier (drops pickups in order: crystal, Harmonic, speed, fork).
     - Pickups (`entities/pickups.ts`) with shape glyphs above (`glyphs.ts`); crystals cycle SPIRAL → PRISM → SONAR every 1.5 s, the same weapon levels up, another switches at the same level.
     - PRISM (1/3/5 beams, two bounces off the terrain) and SONAR (arcs grow at 40 px/s to 16/22/28 px, pass through terrain, hit each enemy once); grace notes (two homing notes a second).
@@ -222,4 +228,29 @@ Pure modules (`beat.ts`, `script.ts`, `terrain.ts`, `land/bake.ts`) are tested b
     - the HUD shows weapon, level and Harmonics.
   - `m1-test` 27/27 and `m2-test` 23/23 still pass.
   - Screenshots looked at: the contact sheet (every sprite reads; ceiling ones flipped), busy PRISM play, and a staged hero shot.
-- **Next:** milestone 4: Movements I–III with authored scripts and terrain, loop modifiers, lives, game over with CONTINUE / RETRY, pause and the high score.
+  - **Milestone 4:**
+    - Movements II and III have their own terrain (`TERRAINS`; a cave closer above and below, and a quicker, sharper III; both keep a gap of at least 80 px). They have their own looks (themes, see Decisions).
+    - Each movement has an authored script (`script.ts`, one token per bar, see Decisions), with a `+` for two waves in a bar. The script's end shows MOVEMENT n COMPLETE and moves on to the next movement; after III comes an ENCORE.
+    - Runs carry score, ships, Harmony and power. The HUD shows the numeral with ENCORE (and its count), and each movement opens with a banner.
+    - Game over shows a panel with CONTINUE, RETRY and TITLE, the score, HI or NEW HIGH SCORE!, and a note on what CONTINUE costs.
+    - Pause: P, Start, the II icon in the top bar, or the page going to the background. The panel has RESUME and TITLE, and the hints say how to use them. PAUSE is back on the title's control list and in the hints.
+    - The high score is saved at game over or on leaving, only for eligible runs.
+    - Dev hooks `skipTo(movement, loop)`, `finish()`, `lose()`, `reach(movement, loop, speed)`.
+- **Verified (milestone 4):** `npx tsc` clean.
+  - `m4-test` 36/36:
+    - BPM, Sentry note speed and the HUD numeral for every movement in loops 0, 1 and 2 (128/140/152, then +12 per loop; 84, 96.6 and 109.2 px/s).
+    - The reachability search catches a wall of obstacles and finds a path through each movement in loops 0 and 1 at speeds 1 and 3.
+    - Every script is 80 bars and uses all eight wave kinds.
+    - The drawn edges of II and III match their collision edges.
+    - The script sends II's first wave. The end of the script completes I, and II starts with score, ships, Harmony and power carried. After III comes the ENCORE at 140 BPM.
+    - The game-over panel: CONTINUE selected, a choice ignored at first, left and right (with wrap). CONTINUE restarts the movement at score 0 with fresh power and no HI. RETRY starts I and can set HI again. HI is saved at game over. TITLE.
+  - `pause-hi-test` 22/22:
+    - P pauses and P resumes; Enter resumes.
+    - Clicking II pauses and clicking RESUME resumes.
+    - Start on a (simulated) controller pauses and resumes, with the controller's hints.
+    - The page going to the background pauses, and the game stays paused when it comes back.
+    - Esc from pause goes to the title.
+    - The high score is saved and shown on the panel, the HUD and the title. A lower score doesn't replace it. Pause is refused after game over. Leaving from pause keeps a better score.
+  - `m1-test`, `m2-test` and `m3-test` still pass.
+  - Screenshots looked at: II and III in play and as bare landscapes, the banner, COMPLETE, the ENCORE, the game-over panel, the pause panel.
+- **Next:** milestone 5: the three bosses.

@@ -4,7 +4,7 @@ import { glyph } from '../glyphs';
 import { toggleMute } from '../synth';
 import { label } from '../text';
 import { fitCamera } from '../view';
-import type { HudState } from './StageScene';
+import type { HudState, StageScene } from './StageScene';
 
 // HUD units are half a design pixel: the camera zooms by HUD_SCALE, so 16 px sprites show at 8 design px, unshrunk.
 const U = HUD_SCALE;
@@ -13,10 +13,22 @@ const W = WIDTH * U;
 const H = HEIGHT * U;
 
 const HINTS = {
-  kbm: 'ARROWS FLY  ·  Z FIRE  ·  X CHARGE  ·  C ECHO  ·  M SOUND  ·  ESC TITLE',
-  pad: 'STICK FLY  ·  A FIRE  ·  X CHARGE  ·  B ECHO  ·  Y SOUND  ·  BACK TITLE',
+  kbm: 'ARROWS FLY  ·  Z FIRE  ·  X CHARGE  ·  C ECHO  ·  P PAUSE  ·  M SOUND  ·  ESC TITLE',
+  pad: 'STICK FLY  ·  A FIRE  ·  X CHARGE  ·  B ECHO  ·  START PAUSE  ·  Y SOUND',
   touch: 'TOUCH CONTROLS ARRIVE SOON',
 };
+const PAUSE_HINTS = { kbm: 'P OR ENTER RESUME  ·  ESC TITLE', pad: 'START OR A RESUME  ·  BACK TITLE', touch: 'TAP RESUME OR TITLE' };
+const OVER_HINTS = { kbm: '← → CHOOSE  ·  ENTER SELECT  ·  ESC TITLE', pad: 'D-PAD CHOOSE  ·  A SELECT  ·  BACK TITLE', touch: 'TAP TO CHOOSE' };
+const OVER_CHOICES = ['CONTINUE', 'RETRY', 'TITLE'];
+
+interface Button {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  text: Phaser.GameObjects.Text;
+  zone: Phaser.GameObjects.Zone;
+}
 
 /** The top bar and the hint strip, drawn from the registry's `hud` state. */
 export class HudScene extends Phaser.Scene {
@@ -28,6 +40,17 @@ export class HudScene extends Phaser.Scene {
   private numeral!: Phaser.GameObjects.Text;
   private hint!: Phaser.GameObjects.Text;
   private ships: Phaser.GameObjects.Image[] = [];
+  private panelG!: Phaser.GameObjects.Graphics;
+  private pauseParts: Phaser.GameObjects.GameObject[] = [];
+  private pauseButtons: Button[] = [];
+  private pauseHint!: Phaser.GameObjects.Text;
+  private overParts: Phaser.GameObjects.GameObject[] = [];
+  private overButtons: Button[] = [];
+  private overScore!: Phaser.GameObjects.Text;
+  private overHi!: Phaser.GameObjects.Text;
+  private overNote!: Phaser.GameObjects.Text;
+  private overHint!: Phaser.GameObjects.Text;
+  private pauseTap!: Phaser.GameObjects.Zone;
 
   constructor() {
     super('hud');
@@ -55,6 +78,60 @@ export class HudScene extends Phaser.Scene {
     // The speaker toggles sound.
     this.add.zone(810, 16, 28, 28).setInteractive({ useHandCursor: true }).on('pointerdown', () => toggleMute(this));
     this.ships = Array.from({ length: 5 }, (_, i) => this.add.image(516 + i * 18, 22, 'player').setAngle(90).setDepth(2));
+    // The pause icon (II) pauses.
+    this.pauseTap = this.add.zone(774, 16, 28, 28).setInteractive({ useHandCursor: true }).on('pointerdown', () => this.stage().setPaused(true));
+    this.panelG = this.add.graphics().setDepth(5);
+    this.buildPause();
+    this.buildOver();
+  }
+
+  private stage() {
+    return this.scene.get('stage') as StageScene;
+  }
+
+  private button(x: number, y: number, w: number, text: string, act: () => void): Button {
+    const h = 40;
+    const t = label(this, x, y + h / 2 - 8, text, 14, TEXT.ink, { zoom: HUD_SCALE, align: 'center' }).setDepth(6);
+    const zone = this.add.zone(x - w / 2, y, w, h).setOrigin(0).setInteractive({ useHandCursor: true }).on('pointerdown', act);
+    return { x, y, w, h, text: t, zone };
+  }
+
+  /** PAUSED, with RESUME and TITLE buttons a mouse or thumb can hit. */
+  private buildPause() {
+    const top = 140;
+    const t = label(this, W / 2, top + 18, 'PAUSED', 32, TEXT.gold, { zoom: HUD_SCALE, align: 'center' }).setDepth(6);
+    this.pauseButtons = [
+      this.button(W / 2 - 90, top + 80, 150, 'RESUME', () => this.stage().setPaused(false)),
+      this.button(W / 2 + 90, top + 80, 150, 'TITLE', () => this.stage().leave()),
+    ];
+    this.pauseHint = label(this, W / 2, top + 140, '', 10, TEXT.dim, { zoom: HUD_SCALE, align: 'center' }).setDepth(6);
+    this.pauseParts = [t, this.pauseHint, ...this.pauseButtons.flatMap((b) => [b.text, b.zone])];
+  }
+
+  /** GAME OVER, the score and the high score, then CONTINUE, RETRY and TITLE. */
+  private buildOver() {
+    const top = 110;
+    const t = label(this, W / 2, top + 16, 'GAME OVER', 32, TEXT.danger, { zoom: HUD_SCALE, align: 'center' }).setDepth(6);
+    this.overScore = label(this, W / 2, top + 64, '', 14, TEXT.ink, { zoom: HUD_SCALE, align: 'center' }).setDepth(6);
+    this.overHi = label(this, W / 2, top + 86, '', 12, TEXT.dim, { zoom: HUD_SCALE, align: 'center' }).setDepth(6);
+    this.overNote = label(this, W / 2, top + 106, '', 10, TEXT.dim, { zoom: HUD_SCALE, align: 'center' }).setDepth(6);
+    this.overButtons = OVER_CHOICES.map((c, i) => this.button(W / 2 + (i - 1) * 170, top + 132, 156, c, () => this.stage().choose(i)));
+    this.overHint = label(this, W / 2, top + 192, '', 10, TEXT.dim, { zoom: HUD_SCALE, align: 'center' }).setDepth(6);
+    this.overParts = [t, this.overScore, this.overHi, this.overNote, this.overHint, ...this.overButtons.flatMap((b) => [b.text, b.zone])];
+  }
+
+  /** The panel box and its buttons: the selected (or primary) one filled, the rest outlined. */
+  private drawPanel(top: number, h: number, w: number, buttons: Button[], selected: number) {
+    const g = this.panelG;
+    g.fillStyle(COLORS.void, 0.55).fillRect(0, BAR, W, H - BAR);
+    g.fillStyle(COLORS.void).fillRect(W / 2 - w / 2, top, w, h);
+    g.lineStyle(2, COLORS.line).strokeRect(W / 2 - w / 2, top, w, h);
+    buttons.forEach((b, i) => {
+      const on = i === selected;
+      if (on) g.fillStyle(COLORS.gold).fillRect(b.x - b.w / 2, b.y, b.w, b.h);
+      else g.lineStyle(2, COLORS.ink).strokeRect(b.x - b.w / 2 + 1, b.y + 1, b.w - 2, b.h - 2);
+      b.text.setColor(on ? '#07040f' : TEXT.ink);
+    });
   }
 
   update() {
@@ -89,8 +166,31 @@ export class HudScene extends Phaser.Scene {
     this.numeral.setText(`MOVEMENT ${s.numeral}`);
     this.movement.setText(s.movement);
 
-    this.hint.setVisible(!s.attract).setText(HINTS[s.device]);
-    if (!s.attract) {
+    // II: pause.
+    g.fillStyle(s.over || s.attract ? COLORS.dim : COLORS.ink).fillRect(770, 8, 4, 16).fillRect(780, 8, 4, 16);
+    this.pauseTap.input!.enabled = !s.attract && !s.over && !s.paused;
+
+    this.panelG.clear();
+    const paused = s.paused && !s.attract;
+    const over = s.over && !s.attract;
+    for (const o of this.pauseParts) (o as unknown as Phaser.GameObjects.Components.Visible).setVisible(paused);
+    for (const b of this.pauseButtons) b.zone.input!.enabled = paused;
+    if (paused) {
+      this.drawPanel(140, 170, 400, this.pauseButtons, 0);
+      this.pauseHint.setText(PAUSE_HINTS[s.device]);
+    }
+    for (const o of this.overParts) (o as unknown as Phaser.GameObjects.Components.Visible).setVisible(over);
+    for (const b of this.overButtons) b.zone.input!.enabled = over && s.ready;
+    if (over) {
+      this.drawPanel(110, 220, 540, this.overButtons, s.choice);
+      this.overScore.setText(`SCORE ${String(s.score).padStart(7, '0')}`);
+      this.overHi.setText(s.newHi ? 'NEW HIGH SCORE!' : `HI ${String(s.hi).padStart(7, '0')}`).setColor(s.newHi ? TEXT.gold : TEXT.dim);
+      this.overNote.setText(s.eligible ? 'CONTINUE STARTS THIS MOVEMENT AGAIN WITH THE SCORE AT ZERO' : 'A CONTINUED RUN CAN\'T SET THE HIGH SCORE');
+      this.overHint.setText(OVER_HINTS[s.device]).setAlpha(s.ready ? 1 : 0.4);
+    }
+
+    this.hint.setVisible(!s.attract && !paused && !over).setText(HINTS[s.device]);
+    if (!s.attract && !paused && !over) {
       const w = this.hint.width + 16;
       g.fillStyle(COLORS.void, 0.8).fillRect(Math.round(W / 2 - w / 2), H - 16, Math.round(w), 16);
     }

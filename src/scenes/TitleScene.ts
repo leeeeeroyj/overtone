@@ -38,7 +38,7 @@ export class TitleScene extends Phaser.Scene {
     restoreMute(this);
     this.controls = new Controls(this);
     this.beat = new BeatClock(MOVEMENTS[0].bpm);
-    this.land = new Landscape(this, MOVEMENT_I, 'title-landscape');
+    this.land = new Landscape(this, MOVEMENT_I, 0, 'title-landscape');
     this.cameras.main.fadeIn(250);
     this.add.graphics().setDepth(4).fillStyle(COLORS.void, 0.55).fillRect(0, 0, WIDTH, HEIGHT);
 
@@ -61,8 +61,8 @@ export class TitleScene extends Phaser.Scene {
       label(this, x - 3, 150, keys, 6, TEXT.ink, { align: 'right' }).setLineSpacing(1).setDepth(5);
       label(this, x + 3, 150, actions, 6, TEXT.dim).setLineSpacing(1).setDepth(5);
     };
-    column(120, 'KEYBOARD + MOUSE', 'ARROWS / WASD\nZ / SPACE / CLICK\nX / RIGHT-CLICK\nC / SHIFT\nM', 'FLY\nFIRE\nCHARGE\nECHO\nSOUND');
-    column(300, 'CONTROLLER', 'L-STICK / D-PAD\nA\nX / RT\nB / RB\nY', 'FLY\nFIRE\nCHARGE\nECHO\nSOUND');
+    column(120, 'KEYBOARD + MOUSE', 'ARROWS / WASD\nZ / SPACE / CLICK\nX / RIGHT-CLICK\nC / SHIFT\nP\nM', 'FLY\nFIRE\nCHARGE\nECHO\nPAUSE\nSOUND');
+    column(300, 'CONTROLLER', 'L-STICK / D-PAD\nA\nX / RT\nB / RB\nSTART\nY', 'FLY\nFIRE\nCHARGE\nECHO\nPAUSE\nSOUND');
     this.padStatus = text(cx, 214, '', 6, TEXT.dim);
   }
 

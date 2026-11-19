@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { FOES, HEIGHT, TOP, WIDTH, type FoeKind } from '../config';
+import { FOES, HEIGHT, NOTES, TOP, WIDTH, type FoeKind } from '../config';
 import { hsl } from '../effects';
 import { clamp } from '../land/bake';
 import { mod } from '../synth';
@@ -169,8 +169,10 @@ export function foesOnBeat(stage: StageScene, b: number) {
     }
     if (!e.every || !onScreen(e) || mod(b - e.phase, e.every) !== 0) continue;
     const aim = Math.atan2(stage.craft.y - e.y, stage.craft.x - e.x);
-    const shoot = (a: number, speed: number) => stage.addNote(e.x, e.y, Math.cos(a) * speed, Math.sin(a) * speed);
-    if (e.kind === 'drummer') shoot(aim, 84);
+    // Notes fly faster each ENCORE.
+    const k = stage.noteScale;
+    const shoot = (a: number, speed: number) => stage.addNote(e.x, e.y, Math.cos(a) * speed * k, Math.sin(a) * speed * k);
+    if (e.kind === 'drummer') shoot(aim, NOTES.speed);
     else if (e.kind === 'jelly') for (let i = 0; i < 6; i++) shoot((i / 6) * Math.PI * 2 + e.t, 52);
     else if (e.kind === 'metronome') {
       shoot(-Math.PI * 0.75, 70);

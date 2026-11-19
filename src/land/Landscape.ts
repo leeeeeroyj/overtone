@@ -3,9 +3,9 @@
 // scroll, and the image is nudged by the fraction left over so it still moves smoothly on the 4x canvas.
 import Phaser from 'phaser';
 import type { BeatClock } from '../beat';
-import { HEIGHT, TOP, WIDTH } from '../config';
+import { HEIGHT, MOVEMENTS, TOP, WIDTH } from '../config';
 import { CELL, COL, type Terrain } from '../terrain';
-import { artMovementI, CITY_H, CITY_W, hash, hsl, mod, PAL } from './bake';
+import { artFor, CITY_H, CITY_W, hash, hsl, mod, type Theme } from './bake';
 
 /** How fast each layer scrolls, as a share of the play layer's speed. */
 export const PARALLAX = { moon: 0.02, spectrum: 0.12, city: 0.3, stave: 0.5, motes: 0.7 };
@@ -17,9 +17,10 @@ export class Landscape {
   readonly image: Phaser.GameObjects.Image;
   readonly texture: Phaser.Textures.CanvasTexture;
   /** The hue the glows cycle through; the HUD's accent follows it. */
-  hue = 285;
+  hue: number;
   private readonly ctx: CanvasRenderingContext2D;
-  private readonly art = artMovementI();
+  private readonly art;
+  private readonly theme: Theme;
   private readonly peaks = new Map<number, number>();
   private readonly motes = Array.from({ length: 34 }, (_, i) => ({
     x: hash(i * 7 + 3) * WIDTH,
@@ -31,7 +32,10 @@ export class Landscape {
   /** Drawn on the last frame: the world x of canvas column 0. */
   wx0 = 0;
 
-  constructor(scene: Phaser.Scene, private readonly terrain: Terrain, key = 'landscape') {
+  constructor(scene: Phaser.Scene, private readonly terrain: Terrain, movement = 0, key = 'landscape') {
+    this.art = artFor(movement);
+    this.theme = this.art.theme;
+    this.hue = MOVEMENTS[movement]?.hue ?? MOVEMENTS[0].hue;
     const existing = scene.textures.exists(key) ? scene.textures.get(key) : null;
     this.texture = (existing as Phaser.Textures.CanvasTexture | null) ?? scene.textures.createCanvas(key, CANVAS_W, HEIGHT)!;
     this.ctx = this.texture.context;
@@ -76,45 +80,46 @@ export class Landscape {
       g.globalAlpha = 1;
     }
 
+    const T = this.theme;
     // Speaker moon: rings from the rim inward; on each kick the inner rings push out a pixel or two.
-    const mx = Math.round(mod(318 - scroll * PARALLAX.moon, WIDTH + 120) - 60);
-    const my = 66;
-    const kick = Math.round(env * 2);
-    g.globalAlpha = 0.5;
-    disc(g, mx, my, 40, '#3a1660');
-    g.globalAlpha = 1;
-    const rings: [number, string][] = [
-      [34, '#24123f'], [32, '#3a1f66'], [28 + kick, '#2a1549'], [24 + kick, '#46287c'],
-      [18 + kick, '#331a58'], [13 + kick, '#5b3a96'], [7, '#2a1549'], [5, '#8f6ad0'],
-    ];
-    for (const [r, c] of rings) disc(g, mx, my, r, c);
-    disc(g, mx - 1, my - 1, 2, '#d9c4ff');
-    g.fillStyle = '#9a7ae0';
-    for (let a = 2.4; a < 4.3; a += 0.05) g.fillRect(Math.round(mx + Math.cos(a) * 33), Math.round(my + Math.sin(a) * 33), 1, 1);
+    if (T.moon) {
+      const mx = Math.round(mod(318 - scroll * PARALLAX.moon, WIDTH + 120) - 60);
+      const my = 66;
+      const kick = Math.round(env * 2);
+      g.globalAlpha = 0.5;
+      disc(g, mx, my, 40, T.moon.halo);
+      g.globalAlpha = 1;
+      const radii = [34, 32, 28 + kick, 24 + kick, 18 + kick, 13 + kick, 7, 5];
+      radii.forEach((r, i) => disc(g, mx, my, r, T.moon!.rings[i]));
+      disc(g, mx - 1, my - 1, 2, T.moon.core);
+      g.fillStyle = T.moon.rim;
+      for (let a = 2.4; a < 4.3; a += 0.05) g.fillRect(Math.round(mx + Math.cos(a) * 33), Math.round(my + Math.sin(a) * 33), 1, 1);
+    }
+    if (T.strings) this.drawStrings(g, beat, env, false);
 
     // Spectrum range: analyser bars on a hazy horizon, each peak held a moment before it falls.
     const horizon = 186;
     const off = scroll * PARALLAX.spectrum;
     const c0 = Math.floor(off / 6);
-    for (let c = c0 - 1; c < c0 + CANVAS_W / 6 + 2; c++) {
+    for (let c = c0 - 1; T.spectrum && c < c0 + CANVAS_W / 6 + 2; c++) {
       const x = Math.round(c * 6 - off);
       const h0 = 12 + 24 * (0.5 + 0.5 * Math.sin(c * 0.13)) + 16 * (0.5 + 0.5 * Math.sin(c * 0.047 + 1));
       const amp = [11, 9, 7, 5, 4, 3, 3, 2][mod(c, 8)];
       const h = Math.round(h0 + env * amp * (0.6 + 0.4 * Math.sin(c * 1.7 + beat.beat)) + (REDUCED ? 0 : 2 * Math.sin(beat.time * 3 + c)));
       for (let s = 0; s * 4 < h; s++) {
-        g.fillStyle = PAL.spec[Math.min(PAL.spec.length - 1, Math.floor(((s * 4) / 70) * PAL.spec.length))];
+        g.fillStyle = T.spec[Math.min(T.spec.length - 1, Math.floor(((s * 4) / 70) * T.spec.length))];
         g.fillRect(x, horizon - s * 4 - 3, 5, 3);
       }
       const pk = Math.max((this.peaks.get(c) ?? 0) - 16 * dt, h);
       this.peaks.set(c, pk);
-      g.fillStyle = PAL.peak;
+      g.fillStyle = T.peak;
       g.fillRect(x, horizon - Math.round(pk) - 3, 5, 1);
     }
     for (const c of this.peaks.keys()) if (c < c0 - 4) this.peaks.delete(c);
     let grad = g.createLinearGradient(0, 120, 0, HEIGHT);
-    grad.addColorStop(0, 'rgba(42,15,79,0)');
-    grad.addColorStop(0.6, 'rgba(52,18,90,0.75)');
-    grad.addColorStop(1, 'rgba(30,10,55,0.9)');
+    grad.addColorStop(0, T.haze[0]);
+    grad.addColorStop(0.6, T.haze[1]);
+    grad.addColorStop(1, T.haze[2]);
     g.fillStyle = grad;
     g.fillRect(0, 120, CANVAS_W, HEIGHT - 120);
 
@@ -137,15 +142,46 @@ export class Landscape {
       }
     }
     grad = g.createLinearGradient(0, 170, 0, HEIGHT);
-    grad.addColorStop(0, 'rgba(60,20,100,0)');
-    grad.addColorStop(1, 'rgba(60,20,100,0.55)');
+    grad.addColorStop(0, T.haze2[0]);
+    grad.addColorStop(1, T.haze2[1]);
     g.fillStyle = grad;
     g.fillRect(0, 170, CANVAS_W, HEIGHT - 170);
 
-    // The stave: five lines drifting across the sky, the note on the current beat lit.
+    if (T.strings) this.drawStrings(g, beat, env, true);
+    if (T.stave) this.drawStave(g, scroll, beat);
+    for (const m of this.motes) {
+      g.fillStyle = hsl(this.hue + 40 + m.z * 60, 100, 75, 0.25 + m.z * 0.3 + env * 0.4);
+      g.fillRect(Math.round(m.x), Math.round(m.y), 1, 1);
+    }
+  }
+
+  /**
+   * Strings across the sky (far ones dim, near ones brighter). Each is a standing wave; one string rings hard on
+   * each beat, in turn, and the rest hum.
+   */
+  private drawStrings(g: CanvasRenderingContext2D, beat: BeatClock, env: number, near: boolean) {
+    const n = this.theme.strings;
+    for (let i = 0; i < n; i++) {
+      if ((i % 3 === 0) !== near) continue;
+      const y0 = TOP + 18 + ((HEIGHT - TOP - 70) * i) / Math.max(1, n - 1) + hash(i * 13) * 10;
+      const y1 = y0 + (hash(i * 17) - 0.5) * 30;
+      const k = 1 + (i % 3);
+      const plucked = mod(beat.beat, n) === i;
+      const amp = (plucked ? 5 : 1.2) * env * (beat.beat % 2 ? 1 : -1);
+      g.fillStyle = near ? hsl(this.hue + i * 25, 90, 70, 0.55 + 0.45 * env * (plucked ? 1 : 0.3)) : `rgba(${this.theme.staveRgb},${0.18 + (plucked ? 0.3 * env : 0)})`;
+      for (let x = 0; x < CANVAS_W; x += near ? 1 : 2) {
+        const y = y0 + ((y1 - y0) * x) / CANVAS_W + amp * Math.sin((Math.PI * k * x) / CANVAS_W);
+        g.fillRect(x, Math.round(y), 1, 1);
+      }
+    }
+  }
+
+  /** The stave: five lines drifting across the sky, the note on the current beat lit. */
+  private drawStave(g: CanvasRenderingContext2D, scroll: number, beat: BeatClock) {
+    const rgb = this.theme.staveRgb;
     const so = scroll * PARALLAX.stave;
     const base = (x: number) => Math.round(54 + 9 * Math.sin((x + so) * 0.006));
-    g.fillStyle = 'rgba(205,180,255,0.16)';
+    g.fillStyle = `rgba(${rgb},0.16)`;
     for (let x = 0; x < CANVAS_W; x += 2) {
       const y = base(x);
       for (let i = 0; i < 5; i++) g.fillRect(x, y + i * 3, 1, 1);
@@ -156,13 +192,9 @@ export class Landscape {
       const pitch = Math.floor(hash(n + 77) * 9);
       const y = Math.round(base(x) + 12 - pitch * 1.5);
       const lit = mod(n, 8) === mod(beat.beat, 8);
-      g.fillStyle = lit ? hsl(this.hue + 40, 100, 75, 0.5 + 0.5 * beat.env) : 'rgba(205,180,255,0.28)';
+      g.fillStyle = lit ? hsl(this.hue + 40, 100, 75, 0.5 + 0.5 * beat.env) : `rgba(${rgb},0.28)`;
       g.fillRect(x, y, 3, 2);
       g.fillRect(x + 2, y - 6, 1, 6);
-    }
-    for (const m of this.motes) {
-      g.fillStyle = hsl(this.hue + 40 + m.z * 60, 100, 75, 0.25 + m.z * 0.3 + env * 0.4);
-      g.fillRect(Math.round(m.x), Math.round(m.y), 1, 1);
     }
   }
 
@@ -172,19 +204,20 @@ export class Landscape {
    */
   private drawFrame(g: CanvasRenderingContext2D, wx0: number, beat: BeatClock) {
     const t = this.terrain;
+    const T = this.theme;
     for (let c = Math.floor(wx0 / COL) - 1; c * COL < wx0 + CANVAS_W + COL; c++) {
       const sx = c * COL - wx0;
       for (const side of [1, -1]) {
         const edge = side > 0 ? t.floorY(c * COL) : t.ceilY(c * COL);
         const n = side > 0 ? (HEIGHT - edge) / CELL : (edge - TOP) / CELL;
-        g.fillStyle = PAL.mass;
+        g.fillStyle = T.mass;
         g.fillRect(sx, side > 0 ? edge : TOP, COL, side > 0 ? HEIGHT - edge : edge - TOP);
         const level = REDUCED ? 3 : 3 + Math.round(hash(c * 31 + beat.beat * 7 + (side > 0 ? 0 : 999)) * 6 * beat.env);
         for (let i = 0; i < n; i++) {
           const y = side > 0 ? edge + i * CELL : edge - (i + 1) * CELL + 1;
-          g.fillStyle = i === 0 ? PAL.eqRim
+          g.fillStyle = i === 0 ? T.eqRim
             : i < level ? hsl(this.hue + i * 18 + (side > 0 ? 0 : 180), 95, 68 - i * 6)
-            : PAL.eqDim[Math.min(PAL.eqDim.length - 1, i - level)];
+            : T.eqDim[Math.min(T.eqDim.length - 1, i - level)];
           g.fillRect(sx, y, COL - 1, 2);
         }
         const sw = REDUCED ? 0 : sweep(sx + 2, side, beat.frac);

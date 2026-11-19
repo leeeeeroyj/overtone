@@ -45,10 +45,24 @@ export const SPRITES = [
 ] as const;
 export type SpriteKey = (typeof SPRITES)[number];
 
-/** Each movement's tempo (beats per minute) and scroll speed (design px per second). */
+/**
+ * Each movement's tempo (beats per minute), scroll speed (design px per second) and the hue its glows start from.
+ * I Pulse: a dusk over the instrument city. II Strings: a cave strung with vibrating strings. III Crescendo:
+ * everything at once.
+ */
 export const MOVEMENTS = [
-  { name: 'PULSE', numeral: 'I', bpm: 128, scroll: 44 },
+  { name: 'PULSE', numeral: 'I', bpm: 128, scroll: 44, hue: 285 },
+  { name: 'STRINGS', numeral: 'II', bpm: 140, scroll: 48, hue: 170 },
+  { name: 'CRESCENDO', numeral: 'III', bpm: 152, scroll: 52, hue: 330 },
 ] as const;
+
+/**
+ * After Movement III the ensemble plays again from Movement I (an ENCORE): each loop adds `bpm` to every tempo and
+ * makes enemy notes `noteSpeed` faster (as a share of their speed).
+ */
+export const LOOP = { bpm: 12, noteSpeed: 0.15 };
+export const tempo = (movement: number, loop: number) => MOVEMENTS[movement].bpm + LOOP.bpm * loop;
+export const noteScale = (loop: number) => 1 + LOOP.noteSpeed * loop;
 
 /**
  * The craft. Speeds in design px per second. It squashes to `bankScale` tall (a bank) while climbing or diving
@@ -185,6 +199,10 @@ export const PLAY = {
   respawn: 2,
   /** Running into an enemy costs you a hit and does this much damage to it. */
   ramDamage: 2,
-  /** After the last ship goes, s before the title. */
-  gameOver: 3,
+  /** After the last ship goes, s before the game-over panel takes input. */
+  gameOver: 1.2,
+  /** The movement's name stays on screen this long at the start, s. */
+  banner: 3,
+  /** Bars of quiet after a movement's last wave before it ends. */
+  outro: 4,
 };

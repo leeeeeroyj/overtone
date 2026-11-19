@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
 import { BeatClock } from '../beat';
 import {
-  BEAT_WINDOW, CHARGE, CHORD, COLORS, CRAFT, FIRE, FOES, GRACE, HARMONIC, MAX_LEVEL, MOVEMENTS, PICKUPS, PLAY,
-  RENDER_SCALE, TEXT, WEAPONS, WIDTH, type FoeKind, type PickupKind, type Weapon,
+  BEAT_WINDOW, CHARGE, CHORD, COLORS, CRAFT, FIRE, FOES, GRACE, HARMONIC, MAX_LEVEL, MOVEMENTS, noteScale, PICKUPS,
+  PLAY, RENDER_SCALE, tempo, TEXT, WEAPONS, WIDTH, type FoeKind, type PickupKind, type Weapon,
 } from '../config';
 import { Controls, type ControlState, type Device } from '../controls';
 import { Effects, hsl } from '../effects';
@@ -10,15 +10,15 @@ import { Echo } from '../entities/echo';
 import { drawFoes, foesOnBeat, spawnFoe, updateFoes, type Foe, type SpawnOptions } from '../entities/foes';
 import { crystalWeapon, drawPickups, dropPickup, updatePickups, type Pickup } from '../entities/pickups';
 import { drawBeams, drawNotes, drawShots, makeShot, updateNotes, updateShots, type Beam, type Note, type Shot } from '../entities/shots';
-import { loadHi } from '../hi';
+import { loadHi, saveHi } from '../hi';
 import { clamp } from '../land/bake';
 import { Landscape, REDUCED } from '../land/Landscape';
 import { Band } from '../music';
-import { patternsAt, runPattern, type Pattern } from '../script';
+import { pinnedSpots, runPattern, scriptBars, wavesAt, type Pattern } from '../script';
 import { Sfx } from '../sfx';
 import { Synth, toggleMute } from '../synth';
 import { label } from '../text';
-import { terrainFor, type Terrain } from '../terrain';
+import { blockedAt, terrainFor, type Terrain } from '../terrain';
 import { fitCamera } from '../view';
 
 /** What the HUD scene draws, published to the registry every frame. */
@@ -39,7 +39,42 @@ export interface HudState {
   harm: number;
   echo: 'attached' | 'away' | 'loose';
   muted: boolean;
+  paused: boolean;
+  /** The last ship is gone: the game-over panel shows, with `choice` (0 CONTINUE, 1 RETRY, 2 TITLE) selected. */
+  over: boolean;
+  choice: number;
+  /** Ready for a choice (the panel ignores input for a moment so a held button doesn't pick). */
+  ready: boolean;
+  newHi: boolean;
+  /** This run can set the high score (it started at Movement I and never continued). */
+  eligible: boolean;
 }
+
+/** Power the craft carries from one movement to the next. */
+export interface Power {
+  weapon: Weapon;
+  level: number;
+  harm: number;
+  speed: number;
+  fork: boolean;
+}
+
+/** A run: where it is, and what carries over between movements. */
+export interface Run {
+  movement: number;
+  /** How many times the ensemble has played through (an ENCORE is loop 1 or more). */
+  loop: number;
+  score: number;
+  ships: number;
+  mult: number;
+  power: Power | undefined;
+  /** Only a run that started at Movement I and never continued can set the high score. */
+  eligible: boolean;
+}
+
+export const newRun = (movement = 0, loop = 0): Run => ({
+  movement, loop, score: 0, ships: PLAY.ships, mult: 1, power: undefined, eligible: movement === 0 && loop === 0,
+});
 
 const IDLE: ControlState = {
   move: { x: 0, y: 0 }, fire: false, charge: false, echo: false, confirm: false, back: false, mute: false, pause: false, device: 'kbm',
@@ -80,6 +115,13 @@ export class StageScene extends Phaser.Scene {
   mult = 1;
   ships: number = PLAY.ships;
   movement = 0;
+  loop = 0;
+  eligible = true;
+  /** Paused: nothing moves and the HUD shows RESUME and TITLE. */
+  paused = false;
+  /** The game-over panel's selection: 0 CONTINUE, 1 RETRY, 2 TITLE. */
+  choice = 0;
+  newHi = false;
   /** Counters the tests read: hits taken from the frame, hits taken in all, enemy notes blocked. */
   frameHits = 0;
   hits = 0;
@@ -108,31 +150,45 @@ export class StageScene extends Phaser.Scene {
   private gFoe!: Phaser.GameObjects.Graphics;
   private camBase = { x: 0, y: 0 };
   private kick = 0;
-  private gameOver = 0;
+  /** Seconds since the last ship went (-1: still playing). */
+  private gameOver = -1;
+  /** Seconds left of the end-of-movement fanfare (-1: still playing). */
+  private ending = -1;
+  private banner: Phaser.GameObjects.Text[] = [];
+  private bannerTime = 0;
+  private lastMoveX = 0;
   private attract: number | undefined;
   private leaving = false;
+  private readonly onHidden = () => {
+    if (document.hidden) this.setPaused(true);
+  };
 
   constructor() {
     super('stage');
   }
 
-  create(data: { attract?: number; movement?: number } = {}) {
+  create(data: { attract?: number; run?: Run } = {}) {
     this.attract = data.attract;
-    this.movement = data.movement ?? 0;
+    const run = data.run ?? newRun();
+    this.movement = run.movement;
+    this.loop = run.loop;
+    this.eligible = run.eligible && this.attract === undefined;
     this.leaving = false;
     fitCamera(this, RENDER_SCALE);
     this.camBase = { x: this.cameras.main.scrollX, y: this.cameras.main.scrollY };
     this.terrain = terrainFor(this.movement);
-    this.beat = new BeatClock(MOVEMENTS[this.movement].bpm);
+    this.beat = new BeatClock(tempo(this.movement, this.loop));
     this.scrollX = 0;
-    this.land = new Landscape(this, this.terrain);
+    this.land = new Landscape(this, this.terrain, this.movement);
     this.synth = new Synth(this);
     this.sfx = new Sfx(this.synth);
     this.band = new Band(this.synth);
     this.fx = new Effects(this);
     this.craft = newCraft();
-    Object.assign(this, { foes: [], shots: [], beams: [], notes: [], pickups: [], warns: [], score: 0, mult: 1, ships: PLAY.ships });
-    Object.assign(this, { frameHits: 0, hits: 0, blocked: 0, lastRelease: undefined, scripted: true, gameOver: 0, kick: 0 });
+    if (run.power) Object.assign(this.craft, run.power);
+    Object.assign(this, { foes: [], shots: [], beams: [], notes: [], pickups: [], warns: [], score: run.score, mult: run.mult, ships: run.ships });
+    Object.assign(this, { frameHits: 0, hits: 0, blocked: 0, lastRelease: undefined, scripted: true, gameOver: -1, ending: -1, kick: 0 });
+    Object.assign(this, { paused: false, choice: 0, newHi: false, lastMoveX: 0 });
     Object.assign(this, { landOnly: false, frozen: false, noteFire: true, drops: 0, formations: new Map() });
     this.gBack = this.add.graphics().setDepth(5);
     this.gFoe = this.add.graphics().setDepth(7.5);
@@ -144,7 +200,13 @@ export class StageScene extends Phaser.Scene {
     this.speakers = Array.from({ length: HARMONIC.max }, () => this.add.image(0, 0, 'harmonic').setScale(HARMONIC.scale).setFlipX(true));
     this.echo = new Echo(this);
     this.controls = this.attract === undefined ? new Controls(this) : undefined;
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.sfx.chargeStop());
+    // A phone call, a tab switch or the screen locking pauses the run.
+    if (this.attract === undefined) document.addEventListener('visibilitychange', this.onHidden);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.sfx.chargeStop();
+      document.removeEventListener('visibilitychange', this.onHidden);
+    });
+    this.showBanner();
     this.publish('kbm');
     this.scene.launch('hud');
     this.cameras.main.fadeIn(250);
@@ -152,20 +214,28 @@ export class StageScene extends Phaser.Scene {
 
   update(_time: number, delta: number) {
     const dt = Math.min(0.05, delta / 1000);
-    const input = this.gameOver > 0 ? IDLE : (this.controls?.read() ?? IDLE);
-    if (input.back) return this.leave();
+    const input = this.controls?.read() ?? IDLE;
     if (input.mute) toggleMute(this);
-    this.scrollX += MOVEMENTS[this.movement].scroll * dt;
+    if (this.paused) {
+      if (input.back) return this.leave();
+      if (input.pause || input.confirm) this.setPaused(false);
+      return this.publish(input.device);
+    }
+    if (this.gameOver >= 0) this.overMenu(dt, input);
+    else if (input.back) return this.leave();
+    else if (input.pause) return this.setPaused(true), this.publish(input.device);
+    if (this.attract !== undefined && this.gameOver > PLAY.gameOver) return this.leave();
+    this.scrollX += this.scrollSpeed * dt;
     const b = this.beat.update(dt);
     if (b !== null) this.onBeat(b);
-    if (this.gameOver > 0) {
-      this.gameOver -= dt;
-      if (this.gameOver <= 0) this.leave();
-    } else {
+    const playing = this.gameOver < 0 && this.ending < 0;
+    if (playing) {
       this.fly(dt, input);
       this.weapons(dt, input);
       if (input.echo) this.echo.toggle();
     }
+    if (this.ending >= 0 && (this.ending -= dt) < 0) return this.nextMovement();
+    if (this.bannerTime > 0 && (this.bannerTime -= dt) < 1) this.banner.forEach((t) => t.setAlpha(Math.max(0, this.bannerTime)));
     this.echo.update(dt);
     updateShots(this, dt);
     if (!this.frozen) {
@@ -194,9 +264,86 @@ export class StageScene extends Phaser.Scene {
     return MOVEMENTS[this.movement].scroll;
   }
 
-  /** The last ship is gone and the game is ending. */
+  /** Enemy notes fly this much faster each ENCORE. */
+  get noteScale() {
+    return noteScale(this.loop);
+  }
+
+  /** The last ship is gone. */
   get over() {
-    return this.gameOver > 0;
+    return this.gameOver >= 0;
+  }
+
+  /** The movement's name, shown as it starts. */
+  private showBanner() {
+    const m = MOVEMENTS[this.movement];
+    const encore = this.loop > 0 ? `  ·  ENCORE${this.loop > 1 ? ` ${this.loop}` : ''}` : '';
+    this.banner = [
+      label(this, WIDTH / 2, 74, `MOVEMENT ${m.numeral}${encore}`, 8, TEXT.dim, { align: 'center' }).setDepth(20),
+      label(this, WIDTH / 2, 86, m.name, 20, TEXT.gold, { align: 'center' }).setDepth(20),
+    ];
+    this.bannerTime = PLAY.banner;
+  }
+
+  /** The script has run out: the movement is complete, and the next one (or an ENCORE) follows. */
+  finish() {
+    if (this.ending >= 0 || this.gameOver >= 0) return;
+    this.ending = 2.5;
+    this.scripted = false;
+    const m = MOVEMENTS[this.movement];
+    this.banner.forEach((t) => t.destroy());
+    this.banner = [
+      label(this, WIDTH / 2, 74, `MOVEMENT ${m.numeral}`, 8, TEXT.dim, { align: 'center' }).setDepth(20),
+      label(this, WIDTH / 2, 86, 'COMPLETE', 20, TEXT.gold, { align: 'center' }).setDepth(20),
+    ];
+    this.bannerTime = 0;
+  }
+
+  private nextMovement() {
+    const last = this.movement === MOVEMENTS.length - 1;
+    this.restartWith({
+      movement: last ? 0 : this.movement + 1, loop: last ? this.loop + 1 : this.loop, score: this.score,
+      ships: this.ships, mult: this.mult, power: this.power(), eligible: this.eligible,
+    });
+  }
+
+  private power(): Power {
+    const { weapon, level, harm, speed, fork } = this.craft;
+    return { weapon, level, harm, speed, fork };
+  }
+
+  private restartWith(run: Run) {
+    if (this.leaving) return;
+    this.leaving = true;
+    this.sfx.chargeStop();
+    this.cameras.main.fadeOut(250);
+    this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => this.scene.restart({ attract: this.attract, run }));
+  }
+
+  /** Pauses or resumes (not in attract mode or once the run is over). */
+  setPaused(on: boolean) {
+    if (this.attract !== undefined || on === this.paused || (on && (this.gameOver >= 0 || this.leaving))) return;
+    this.paused = on;
+    if (on) this.sfx.chargeStop();
+  }
+
+  /** The game-over panel: left and right pick, confirm chooses, Esc or Back goes to the title. */
+  private overMenu(dt: number, input: ControlState) {
+    this.gameOver += dt;
+    const sx = Math.sign(Math.round(input.move.x));
+    if (sx && sx !== this.lastMoveX) this.choice = (this.choice + sx + 3) % 3;
+    this.lastMoveX = sx;
+    if (this.gameOver < PLAY.gameOver) return;
+    if (input.back) this.choose(2);
+    else if (input.confirm) this.choose(this.choice);
+  }
+
+  /** CONTINUE: this movement again with the score reset (and no high score). RETRY: from Movement I. TITLE. */
+  choose(i: number) {
+    if (this.gameOver < PLAY.gameOver || this.leaving) return;
+    if (i === 0) this.restartWith({ ...newRun(this.movement, this.loop), eligible: false });
+    else if (i === 1) this.restartWith(newRun());
+    else this.leave();
   }
 
   /** Announces something arriving at height y a beat from now, with a chevron at the right edge. */
@@ -214,7 +361,9 @@ export class StageScene extends Phaser.Scene {
 
   private onBeat(b: number) {
     if (!this.frozen) foesOnBeat(this, b);
-    if (this.scripted && this.gameOver <= 0) for (const p of patternsAt(this.movement, b)) runPattern(this, p);
+    if (!this.scripted || this.gameOver >= 0) return;
+    for (const w of wavesAt(this.movement, b)) runPattern(this, w.pattern, w.variant);
+    if (b >= (scriptBars(this.movement) + PLAY.outro) * 4) this.finish();
   }
 
   /** Direct 8-way flight. The craft squashes (a bank) while climbing or diving; the frame is a hit and bounces it back. */
@@ -367,7 +516,7 @@ export class StageScene extends Phaser.Scene {
   /** Running into an enemy is a hit, and hurts it too. */
   private contact() {
     const c = this.craft;
-    if (this.gameOver > 0 || c.invuln > 0) return;
+    if (this.gameOver >= 0 || this.ending >= 0 || c.invuln > 0) return;
     for (const e of this.foes) {
       if (e.dead || Math.hypot(e.x - c.x, e.y - c.y) >= e.r + 3) continue;
       this.hitCraft();
@@ -379,7 +528,7 @@ export class StageScene extends Phaser.Scene {
   /** A hit costs a Harmonic, then a weapon level, then knocks the Echo loose, and only then a ship. */
   hitCraft() {
     const c = this.craft;
-    if (c.invuln > 0 || this.gameOver > 0) return;
+    if (c.invuln > 0 || this.gameOver >= 0 || this.ending >= 0) return;
     this.hits++;
     this.mult = 1;
     const hue = this.land.hue;
@@ -421,11 +570,12 @@ export class StageScene extends Phaser.Scene {
   }
 
   private endGame() {
-    this.gameOver = PLAY.gameOver;
+    this.gameOver = 0;
+    this.choice = 0;
     this.ship.setVisible(false);
     this.echo.img.setVisible(false);
     this.craft.harm = 0;
-    label(this, WIDTH / 2, 92, 'GAME OVER', 18, TEXT.gold, { align: 'center' }).setDepth(20);
+    this.newHi = this.eligible && saveHi(this.score);
   }
 
   damage(e: Foe, d: number, resonant = false) {
@@ -523,7 +673,7 @@ export class StageScene extends Phaser.Scene {
     drawPickups(this, gBack, gMid);
     drawShots(gMid, this, false);
 
-    const alive = this.gameOver <= 0;
+    const alive = this.gameOver < 0;
     const blinkOff = c.invuln > 0 && Math.floor(this.beat.time * 20) % 2 === 0;
     // Turned a quarter, the image's own x axis is the screen's y, so the squash goes on scaleX.
     this.ship.setPosition(c.x, c.y).setScale(c.bank, 1).setVisible(alive && !blinkOff);
@@ -622,6 +772,36 @@ export class StageScene extends Phaser.Scene {
     runPattern(this, p);
   }
 
+  /**
+   * Dev: whether Movement `movement` (at `loop`) can be flown at speed level `speed` past its terrain and every
+   * pinned enemy, with the craft's own collision rules. The world x where it's blocked, or -1.
+   */
+  reach(movement: number, loop: number, speed: number) {
+    const terrain = terrainFor(movement);
+    const bpm = tempo(movement, loop);
+    const { scroll } = MOVEMENTS[movement];
+    const obstacles = pinnedSpots(movement, bpm, scroll, terrain).map((p) => ({ wx: p.wx, y: p.y, reach: p.r + 3 }));
+    const length = scroll * (scriptBars(movement) + PLAY.outro) * 4 * (60 / bpm) + WIDTH;
+    return blockedAt(terrain, {
+      scroll, speed: CRAFT.speed + CRAFT.speedStep * (speed - 1), x: CRAFT.startX, minY: CRAFT.minY, maxY: CRAFT.maxY,
+      probes: CRAFT.probes, edgeReach: CRAFT.edgeReach, length, obstacles,
+    });
+  }
+
+  /** Loses the last ship now (the game-over panel follows). */
+  lose() {
+    this.ships = 1;
+    this.craft.harm = 0;
+    this.craft.invuln = 0;
+    this.echo.knockLoose();
+    this.hitCraft();
+  }
+
+  /** Starts a fresh run at a movement and loop (it can't set the high score unless it's Movement I, loop 0). */
+  skipTo(movement: number, loop = 0) {
+    this.restartWith(newRun(movement, loop));
+  }
+
   grant(p: { harm?: number; level?: number; ships?: number; speed?: number; weapon?: Weapon; fork?: boolean }) {
     const c = this.craft;
     if (p.weapon !== undefined) c.weapon = p.weapon;
@@ -644,7 +824,7 @@ export class StageScene extends Phaser.Scene {
       ships: this.ships,
       speed: c.speed,
       movement: m.name,
-      numeral: m.numeral,
+      numeral: this.loop > 0 ? `${m.numeral}  ·  ENCORE${this.loop > 1 ? ` ${this.loop}` : ''}` : m.numeral,
       device,
       attract: this.attract !== undefined,
       weapon: c.weapon,
@@ -652,13 +832,21 @@ export class StageScene extends Phaser.Scene {
       harm: c.harm,
       echo: this.echo.attached ? 'attached' : this.echo.state === 'loose' ? 'loose' : 'away',
       muted: this.sound.mute,
+      paused: this.paused,
+      over: this.gameOver >= 0,
+      choice: this.choice,
+      ready: this.gameOver >= PLAY.gameOver,
+      newHi: this.newHi,
+      eligible: this.eligible,
     };
     this.registry.set('hud', state);
   }
 
-  private leave() {
+  /** Back to the title. A run that's still going keeps its high score. */
+  leave() {
     if (this.leaving) return;
     this.leaving = true;
+    if (this.gameOver < 0 && this.eligible) saveHi(this.score);
     this.sfx.chargeStop();
     this.cameras.main.fadeOut(250);
     this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {

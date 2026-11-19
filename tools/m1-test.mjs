@@ -107,7 +107,8 @@ await shot('4-landscape');
 await evaluate(`__overtone.scene.getScene('hud').cameras.main.setVisible(true)`);
 
 console.log(`fps while playing (headless, SwiftShader): ${await evaluate(`Math.round(__overtone.loop.actualFps)`)}`);
+const before = await evaluate(`(() => { const s = ${stage}; return { paused: s.paused, over: s.over, leaving: s.leaving, ships: s.ships, hidden: document.hidden }; })()`);
 await tap('Escape');
 await until(() => evaluate(`__overtone.scene.isActive('title') && !__overtone.scene.isActive('hud')`), 5000)
-  .then(() => check('Esc returns to the title and the HUD stops', true), () => check('Esc returns to the title and the HUD stops', false));
+  .then(() => check('Esc returns to the title and the HUD stops', true), () => check('Esc returns to the title and the HUD stops', false, JSON.stringify(before)));
 done();

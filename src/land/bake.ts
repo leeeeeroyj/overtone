@@ -28,18 +28,119 @@ export function hash(n: number) {
 
 export const hsl = (h: number, s = 95, l = 62, a = 1) => `hsla(${mod(h, 360)},${s}%,${l}%,${a})`;
 
-export const PAL = {
-  sky: ['#0a0420', '#110630', '#1a0a3e', '#25104c', '#341559', '#4a1a66', '#62206e', '#7e2a74'],
-  spec: ['#1d2559', '#243069', '#2c3d7c', '#354d90', '#3f60a4', '#4b74b8'],
-  peak: '#8fdcff',
-  city: '#150a2b',
-  cityRim: '#2c1a58',
-  cityDetail: '#1f1140',
-  string: '#3a2670',
-  mass: '#0a0518',
-  eqRim: '#e6dcff',
-  eqDim: ['#4a2478', '#3a1d64', '#2d1752', '#231243', '#1b0f37'],
-};
+/**
+ * A movement's look: palette and which layers it has. The landscape stays dim and cool enough that anything that
+ * can hurt you, which is bright, outlined and on top, always reads.
+ */
+export interface Theme {
+  sky: string[];
+  spec: string[];
+  peak: string;
+  city: string;
+  cityRim: string;
+  cityDetail: string;
+  string: string;
+  mass: string;
+  eqRim: string;
+  eqDim: string[];
+  /** The speaker moon's halo and rings, outside in (null: no moon). */
+  moon: { halo: string; rings: string[]; core: string; rim: string } | null;
+  /** Two haze gradients over the far layers, as [top, middle, bottom] and [top, bottom] rgba colours. */
+  haze: [string, string, string];
+  haze2: [string, string];
+  /** The skyline: the instrument city, or the cave's rock and crystals. */
+  skyline: 'city' | 'cave';
+  spectrum: boolean;
+  /** Vibrating strings across the sky: none, or how many. */
+  strings: number;
+  stave: boolean;
+  /** Dim colour for the stave and unlit notes, as an "r,g,b" triple. */
+  staveRgb: string;
+  /** Baked stars: [bright, dim]. */
+  stars: [string, string];
+}
+
+export const THEMES: Theme[] = [
+  // I Pulse: violet dusk over the instrument city.
+  {
+    sky: ['#0a0420', '#110630', '#1a0a3e', '#25104c', '#341559', '#4a1a66', '#62206e', '#7e2a74'],
+    spec: ['#1d2559', '#243069', '#2c3d7c', '#354d90', '#3f60a4', '#4b74b8'],
+    peak: '#8fdcff',
+    city: '#150a2b',
+    cityRim: '#2c1a58',
+    cityDetail: '#1f1140',
+    string: '#3a2670',
+    mass: '#0a0518',
+    eqRim: '#e6dcff',
+    eqDim: ['#4a2478', '#3a1d64', '#2d1752', '#231243', '#1b0f37'],
+    moon: {
+      halo: '#3a1660',
+      rings: ['#24123f', '#3a1f66', '#2a1549', '#46287c', '#331a58', '#5b3a96', '#2a1549', '#8f6ad0'],
+      core: '#d9c4ff',
+      rim: '#9a7ae0',
+    },
+    haze: ['rgba(42,15,79,0)', 'rgba(52,18,90,0.75)', 'rgba(30,10,55,0.9)'],
+    haze2: ['rgba(60,20,100,0)', 'rgba(60,20,100,0.55)'],
+    skyline: 'city',
+    spectrum: true,
+    strings: 0,
+    stave: true,
+    staveRgb: '205,180,255',
+    stars: ['#b9a8ff', '#5a4a9a'],
+  },
+  // II Strings: a teal cave, strung with strings that ring on the beat.
+  {
+    sky: ['#02080d', '#030c13', '#05121a', '#071922', '#0a212b', '#0d2a34', '#11343e', '#163e47'],
+    spec: [],
+    peak: '#9ffff0',
+    city: '#05111a',
+    cityRim: '#14394a',
+    cityDetail: '#0a2230',
+    string: '#2a7f88',
+    mass: '#03090e',
+    eqRim: '#d6fff4',
+    eqDim: ['#145a5e', '#0f4a50', '#0b3a42', '#082c34', '#061f28'],
+    moon: null,
+    haze: ['rgba(8,40,50,0)', 'rgba(8,40,50,0.6)', 'rgba(4,22,30,0.85)'],
+    haze2: ['rgba(10,60,70,0)', 'rgba(10,60,70,0.45)'],
+    skyline: 'cave',
+    spectrum: false,
+    strings: 7,
+    stave: false,
+    staveRgb: '170,240,235',
+    stars: ['#9ffff0', '#1d4a55'],
+  },
+  // III Crescendo: a red-gold dusk with everything at once.
+  {
+    sky: ['#12020a', '#1e0414', '#2e071f', '#410b28', '#571030', '#701735', '#8a2036', '#a52e34'],
+    spec: ['#45102e', '#581436', '#6c193d', '#822044', '#992948', '#b0344c'],
+    peak: '#ffd2a8',
+    city: '#170511',
+    cityRim: '#4a1636',
+    cityDetail: '#2a0b20',
+    string: '#7a2a58',
+    mass: '#0e020a',
+    eqRim: '#fff0dc',
+    eqDim: ['#6a1838', '#561430', '#421028', '#300c20', '#220818'],
+    moon: {
+      halo: '#5a1430',
+      rings: ['#3a0c22', '#5e1634', '#45102a', '#7a2040', '#561630', '#a03448', '#45102a', '#e0785a'],
+      core: '#ffe0c0',
+      rim: '#f09070',
+    },
+    haze: ['rgba(80,15,40,0)', 'rgba(90,18,45,0.7)', 'rgba(50,8,28,0.9)'],
+    haze2: ['rgba(110,25,50,0)', 'rgba(110,25,50,0.5)'],
+    skyline: 'city',
+    spectrum: true,
+    strings: 4,
+    stave: true,
+    staveRgb: '255,190,200',
+    stars: ['#ffc8b0', '#6a2a40'],
+  },
+];
+
+/** Movement I's palette (the frame's colours and the mockup's names). */
+export const PAL = THEMES[0];
 
 const BAYER = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]];
 
@@ -100,6 +201,7 @@ export interface CityLight {
 }
 
 export interface Art {
+  theme: Theme;
   sky: HTMLCanvasElement;
   twinkle: { x: number; y: number; k: number }[];
   city: HTMLCanvasElement;
@@ -109,11 +211,14 @@ export interface Art {
 export const CITY_W = 1024;
 export const CITY_H = 124;
 
-let movementI: Art | undefined;
+const arts = new Map<number, Art>();
 
-/** Movement I's baked art, made on first use and shared after that. */
-export function artMovementI(): Art {
-  if (movementI) return movementI;
+/** A movement's baked art, made on first use and shared after that. */
+export function artFor(movement: number): Art {
+  const have = arts.get(movement);
+  if (have) return have;
+  const theme = THEMES[movement] ?? THEMES[0];
+  const PAL = theme;
   const sky = pixLayer(WIDTH + 2, HEIGHT, ({ set }) => {
     const bands = PAL.sky.length - 1;
     const horizon = 184;
@@ -127,7 +232,7 @@ export function artMovementI(): Art {
     for (let i = 0; i < 110; i++) {
       const y = TOP + r() * 120;
       const b = r();
-      set(r() * WIDTH, y, b > 0.9 ? '#ffffff' : b > 0.6 ? '#b9a8ff' : '#5a4a9a');
+      set(r() * WIDTH, y, b > 0.9 ? '#ffffff' : b > 0.6 ? PAL.stars[0] : PAL.stars[1]);
     }
   });
   const twinkle = Array.from({ length: 18 }, (_, i) => ({
@@ -136,9 +241,16 @@ export function artMovementI(): Art {
     k: i,
   }));
 
-  // The instrument city, tiling every CITY_W px. Its lights are recorded so they can play in turn.
   const cityLights: CityLight[] = [];
-  const city = pixLayer(CITY_W, CITY_H, ({ set, rect, disc, h }) => {
+  const city = theme.skyline === 'cave' ? bakeCave(theme, cityLights) : bakeCity(theme, cityLights);
+  const art: Art = { theme, sky, twinkle, city, cityLights };
+  arts.set(movement, art);
+  return art;
+}
+
+/** The instrument city, tiling every CITY_W px. Its lights are recorded so they can play in turn. */
+function bakeCity(PAL: Theme, cityLights: CityLight[]) {
+  return pixLayer(CITY_W, CITY_H, ({ set, rect, disc, h }) => {
     const r = mulberry32(21);
     const body = PAL.city;
     const rim = PAL.cityRim;
@@ -235,6 +347,75 @@ export function artMovementI(): Art {
     while (x < CITY_W - 40) x += kinds[Math.floor(r() * kinds.length)](x) + 3 + Math.floor(r() * 14);
     rect(0, h - 3, CITY_W, 3, body);
   });
-  movementI = { sky, twinkle, city, cityLights };
-  return movementI;
+}
+
+/**
+ * The cave, tiling every CITY_W px: stalagmites, rock columns, and clusters of crystals whose tips light in turn,
+ * with string posts (two pegs and their strings) between them.
+ */
+function bakeCave(PAL: Theme, cityLights: CityLight[]) {
+  return pixLayer(CITY_W, CITY_H, ({ set, rect, h }) => {
+    const r = mulberry32(37);
+    const body = PAL.city;
+    const rim = PAL.cityRim;
+    const light = (x: number, y: number, kind: CityLight['kind']) => cityLights.push({ x, y, kind, k: cityLights.length });
+    const stalagmite = (x: number) => {
+      const w = 10 + Math.round(r() * 14);
+      const hh = 30 + Math.round(r() * 60);
+      for (let row = 0; row < hh; row++) {
+        const half = Math.max(0, Math.round((w / 2) * (row / hh) + (r() < 0.3 ? 1 : 0)));
+        rect(x + w / 2 - half, h - hh + row, half * 2 + 1, 1, body);
+        set(x + w / 2 - half, h - hh + row, rim);
+      }
+      light(x + Math.round(w / 2), h - hh - 1, 'tip');
+      return w;
+    };
+    const mesa = (x: number) => {
+      // A flat-topped outcrop, banded with strata, its top corners worn round.
+      const w = 22 + Math.round(r() * 26);
+      const hh = 34 + Math.round(r() * 40);
+      for (let row = 0; row < hh; row++) {
+        const inset = row < 3 ? 3 - row : Math.round(row / 12);
+        rect(x + inset, h - hh + row, w - inset * 2, 1, body);
+        set(x + inset, h - hh + row, rim);
+      }
+      rect(x + 3, h - hh, w - 6, 1, rim);
+      for (let y = h - hh + 8; y < h - 6; y += 7 + Math.floor(r() * 6)) rect(x + 4, y, w - 8, 1, PAL.cityDetail);
+      light(x + Math.round(w / 2), h - hh - 1, 'tip');
+      return w;
+    };
+    const crystals = (x: number) => {
+      let w = 0;
+      for (let i = 0; i < 3 + Math.floor(r() * 3); i++) {
+        const hh = 10 + Math.round(r() * 22);
+        const cx = x + i * 5;
+        for (let row = 0; row < hh; row++) {
+          const half = Math.round(2 * Math.min(1, (hh - row) / 4, row / 3 + 0.5));
+          rect(cx - half, h - hh + row, half * 2 + 1, 1, row < 3 ? rim : body);
+        }
+        light(cx, h - hh, 'cone');
+        w = i * 5 + 4;
+      }
+      return w + 2;
+    };
+    const posts = (x: number) => {
+      const span = 40 + Math.round(r() * 30);
+      const hh = 50 + Math.round(r() * 30);
+      for (const px of [x, x + span]) {
+        rect(px, h - hh, 3, hh, body);
+        rect(px, h - hh, 1, hh, rim);
+        rect(px - 1, h - hh - 2, 5, 2, rim);
+        light(px + 1, h - hh - 3, 'pipe');
+      }
+      for (let k = 0; k < 4; k++) {
+        const y0 = h - hh + 4 + k * 5;
+        for (let sx = x + 3; sx < x + span; sx++) set(sx, y0 + Math.round(2 * Math.sin(((sx - x) / span) * Math.PI)), PAL.string);
+      }
+      return span + 4;
+    };
+    const kinds = [stalagmite, stalagmite, crystals, mesa, posts, crystals, stalagmite];
+    let x = 6;
+    while (x < CITY_W - 90) x += kinds[Math.floor(r() * kinds.length)](x) + 3 + Math.floor(r() * 12);
+    rect(0, h - 3, CITY_W, 3, body);
+  });
 }
