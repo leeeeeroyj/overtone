@@ -203,8 +203,11 @@ export const BOSS = {
   partHp: 2,
   /** Seconds of explosions between the core's death and MOVEMENT COMPLETE. */
   outro: 1.6,
-  /** How far into the beat before an attack its warning starts (so it shows for at least half a beat). */
-  warnFrom: 0.25,
+  /**
+   * How far into the beat before an attack its warning starts. Early, so it still shows for at least half a beat when
+   * frames are slow (the beat follows the music, so a slow frame can skip a good part of a beat).
+   */
+  warnFrom: 0.1,
 };
 
 /** A full Flutter formation shot down: bonus points (times Harmony) and +1 Harmony. */

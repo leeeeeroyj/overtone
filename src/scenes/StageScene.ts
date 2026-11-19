@@ -80,8 +80,11 @@ export const newRun = (movement = 0, loop = 0): Run => ({
 });
 
 const IDLE: ControlState = {
-  move: { x: 0, y: 0 }, fire: false, charge: false, echo: false, confirm: false, back: false, mute: false, pause: false, device: 'kbm',
+  move: { x: 0, y: 0 }, fire: false, charge: false, echo: false, confirm: false, back: false, mute: false, pause: false, nav: 0, device: 'kbm',
 };
+
+/** The longest step the world takes at once, s: a slow frame is split into steps this short. */
+const MAX_STEP = 1 / 30;
 
 const newCraft = () => ({
   x: CRAFT.startX, y: CRAFT.startY, vx: 0, vy: 0, bank: 1, invuln: 0, speed: 1,
@@ -153,6 +156,7 @@ export class StageScene extends Phaser.Scene {
   private gBack!: Phaser.GameObjects.Graphics;
   private gMid!: Phaser.GameObjects.Graphics;
   private gFront!: Phaser.GameObjects.Graphics;
+  private gFx!: Phaser.GameObjects.Graphics;
   private gFoe!: Phaser.GameObjects.Graphics;
   private camBase = { x: 0, y: 0 };
   private kick = 0;
@@ -162,7 +166,6 @@ export class StageScene extends Phaser.Scene {
   private ending = -1;
   private banner: Phaser.GameObjects.Text[] = [];
   private bannerTime = 0;
-  private lastMoveX = 0;
   private attract: number | undefined;
   private leaving = false;
   private readonly onHidden = () => {
@@ -187,18 +190,20 @@ export class StageScene extends Phaser.Scene {
     this.scrollX = 0;
     this.land = new Landscape(this, this.terrain, this.movement);
     this.synth = new Synth(this);
-    this.sfx = new Sfx(this.synth);
-    this.band = new Band(this.synth);
+    this.band = new Band(this.synth, this.movement);
+    this.sfx = new Sfx(this.synth, this.band, this.beat);
     this.fx = new Effects(this);
     this.craft = newCraft();
     if (run.power) Object.assign(this.craft, run.power);
     Object.assign(this, { foes: [], shots: [], beams: [], notes: [], pickups: [], warns: [], score: run.score, mult: run.mult, ships: run.ships });
     Object.assign(this, { frameHits: 0, hits: 0, blocked: 0, lastRelease: undefined, scripted: true, gameOver: -1, ending: -1, kick: 0 });
-    Object.assign(this, { paused: false, choice: 0, newHi: false, lastMoveX: 0, boss: undefined, bossDue: true });
+    Object.assign(this, { paused: false, choice: 0, newHi: false, boss: undefined, bossDue: true });
     Object.assign(this, { landOnly: false, frozen: false, noteFire: true, drops: 0, formations: new Map() });
     this.gBack = this.add.graphics().setDepth(5);
     this.gFoe = this.add.graphics().setDepth(7.5);
     this.gMid = this.add.graphics().setDepth(8.5);
+    // Sparks and rings in front of the enemies, but under the craft, the Echo and every enemy note.
+    this.gFx = this.add.graphics().setDepth(9.6);
     this.gFront = this.add.graphics().setDepth(14);
     // The craft is drawn from above, nose up: turned a quarter it faces right.
     this.ship = this.add.image(this.craft.x, this.craft.y, 'player').setAngle(90).setDepth(10);
@@ -231,16 +236,33 @@ export class StageScene extends Phaser.Scene {
     else if (input.back) return this.leave();
     else if (input.pause) return this.setPaused(true), this.publish(input.device);
     if (this.attract !== undefined && this.gameOver > PLAY.gameOver) return this.leave();
-    this.scrollX += this.scrollSpeed * dt;
-    const b = this.beat.update(dt);
+    // The beat follows the audio clock while it runs, so the music and everything on screen stay together. The world
+    // moves exactly as far as the beat did (more than a frame's time on a slow device), in steps short enough that
+    // nothing passes through anything.
+    const before = this.beat.time;
+    const b = this.beat.update(dt, this.synth.running ? this.synth.now : undefined);
+    const advance = Math.max(0, this.beat.time - before);
     if (b !== null) this.onBeat(b);
-    const playing = this.gameOver < 0 && this.ending < 0;
-    if (playing) {
+    if (input.echo && this.gameOver < 0 && this.ending < 0) this.echo.toggle();
+    const steps = Math.max(1, Math.ceil(advance / MAX_STEP));
+    for (let i = 0; i < steps; i++) if (this.step(advance / steps, input)) return;
+    this.land.update(advance, this.scrollX, this.beat);
+    this.draw();
+    this.band.update(this.beat);
+    this.publish(input.device);
+  }
+
+  /** Moves the world on by `dt`. True if the scene is ending (the next movement is starting). */
+  private step(dt: number, input: ControlState) {
+    this.scrollX += this.scrollSpeed * dt;
+    if (this.gameOver < 0 && this.ending < 0) {
       this.fly(dt, input);
       this.weapons(dt, input);
-      if (input.echo) this.echo.toggle();
     }
-    if (this.ending >= 0 && (this.ending -= dt) < 0) return this.nextMovement();
+    if (this.ending >= 0 && (this.ending -= dt) < 0) {
+      this.nextMovement();
+      return true;
+    }
     if (this.bannerTime > 0 && (this.bannerTime -= dt) < 1) this.banner.forEach((t) => t.setAlpha(Math.max(0, this.bannerTime)));
     this.echo.update(dt);
     updateShots(this, dt);
@@ -261,10 +283,7 @@ export class StageScene extends Phaser.Scene {
     });
     this.fx.update(dt);
     this.kick = Math.max(0, this.kick - dt);
-    this.land.update(dt, this.scrollX, this.beat);
-    this.draw();
-    this.band.update(this.beat);
-    this.publish(input.device);
+    return false;
   }
 
   /** Design px per second the world scrolls. */
@@ -302,6 +321,8 @@ export class StageScene extends Phaser.Scene {
     this.arrive((TOP + HEIGHT) / 2, () => {
       if (this.gameOver >= 0 || this.leaving) return;
       this.boss = new Boss(this, this.movement);
+      this.band.boss = this.boss;
+      this.sfx.bossArrive();
       this.showBanner(`MOVEMENT ${MOVEMENTS[this.movement].numeral}  ·  FINALE`, this.boss.name);
     });
   }
@@ -321,6 +342,7 @@ export class StageScene extends Phaser.Scene {
     }
     if (b.dying >= BOSS.outro) {
       this.boss = undefined;
+      this.band.boss = undefined;
       this.finish();
     }
   }
@@ -330,6 +352,8 @@ export class StageScene extends Phaser.Scene {
     if (this.ending >= 0 || this.gameOver >= 0) return;
     this.ending = 2.5;
     this.scripted = false;
+    this.band.quiet = true;
+    this.sfx.complete();
     this.bossDue = false;
     const m = MOVEMENTS[this.movement];
     this.banner.forEach((t) => t.destroy());
@@ -366,14 +390,17 @@ export class StageScene extends Phaser.Scene {
     if (this.attract !== undefined || on === this.paused || (on && (this.gameOver >= 0 || this.leaving))) return;
     this.paused = on;
     if (on) this.sfx.chargeStop();
+    this.sfx.pause(on);
   }
 
   /** The game-over panel: left and right pick, confirm chooses, Esc or Back goes to the title. */
   private overMenu(dt: number, input: ControlState) {
     this.gameOver += dt;
-    const sx = Math.sign(Math.round(input.move.x));
-    if (sx && sx !== this.lastMoveX) this.choice = (this.choice + sx + 3) % 3;
-    this.lastMoveX = sx;
+    const sx = input.nav;
+    if (sx) {
+      this.choice = (this.choice + sx + 3) % 3;
+      this.sfx.tick();
+    }
     if (this.gameOver < PLAY.gameOver) return;
     if (input.back) this.choose(2);
     else if (input.confirm) this.choose(this.choice);
@@ -382,6 +409,7 @@ export class StageScene extends Phaser.Scene {
   /** CONTINUE: this movement again with the score reset (and no high score). RETRY: from Movement I. TITLE. */
   choose(i: number) {
     if (this.gameOver < PLAY.gameOver || this.leaving) return;
+    this.sfx.select();
     if (i === 0) this.restartWith({ ...newRun(this.movement, this.loop), eligible: false });
     else if (i === 1) this.restartWith(newRun());
     else this.leave();
@@ -603,9 +631,11 @@ export class StageScene extends Phaser.Scene {
       c.charge = 0;
       c.charging = false;
       if (this.ships <= 0) return this.endGame();
-      // Respawn on the spot, the Echo back on the nose.
+      // Respawn on the spot, the Echo back on the nose, with no power-ups: base speed and no grace notes.
       this.echo.attach('front');
       c.level = 1;
+      c.speed = 1;
+      c.fork = false;
       c.invuln = PLAY.respawn;
       msg = 'SHIP LOST';
     }
@@ -620,6 +650,8 @@ export class StageScene extends Phaser.Scene {
     this.echo.img.setVisible(false);
     this.craft.harm = 0;
     this.newHi = this.eligible && saveHi(this.score);
+    this.band.quiet = true;
+    this.sfx.gameOver();
   }
 
   damage(e: Foe, d: number, resonant = false) {
@@ -647,7 +679,7 @@ export class StageScene extends Phaser.Scene {
     const big = e.kind === 'horn' || e.kind === 'eelhead' || e.kind === 'carrier' || core;
     if (big) this.fx.burst(e.x, e.y, 22, hue + 90, 1.4);
     this.fx.shake(big ? 2.5 : 1, big ? 0.3 : 0.12);
-    this.sfx.kill(e.y);
+    this.sfx.kill(e.y, big);
     if (e.kind === 'carrier') dropPickup(this, PICKUPS.drops[this.drops++ % PICKUPS.drops.length], e.x, e.y);
     if (e.kind === 'eelhead') for (const f of this.foes) if (f.head === e && !f.dead) this.kill(f, false);
     if (core) {
@@ -655,6 +687,7 @@ export class StageScene extends Phaser.Scene {
       e.boss!.defeat();
       for (const f of e.boss!.parts) if (!f.dead) this.kill(f, false);
       this.fx.popup(e.x, e.y - 22, e.boss!.name, TEXT.gold);
+      this.sfx.bossDefeat();
       this.fx.flash(0.25);
     }
     // The last of a whole formation: a CHORD.
@@ -664,6 +697,7 @@ export class StageScene extends Phaser.Scene {
       this.mult = Math.min(PLAY.harmonyMax, this.mult + 1);
       this.addScore(bonus);
       this.fx.popup(e.x, e.y - 26, `CHORD ${bonus}`, TEXT.magenta);
+      this.sfx.chord();
       this.fx.ring(e.x, e.y, 4, 200, 0.6, hue + 90, 2);
     }
   }
@@ -697,7 +731,7 @@ export class StageScene extends Phaser.Scene {
       msg = 'GRACE NOTES';
     }
     this.fx.popup(p.x, p.y - 12, msg, TEXT.beam);
-    this.sfx.blip(990);
+    this.sfx.pickup();
   }
 
   addScore(n: number) {
@@ -706,13 +740,15 @@ export class StageScene extends Phaser.Scene {
     if (Math.floor(this.score / PLAY.extraShip) > before) {
       this.ships++;
       this.fx.popup(this.craft.x, this.craft.y - 24, '+SHIP', TEXT.beam);
+      this.sfx.extraShip();
     }
   }
 
   private draw() {
     const c = this.craft;
     const hue = this.land.hue;
-    const { gBack, gMid, gFront, gFoe } = this;
+    const { gBack, gMid, gFront, gFoe, gFx } = this;
+    gFx.clear();
     gBack.clear();
     gMid.clear();
     gFront.clear();
@@ -747,13 +783,14 @@ export class StageScene extends Phaser.Scene {
     if (alive) this.echo.draw(gMid, REDUCED);
     this.boss?.draw(gMid);
 
+    this.fx.drawSparks(gFx, true);
+    this.fx.drawRings(gFx);
     drawShots(gFront, this, true);
     drawBeams(gFront, this);
-    drawNotes(gFront, this, COLORS.danger);
     if (c.charging && alive) this.drawCharge(gFront);
-    this.fx.drawSparks(gFront, true);
-    this.fx.drawRings(gFront);
     this.drawChevrons(gFront);
+    // Enemy notes last: nothing ever covers what can hurt you.
+    drawNotes(gFront, this, COLORS.danger, REDUCED ? 0 : this.beat.env);
     const o = this.fx.offset;
     this.cameras.main.setScroll(this.camBase.x + o.x, this.camBase.y + o.y);
   }
@@ -808,13 +845,13 @@ export class StageScene extends Phaser.Scene {
     this.fx.clear();
     this.scripted = false;
     this.boss = undefined;
+    this.band.boss = undefined;
   }
 
   /** Moves the beat clock to `frac` of the way through the current beat. */
   setBeatPhase(frac: number) {
     this.beat.time = (this.beat.beat + frac) * this.beat.spb;
     this.beat.update(0);
-    this.band.seek(this.beat);
   }
 
   /** Drops a pickup; `t` sets how far through its cycle a crystal starts. */

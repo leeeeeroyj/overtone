@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { FOES, HEIGHT, NOTES, TOP, WIDTH, type FoeKind } from '../config';
 import { hsl } from '../effects';
 import { clamp } from '../land/bake';
+import { REDUCED } from '../land/Landscape';
 import { mod } from '../synth';
 import type { StageScene } from '../scenes/StageScene';
 import type { Boss } from './boss';
@@ -196,7 +197,7 @@ const onScreen = (e: Foe) => e.x > 4 && e.x < WIDTH - 4;
 export function drawFoes(stage: StageScene, g: Phaser.GameObjects.Graphics) {
   const { beat } = stage;
   const blink = Math.floor(beat.time * 16) % 2 === 0;
-  const hop = Math.round(beat.env * 1.2);
+  const hop = REDUCED ? 0 : Math.round(beat.env * 1.2);
   const hue = stage.land.hue;
   for (const e of stage.foes) {
     const white = e.flash > 0 || (e.warn && blink);

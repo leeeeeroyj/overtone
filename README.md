@@ -23,16 +23,16 @@ A side-scrolling shooter through a neon cosmos where everything moves to the bea
 Overtone is an original arcade game inspired by the mechanics of Irem's 1987 arcade game *R-Type*. The game is being built in the open; this is how it plays today.
 
 - **Three movements, each faster than the last.**
-  - **I Pulse** (128 beats a minute) is a violet dusk over a city of instruments. A speaker-cone moon ripples on every kick, spectrum-analyser mountains bounce with the music, and the city's lights play in turn through each bar.
-  - **II Strings** (140) is a teal cave hung with strings that ring in turn on the beat.
-  - **III Crescendo** (152) is a red-gold dusk with everything at once.
+  - **I Pulse** (128 beats a minute) is a violet dusk over a city of instruments, to dark, driving music in A minor. A speaker-cone moon ripples on every kick, spectrum-analyser mountains bounce with the music, and the city's lights play in turn through each bar.
+  - **II Strings** (140) is a teal cave hung with strings that ring in turn on the beat. The music is hypnotic: D dorian, half-time drums and plucked strings.
+  - **III Crescendo** (152) is a red-gold dusk with everything at once, and a triumphant fanfare in E major.
 - **A boss ends each movement.** Its core opens on the first beat of every bar, and that's the only time it can be hurt.
 - **Encores.** After III the ensemble plays again from I, 12 beats a minute faster, with enemy notes 15% quicker each time round.
 - **Charge on the beat.** Hold CHARGE for a beat per tier, then let go for a piercing beam. Let go right on the beat and it's **resonant**: wider, harder, worth double and it raises your Harmony.
 - **The Echo.** A living orb of sound rides on your nose. It blocks shots, hurts whatever it touches and fires your weapon: a spiralling double helix, bouncing prism beams or sonar arcs that pass through walls. Send it out ahead and it hovers there, repeating your shots, until you call it back.
 - **Hits cost power, not lives.** A hit takes a speaker, then a weapon level, then knocks the Echo loose, before it costs you a ship.
 - **A frame that keeps time.** The floor and ceiling are walls of LED cells that jump on every beat. They're solid: touch one and it bounces you off, and that counts as a hit.
-- **Drawn and played in code.** Every layer of the landscape is pixel art generated when the game loads, and the music and sound effects are synthesised as you play, in a minor key.
+- **Drawn and played in code.** Every layer of the landscape is pixel art generated when the game loads, and the music and sound effects are synthesised as you play. Everything keeps time to the music, and every sound is in the movement's key, on the chord that's playing: a kill's chord lands on the next sixteenth note.
 
 ## How to play
 
@@ -42,13 +42,13 @@ Fly through the three movements, shoot what's in your way and keep off the walls
 - **CHARGE** (hold) stops your fire and fills a tier for each beat you hold it, up to three: a ring of three arcs round the craft fills as you go. Let go for a beam that sweeps across the screen and pierces everything in its path. Let go at tier 2 or 3 within 0.09 s of a beat (the ring turns solid white) and the beam is **resonant**: half as wide again, half as strong again, and each kill pays double and adds one to your Harmony.
 - **Harmony** multiplies every point, from ×1 up to ×8. Any hit drops it back to ×1.
 - **ECHO** sends the Echo out ahead (or behind, if it's on your tail). It hovers there, drifting toward your height and repeating your shots. Press ECHO again to call it back. It attaches to whichever end of the craft touches it.
-- **Getting hit.** A shot, an enemy, or the floor or ceiling costs you a Harmonic if you have one, otherwise a weapon level, otherwise it knocks the Echo loose: it drifts and blinks until you fly into it. Hit again without it and you lose a ship, respawn on the spot with the Echo back on your nose, and blink for 2 seconds. You start with 3 ships and earn another every 50,000 points. Lose the last and it's game over.
+- **Getting hit.** A shot, an enemy, or the floor or ceiling costs you a Harmonic if you have one, otherwise a weapon level, otherwise it knocks the Echo loose: it drifts and blinks until you fly into it. Hit again without it and you lose a ship, along with your speed and grace notes. You respawn on the spot with the Echo back on your nose and blink for 2 seconds. You start with 3 ships and earn another every 50,000 points. Lose the last and it's game over.
 - **Game over.** **CONTINUE** starts the same movement again with the score at zero, three ships and no power. **RETRY** starts again from Movement I. **TITLE** goes back to the title.
 - **High score.** Kept in your browser. Only a run that starts at Movement I and never continues can set it.
 - **Fair warning.** Anything about to fire flashes white for the half-beat before it does, and a gold chevron blinks at the right edge, at the height something will arrive, a beat before it does.
 - **CHORD.** Shoot down all five Flutters in a formation for 1,000 × your Harmony, and +1 Harmony. If one gets away, there's no bonus.
 
-- **Bosses.** A boss's core is shut behind a riveted plate except for the first two beats of every bar, when the plate opens, a ring pulses round the eye and the boss bar at the bottom reads OPEN. Shots glance off it while it's shut. While it's open, the core holds nearly still (the Great Eel slows to a crawl) and fires on the bar's second beat. Destroy the core and the rest of the boss goes with it. The parts round it take twice their usual hits. In an ENCORE, each boss has a quarter more hit points.
+- **Bosses.** A boss's core is shut behind a riveted plate except for the first two beats of every bar, when the plate opens with a bell, a ring pulses round the eye and the boss bar at the bottom reads OPEN. It clanks shut. Shots glance off it while it's shut. While it's open, the core holds nearly still (the Great Eel slows to a crawl) and fires on the bar's second beat. Destroy the core and the rest of the boss goes with it. The parts round it take twice their usual hits. In an ENCORE, each boss has a quarter more hit points.
 
 | Boss | Movement | Points | Hits | What it does |
 | --- | --- | ---: | ---: | --- |
@@ -98,6 +98,8 @@ Couriers drop pickups in turn: a crystal, a Harmonic, speed, then the tuning for
 
 Controllers show up once you press a button. The game pauses itself when you switch tabs or the page goes to the background.
 
+If your system asks for reduced motion, the screen doesn't shake or flash, the glows keep one colour, and the landscape and enemies stop bouncing to the beat.
+
 ## Run it locally
 
 You need [Node.js](https://nodejs.org/) 20.19+ or 22.12+.
@@ -116,15 +118,15 @@ Every push to `main` builds the game and deploys it to GitHub Pages.
 src/
   main.ts            game setup and fonts
   config.ts          tunables: sizes, tempo, scroll speed, flight, colours
-  beat.ts            the beat clock everything keeps time to
+  beat.ts            the beat clock everything keeps time to, locked to the audio clock
   terrain.ts         each movement's floor and ceiling, and the reachability check
   script.ts          each movement's waves, one token per bar
   entities/          the Echo, enemies, bosses, pickups, shots, beams and enemy notes
   glyphs.ts          the weapon and pickup icons
   effects.ts         sparks, rings, score popups, shake and flash
-  synth.ts           oscillator voices and the sound switch
-  music.ts           the band, scheduled ahead on the audio clock
-  sfx.ts             shots, kills, the charge and the beam
+  synth.ts           oscillator and noise voices, the limiter and the sound switch
+  music.ts           each movement's tune, scheduled ahead on the audio clock
+  sfx.ts             every sound effect, in key with the music
   land/bake.ts       sky and instrument city, baked once as pixel art
   land/Landscape.ts  every layer, drawn each frame in time with the beat
   controls.ts        keyboard, mouse and gamepad input

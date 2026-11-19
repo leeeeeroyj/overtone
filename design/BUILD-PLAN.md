@@ -162,7 +162,7 @@ Pure modules (`beat.ts`, `script.ts`, `terrain.ts`, `land/bake.ts`) are tested b
 - **2026-11-18 Echo and Harmonics at half size (8 px),** at the user's request when approving the build.
 - **2026-11-18 Plan approved; build started.** The user said "Build it." Per the playbook, each milestone is shown before it's committed, and the repo isn't created until the user OKs the first push.
 - **2026-11-18 Commit and push after each milestone without asking,** at the user's word ("go ahead and keep working, committing after each milestone"), once its tests pass and the C1 checks are clean. The empty public repo `leeeeeroyj/overtone` already existed (created earlier that day), so C2 set its description, homepage and Pages instead of creating it.
-- **2026-11-18 Losing a ship keeps speed and grace notes.** The ladder has already taken the Harmonics and weapon levels by then; the plan didn't say, so this follows "hits cost power, not lives". Easy to change after the user plays it.
+- **2026-11-18 Losing a ship takes the power-ups,** at the user's word ("lose power ups when you die"): speed goes back to 1 and the grace notes go, on top of the Harmonics and weapon levels the ladder has already taken. The weapon type stays. (This replaces the earlier choice to keep speed and grace notes.)
 - **2026-11-18 A CHORD needs all five of a formation shot down;** if one leaves the screen alive the formation is broken and pays nothing (the mockup paid out when the last one died, however the others went).
 - **2026-11-18 The Harmonic pickup is drawn like the companion,** at half size with its glow, to match the user's half-size request; the glyph above it keeps it easy to spot.
 - **2026-11-18 Sound is synthesised live with oscillators** (`synth.ts`) on Phaser's audio context, through its mute node, as in the mockup, instead of Sentinel's pre-rendered sfxr buffers: the band has to be scheduled on the audio clock anyway, and the shot and kill sounds are pitched per event. `music.ts` schedules each beat 0.12 s ahead at the moment the beat clock will reach it; the full audio-clock lock is still milestone 6's.
@@ -174,105 +174,49 @@ Pure modules (`beat.ts`, `script.ts`, `terrain.ts`, `land/bake.ts`) are tested b
 - **2026-11-18 The reachability check holds the craft at its start x** (stricter than the real game, where it can also move sideways). It treats Sentries and Snappers as walls and leaves out things that fly, since those move and can be shot.
 - **2026-11-18 Boss parts are ordinary enemies owned by the boss.** The boss moves and fires them, so shots, beams, the Echo and contact work on them unchanged. The Halo's Sentries and the Conductor's instruments take twice their usual hits and pay their usual points. The Great Eel's body is armoured: shots glance off it.
 - **2026-11-18 The core is open for the first two beats of each bar** and fires on the second. Hit points are 80, 100 and 120, plus a quarter per ENCORE. The first test showed the bob was fastest exactly while the core was open, which made it hard to hit for anyone, not just the test pilot. Now the Halo and the Conductor sit at the end of their swing while open, and the Great Eel slows to about a third of its speed.
-- **2026-11-18 Boss warnings start a quarter into the beat before an attack** (so at least ¾ of a beat less a frame), longer than ordinary enemies' half-beat. The plan asks for at least half a beat even at low frame rates.
+- **2026-11-18 Boss warnings start a tenth of the way into the beat before an attack,** longer than ordinary enemies' half-beat. (They started a quarter in until milestone 6: once the beat followed the audio clock, a slow frame could skip enough of a beat to leave less than half a beat of warning.)
 - **2026-11-18 The boss arrives after the script's 4-bar outro,** announced like any arrival (a chevron, then MOVEMENT n · FINALE and its name). The terrain keeps scrolling. CONTINUE still restarts the movement from its first bar.
+- **2026-11-18 A different mood for each movement,** at the user's word ("Each can have a different mood"). I Pulse stays dark and driving (A aeolian, i–i–VI–VII, four on the floor, a tresillo bass). II Strings is mysterious and hypnotic (D dorian, two bars a chord, half-time drums, plucked strings rolling in sixteenths, a bowed line). III Crescendo is triumphant (E major, I–V–vi–IV, claps, sixteenth hats, an octave bass, a fanfare). Parts come in over the first 32 bars, drop out for a 4-bar break at bar 48, and all play for the boss.
+- **2026-11-18 The beat clock follows the audio clock** whenever the audio context runs (muted or not), and the world moves exactly as far as the beat did each frame, in steps of at most 1/30 s. A frame that skips more than half a beat (a pause, a hidden tab, a hitch) re-anchors instead. Without audio it runs on frame time as before. Following the audio clock while the world kept capped frame time made the world fall behind the music below 20 fps, which would also have put pinned enemies in the wrong places.
+- **2026-11-18 Sound effects play in the movement's key, on the band's current chord.** Kills, pickups, extra ships and CHORDs land on the next sixteenth of the music (at most an eighth of a second late at 128 BPM); shots, hits and the Echo sound at once, since you react to them.
+- **2026-11-18 The boss's core is heard as well as seen:** a bell as it opens, a clank as it shuts.
+- **2026-11-18 Sparks and rings draw under the craft, the Echo and enemy notes** (still over enemies and pickups), so a burst never hides the craft or anything that can hurt you. Enemy notes get a halo on each beat (not under reduced motion), and enemies stop hopping on the beat under reduced motion.
+- **2026-11-18 Key presses are kept until the next frame reads them.** Phaser forgets a press once the key is up again, so a tap shorter than a frame was lost (the cause of the occasional test timeouts, and a real risk on a slow device). Menus step on a latched `nav` input for the same reason.
 - **2026-11-17 Information never depends on hue** (the user is colour blind). Enemy notes are white-cored diamonds; player shots are dashes, beads, triangles of lines and arcs. Pickups carry glyphs; the beat lamp is filled vs outlined, with a taller downbeat; the charge ring counts segments and goes solid to say "now".
 
 ## Open questions
 
 - **Craft sprite.** All eight craft candidates are drawn from above, nose up, and turned to face right. If that reads wrong, the slot can be re-searched for side-view ships.
-- **Music for Movements II and III.** I stays dark minor; II and III could brighten or stay. Until milestone 6 they use I's band at their own tempo.
-- **Scope of bosses.** Three bosses is the biggest single chunk of work. If time is tight, Movement II's boss could reuse the Eel entity at boss scale.
+- **Boss balance.** A test pilot with starting power kills the bosses in about 17, 33 and 38 seconds. The user's play decides whether that's right.
 
-## Status (2026-11-18: milestone 5 built and verified)
+## Status (2026-11-18: milestone 6 built and verified)
 
-- **Done:**
-  - Part A: concept sheet v0.3 (with the half-size Echo and Harmonics) and this plan, approved by the user.
-  - **Milestone 1,** pushed as `3b83749` and live at https://leeeeeroyj.github.io/overtone/ (deploy green). Repo settings per C3 and C5 applied and verified: MIT detected; wiki and projects off; topics; Dependabot alerts; GitHub-owned actions only; "Protect main" ruleset; secret scanning and push protection on; read-only workflow token; Pages HTTPS; leeeeeroyj the only collaborator; no keys, hooks, secrets or variables.
-  - **Milestone 2,** pushed as `1e3d5cd` (deploy green):
-    - `BeatClock` drives a band (kick, off-beat hat, bass, pad chord per bar) scheduled ahead on the audio clock.
-    - FIRE (notes), CHARGE (a tier per beat held, ring of three arcs, solid white when a release would resonate), the beam (piercing; resonant 1.5× width and damage, double points, +1 Harmony).
-    - The Echo at half size: front and back, launch, hover and follow, repeat shots, recall, catch on either end, block notes, contact damage, knocked loose and recaught. SPIRAL at levels 1–3 from the attached Echo.
-    - Harmonics at half size (mirrored speakers with glow and kick, firing quavers each half-beat, blocking notes). There are no pickups until milestone 3, so in play they're only reachable through the `grant` dev hook.
-    - Sentries (`drummer` slot) on floor and ceiling, an aimed note every 2 beats, white flash for the half-beat before.
-    - The hit ladder (Harmonic → level → Echo loose → ship), Harmony ×1–×8 reset by hits, ships +1 per 50,000, respawn on the spot with 2 s blink. Terrain is a hit.
-    - Effects: sparks in front of and behind, tilted rings, score popups, shake in game px, white flash; reduced motion honoured.
-    - HUD: ECHO glyph (dims and blinks when loose) and level pips, HARM notes, sound icon (clickable), new hints. M toggles sound everywhere (`overtone-muted`).
-    - Dev hooks on the stage scene: `spawn`, `clearField`, `setBeatPhase`, `grant`, `addNote`, `landOnly`.
-    - Placeholders until later milestones: the spawn script is a loop of Sentry pairs every 8 beats (milestone 4 writes the real one); the last ship lost shows GAME OVER for 3 s and returns to the title (milestone 4's panel); P and Start do nothing yet, so the title and hints leave pause out.
-  - **Milestone 3,** pushed as `d2d0739`:
-    - All eight enemies (`entities/foes.ts`): Flutter formations (surge on the beat, CHORD), Jelly (pulses up, 6-note ring every 4 beats), Sentry, Strider (hops every 2 beats, 2 notes up and back every 4), Saw (flies in at your height, spinning, quarter turns), Snapper (floor or ceiling, 5-note fan every 4 beats), Eel (head + 7 drawn orbs; the body follows the head's path by time, so it looks the same at any frame rate; the head's death takes the body), Courier (drops pickups in order: crystal, Harmonic, speed, fork).
-    - Pickups (`entities/pickups.ts`) with shape glyphs above (`glyphs.ts`); crystals cycle SPIRAL → PRISM → SONAR every 1.5 s, the same weapon levels up, another switches at the same level.
-    - PRISM (1/3/5 beams, two bounces off the terrain) and SONAR (arcs grow at 40 px/s to 16/22/28 px, pass through terrain, hit each enemy once); grace notes (two homing notes a second).
-    - Every arrival is announced by a blinking gold chevron at the right edge, at its height, one beat ahead (`stage.arrive`).
-    - The HUD's ECHO slot shows the current weapon's glyph.
-    - The placeholder script loops through every pattern, one every 4 beats (`script.ts`; milestone 4 writes the real ones).
-    - New dev hooks: `drop`, `pattern`, `frozen`, `noteFire`; `grant` takes `weapon` and `fork`.
-- **Verified:** `npx tsc` clean.
-  - `m1-test` 27/27 (it now clears the field first and uses `landOnly` for the landscape shot).
-  - `m2-test` 23/23:
-    - FIRE streams notes and the helix; charging holds fire;
-    - tier 2 on the beat is resonant (width 15), off the beat it isn't (10), tier 1 on the beat isn't (6);
-    - a Sentry warns only in the half-beat before its beat, shows the fill tint, fires on even beats;
-    - the Echo on the nose blocks a note aimed at the craft, and on the tail it doesn't;
-    - launch, hover at 300, follow, repeat shots, recall and re-attach; contact damage;
-    - the ladder runs exactly 1 3 front 3 → … → 0 1 front 2; a hit resets Harmony;
-    - the floor is a hit and bounces you;
-    - a resonant kill pays 800 at ×2 and a plain one 400; the HUD shows them; real shots kill a Sentry.
-  - Screenshots looked at: resonant beam, Sentries on floor and ceiling (flush with the stepped edge), half-size Echo and speakers, busy play, hero shot.
-  - `m3-test` 31/31:
-    - contact sheet of every enemy and pickup on the floor, ceiling and in the air;
-    - each shooter's volley size (Sentry 1, Jelly 6, Strider 2, Snapper 5); Striders hop on the beat;
-    - a chevron a beat before an arrival, at its height; Saws fly in at -185 px/s toward your height, spinning;
-    - Eel = head + 7, head kill takes the body (850); a Courier drops a crystal;
-    - CHORD pays 5 × 100 + 1,000 and Harmony ×2, and nothing if one got away;
-    - crystals give spiral, prism, sonar by phase and level up the same weapon; Harmonics cap at 2, speed at 3 (152 px/s); the fork's grace notes home;
-    - every weapon at every level kills a target with the Echo's fire alone (volleys 2/2/2, 1/3/5, 1/1/1); SPIRAL widens 7/10/13 and SONAR grows 16/22/28;
-    - PRISM bounces off the floor; SONAR kills a target buried in the floor and SPIRAL can't;
-    - the HUD shows weapon, level and Harmonics.
-  - `m1-test` 27/27 and `m2-test` 23/23 still pass.
-  - Screenshots looked at: the contact sheet (every sprite reads; ceiling ones flipped), busy PRISM play, and a staged hero shot.
-  - **Milestone 4,** pushed as `760348b` (deploy green):
-    - Movements II and III have their own terrain (`TERRAINS`; a cave closer above and below, and a quicker, sharper III; both keep a gap of at least 80 px). They have their own looks (themes, see Decisions).
-    - Each movement has an authored script (`script.ts`, one token per bar, see Decisions), with a `+` for two waves in a bar. The script's end shows MOVEMENT n COMPLETE and moves on to the next movement; after III comes an ENCORE.
-    - Runs carry score, ships, Harmony and power. The HUD shows the numeral with ENCORE (and its count), and each movement opens with a banner.
-    - Game over shows a panel with CONTINUE, RETRY and TITLE, the score, HI or NEW HIGH SCORE!, and a note on what CONTINUE costs.
-    - Pause: P, Start, the II icon in the top bar, or the page going to the background. The panel has RESUME and TITLE, and the hints say how to use them. PAUSE is back on the title's control list and in the hints.
-    - The high score is saved at game over or on leaving, only for eligible runs.
-    - Dev hooks `skipTo(movement, loop)`, `finish()`, `lose()`, `reach(movement, loop, speed)`.
-- **Verified (milestone 4):** `npx tsc` clean.
-  - `m4-test` 36/36:
-    - BPM, Sentry note speed and the HUD numeral for every movement in loops 0, 1 and 2 (128/140/152, then +12 per loop; 84, 96.6 and 109.2 px/s).
-    - The reachability search catches a wall of obstacles and finds a path through each movement in loops 0 and 1 at speeds 1 and 3.
-    - Every script is 80 bars and uses all eight wave kinds.
-    - The drawn edges of II and III match their collision edges.
-    - The script sends II's first wave. The end of the script completes I, and II starts with score, ships, Harmony and power carried. After III comes the ENCORE at 140 BPM.
-    - The game-over panel: CONTINUE selected, a choice ignored at first, left and right (with wrap). CONTINUE restarts the movement at score 0 with fresh power and no HI. RETRY starts I and can set HI again. HI is saved at game over. TITLE.
-  - `pause-hi-test` 22/22:
-    - P pauses and P resumes; Enter resumes.
-    - Clicking II pauses and clicking RESUME resumes.
-    - Start on a (simulated) controller pauses and resumes, with the controller's hints.
-    - The page going to the background pauses, and the game stays paused when it comes back.
-    - Esc from pause goes to the title.
-    - The high score is saved and shown on the panel, the HUD and the title. A lower score doesn't replace it. Pause is refused after game over. Leaving from pause keeps a better score.
-  - `m1-test`, `m2-test` and `m3-test` still pass.
-  - Screenshots looked at: II and III in play and as bare landscapes, the banner, COMPLETE, the ENCORE, the game-over panel, the pause panel.
-  - **Milestone 5** (`entities/boss.ts`):
-    - The Halo (I): eight Sentries in a ring that snaps round a sixteenth of a turn per beat. The ones on your side fire on beat 3.
-    - The Great Eel (II): the core is the head of twelve armoured segments on a figure of eight. Every third segment throws a pair of notes up and down on beat 4; the head spits three at you.
-    - The Conductor (III): a Sentry, a Jelly, a Snapper and a Strider orbit the core, each with its own pattern.
-    - The Halo's and the Conductor's cores fire a ring of ten notes on beat 2 while open.
-    - The core's shut state is a riveted plate with a seam; open, a ring pulses round the eye. The HUD's boss bar (name, health, OPEN/SHUT) takes the hint strip's place.
-    - Killing the core takes the parts with it (for their points), sets off explosions for 1.6 s, then MOVEMENT COMPLETE.
-    - Dev hook `startBoss()`. `clearField()` no longer cancels the boss, since stopping the script is enough.
-    - `m4-test` now expects the boss at the end of the script, and kills it to see the movement complete.
-- **Verified (milestone 5):** `npx tsc` clean.
-  - `m5-test` 23/23, for each boss:
-    - It arrives via the hook, with its name and a full bar on the HUD.
-    - A hit on the shut core (beat 3 or 4) does nothing; on the open core (beat 1) it does 5.
-    - Every attack was warned at least half a beat ahead: 22, 99 and 42 attacks, the shortest 0.75, 0.70 and 0.63 beats.
-    - A pilot that leads the core and holds FIRE with starting power (SPIRAL 1, no Harmonics) kills it in 19.0, 32.9 and 33.2 s of game time.
-    - Its death completes the movement, then the next starts. After the Conductor comes the ENCORE, whose Halo has 100 hit points.
-  - Still passing: `m1-test` 27/27, `m2-test` 23/23, `m3-test` 31/31, `m4-test` 37/37 and `pause-hi-test` 22/22.
-  - Screenshots looked at: each boss arriving (banner, bar), mid-fight (warned Eel segments white, the Conductor's notes), the shut plate and the open ring.
-- **Next:** milestone 6: full music per movement locked to the audio clock, all sound effects, and the remaining feedback.
+- **Done:** Part A (concept sheet v0.3 and this plan, approved by the user). Live at https://leeeeeroyj.github.io/overtone/, every deploy green.
+  - **Milestone 1** `3b83749`: title, scrolling landscape, Equalizer frame and flight. Repo settings per C3 and C5 applied and verified.
+  - **Milestone 2** `1e3d5cd`: fire, charge on the beat, the Echo, Harmonics, Sentries, the hit ladder, effects and the HUD.
+  - **Milestone 3** `d2d0739`: all eight enemies, pickups, PRISM, SONAR, the CHORD and edge chevrons.
+  - **Milestone 4** `760348b`: three movements, scripts, ENCOREs, pause, game over and the high score.
+  - **Milestone 5** `2e58bd4`: the Halo, the Great Eel and the Conductor, with the open core, warnings and the boss bar.
+  - **Milestone 6:**
+    - `beat.ts` follows the audio clock and re-anchors on jumps; `StageScene` moves the world by the beat's advance in steps of at most 1/30 s.
+    - `synth.ts`: a shared limiter, attack, filter sweeps and vibrato on voices, filtered noise for drums and rumbles; times are absolute on the audio clock.
+    - `music.ts`: a tune per movement (I dark, II hypnotic, III triumphant), arranged by bar, with a boss arrangement, a bell as the core opens and a clank as it shuts.
+    - `sfx.ts`: every sound in key on the current chord. New: pickup, Echo launch, recall, loose and catch, the resonant bell, extra ship, CHORD, boss arrival, glancing shots, boss defeat, MOVEMENT COMPLETE, game over, pause and resume, menu step and select. Kills and pickups land on the next sixteenth.
+    - Losing a ship takes speed and grace notes too.
+    - Sparks and rings under the craft, the Echo and enemy notes; a beat halo on enemy notes; no hops under reduced motion.
+    - Controls keep key presses until the next frame; menus step on `nav`.
+- **Verified (milestone 6):** `npx tsc` clean.
+  - `m6-test` 25/25:
+    - The audio clock runs headless and the beat follows it. Over 121 s of Movement I, every beat event lands on the kick scheduled for it (243 of 259 beats had kicks, the rest are the break; worst error 0.00 ms, no re-anchors). While locked this is exact by construction, so the check is really that nothing drifts or re-anchors in two minutes.
+    - Each movement has its own key and mood, and its band plays.
+    - Each sound is wired to its event: kill, pickup, Echo out, back, catch and loose, hit, ship lost, pause and resume, boss arrival, glance, boss defeat, COMPLETE (and the band stops).
+    - A kill's chord lands exactly on a sixteenth, at most a sixteenth late.
+    - The core's bell sounds on every opening beat.
+    - Losing a ship resets speed, grace notes and level, and puts the Echo back.
+    - A busy 30 s in Movement III (spawns every 4 s, everything firing): the game's update p50 3.6 ms, p95 6.8 ms; the whole frame p50 7.5 ms, p95 13.8 ms on CPU rendering, about 11 fps headless.
+    - Layer order: sparks over enemies, under the craft, the Echo and the notes.
+    - Reduced motion (reloaded with `prefers-reduced-motion: reduce`): a hit and a kill don't shake or flash the screen, the glows keep one hue over 12 s, enemies don't hop.
+  - Mix levels, metered at the master over 8–10 s each in all three movements (intro, full band, boss): peaks 0.79 to 0.95, RMS 0.08 to 0.09, so no clipping and an even level.
+  - Still passing: `m1-test` 27/27, `m2-test` 23/23, `m3-test` 31/31, `m4-test` 37/37, `m5-test` 23/23 (kills in 17.3, 32.9 and 38.4 s; shortest warnings 0.77, 0.62 and 0.68 beats), `pause-hi-test` 22/22.
+  - Screenshots looked at: three mid-burst frames in Movement III with the screen full of notes (the craft, its speakers and every note stay on top), and reduced motion.
+- **Next:** milestone 7: touch and mobile. It needs the user's phone at the end.

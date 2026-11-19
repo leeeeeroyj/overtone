@@ -83,6 +83,11 @@ export class Boss {
     return this.openOn(this.stage.beat.beat);
   }
 
+  /** Whether the core is open on beat `b` (the band rings a bell as it opens). */
+  opensOn(b: number) {
+    return this.openOn(b);
+  }
+
   private openOn(b: number) {
     return b >= this.arrived + BOSS.enter && mod(b, 4) < BOSS.open && this.dying < 0;
   }
@@ -97,6 +102,7 @@ export class Boss {
   glance(e: Foe) {
     if (this.stage.beat.time - this.clink < 0.12) return;
     this.clink = this.stage.beat.time;
+    this.stage.sfx.glance();
     this.stage.fx.burst(e.x - e.r, e.y, 3, this.stage.land.hue + 180, 0.4);
   }
 

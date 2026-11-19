@@ -43,15 +43,16 @@ export class Echo {
       this.state = 'flying';
       this.vx = back ? -ECHO.launch : ECHO.launch;
       this.hoverX = back ? ECHO.hoverBack : ECHO.hoverFront;
-      this.stage.sfx.blip(660);
+      this.stage.sfx.echoOut();
     } else if (this.state === 'flying' || this.state === 'hover') {
       this.state = 'returning';
-      this.stage.sfx.blip(440);
+      this.stage.sfx.echoBack();
     }
   }
 
   knockLoose() {
     this.state = 'loose';
+    this.stage.sfx.echoLoose();
     this.vx = -ECHO.looseSpeed;
     this.x = this.stage.craft.x + 12;
   }
@@ -92,7 +93,7 @@ export class Echo {
     // Recalled, hovering or loose: it joins whichever end of the craft touches it.
     if (!this.attached && this.state !== 'flying' && Math.hypot(c.x - this.x, c.y - this.y) < ECHO.catch) {
       this.attach(this.x >= c.x ? 'front' : 'back');
-      this.stage.sfx.blip(880);
+      this.stage.sfx.echoCatch();
     }
     // It hurts anything it touches, unless it's loose.
     if (this.state !== 'loose') {

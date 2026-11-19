@@ -16,6 +16,8 @@ export interface ControlState {
   mute: boolean;
   /** P on the keyboard, Start on a controller (Start also confirms, for menus). */
   pause: boolean;
+  /** A menu step left (-1) or right (1): an arrow, A or D pressed, or the stick or D-pad pushed over. */
+  nav: number;
   device: Device;
 }
 
@@ -40,10 +42,19 @@ export class Controls {
   device: Device = window.matchMedia?.('(pointer: coarse)').matches ? 'touch' : 'kbm';
   private prevButtons = new Set<number>();
   private prevMiddle = false;
+  private prevPadX = 0;
   private readonly keys: Record<KeyName, Phaser.Input.Keyboard.Key>;
+  /**
+   * Keys pressed since the last read. Phaser forgets a press once the key is up again, so a tap shorter than a frame
+   * (easy on a slow device) would be lost; these are kept until the next frame reads them.
+   */
+  private presses = new Set<string>();
 
   constructor(private readonly scene: Phaser.Scene) {
     this.keys = scene.input.keyboard!.addKeys('LEFT,RIGHT,UP,DOWN,A,D,W,S,SPACE,Z,J,X,K,C,L,SHIFT,M,ENTER,ESC,P') as Controls['keys'];
+    scene.input.keyboard!.on('keydown', (e: KeyboardEvent) => {
+      if (!e.repeat) this.presses.add(e.code);
+    });
     scene.input.mouse?.disableContextMenu();
     scene.input.on('pointerdown', (p: Phaser.Input.Pointer) => (this.device = p.wasTouch ? 'touch' : 'kbm'));
   }
@@ -56,7 +67,9 @@ export class Controls {
 
   read(): ControlState {
     const k = this.keys;
-    const just = Phaser.Input.Keyboard.JustDown;
+    const pressed = this.presses;
+    this.presses = new Set();
+    const just = (...codes: string[]) => codes.some((c) => pressed.has(c));
     const pointer = this.scene.input.activePointer;
     // Phaser reports a touch as a held left button, so only a real mouse fires this way.
     const mouse = !pointer.wasTouch && pointer.isDown;
@@ -67,12 +80,13 @@ export class Controls {
     };
     let fire = k.SPACE.isDown || k.Z.isDown || k.J.isDown || (mouse && pointer.leftButtonDown());
     let charge = k.X.isDown || k.K.isDown || (mouse && pointer.rightButtonDown());
-    let echo = just(k.C) || just(k.L) || just(k.SHIFT) || (middle && !this.prevMiddle);
+    let echo = just('KeyC', 'KeyL', 'ShiftLeft', 'ShiftRight') || (middle && !this.prevMiddle);
     this.prevMiddle = middle;
-    let confirm = just(k.ENTER) || just(k.SPACE);
-    let back = just(k.ESC);
-    let mute = just(k.M);
-    let pause = just(k.P);
+    let confirm = just('Enter', 'NumpadEnter', 'Space');
+    let back = just('Escape');
+    let mute = just('KeyM');
+    let pause = just('KeyP');
+    let nav = (just('ArrowRight', 'KeyD') ? 1 : 0) - (just('ArrowLeft', 'KeyA') ? 1 : 0);
     if (move.x || move.y || fire || charge || echo || confirm || back || mute || pause) this.device = 'kbm';
 
     const pad = this.pad();
@@ -93,6 +107,9 @@ export class Controls {
         move.x = mx;
         move.y = my;
       }
+      const padX = Math.sign(Math.round(mx));
+      if (padX && padX !== this.prevPadX) nav ||= padX;
+      this.prevPadX = padX;
       fire ||= down.has(BTN.A);
       charge ||= padCharge;
       echo ||= edges.has(BTN.B) || edges.has(BTN.RB);
@@ -107,6 +124,6 @@ export class Controls {
       move.x /= len;
       move.y /= len;
     }
-    return { move, fire, charge, echo, confirm, back, mute, pause, device: this.device };
+    return { move, fire, charge, echo, confirm, back, mute, pause, nav, device: this.device };
   }
 }

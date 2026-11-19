@@ -245,9 +245,11 @@ export function drawBeams(g: Phaser.GameObjects.Graphics, stage: StageScene) {
 }
 
 /** Enemy notes are diamonds: a dark outline, a red edge that blinks white, and a white core, whatever the hue. */
-export function drawNotes(g: Phaser.GameObjects.Graphics, stage: StageScene, danger: number) {
+/** Enemy notes: an outlined diamond, blinking, with a halo that swells on each beat (`pulse`, 1 on the beat). */
+export function drawNotes(g: Phaser.GameObjects.Graphics, stage: StageScene, danger: number, pulse = 0) {
   const blink = Math.floor(stage.beat.time * 10) % 2 === 0;
   for (const n of stage.notes) {
+    if (pulse > 0.05) g.lineStyle(0.75, danger, 0.6 * pulse).strokeCircle(n.x, n.y, 4 + 2 * (1 - pulse));
     diamond(g, n.x, n.y, 3.2, 0x000000);
     diamond(g, n.x, n.y, 2.4, blink ? 0xffffff : danger);
     g.fillStyle(0xffffff).fillRect(n.x - 0.75, n.y - 0.75, 1.5, 1.5);
