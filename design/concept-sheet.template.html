@@ -1,0 +1,1351 @@
+<title>Overtone Concept Sheet</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Doto:wght@700;900&family=Monoton&family=Sora:wght@400;600&display=swap">
+<style>
+/* Layout: a concert programme for a cosmos that plays music. The live screen leads, then the landscape layer by layer,
+   then your craft, the ensemble, pickups and bosses, then how a movement plays. One deliberate dark look: a stage before
+   the lights. Type: Monoton (record grooves) for the name, Doto (a mixing desk's LED dots) for everything the game shows. */
+:root {
+  --void: #07040f;      /* page ground */
+  --panel: #120b24;     /* raised surfaces */
+  --line: #2a1d4d;      /* hairlines, empty cells */
+  --ink: #f1ebff;       /* primary text */
+  --dim: #a497cc;       /* secondary text */
+  --gold: #ffd84d;      /* accent: HUD, selection, points */
+  --beam: #5ff3ff;      /* your shots and the beat */
+  --magenta: #ff4fd8;   /* the stage's glow */
+  --font-title: "Monoton", "Doto", "Courier New", monospace;
+  --font-display: "Doto", "Courier New", monospace;
+  --font-body: "Sora", "Segoe UI", system-ui, sans-serif;
+  --step--1: 0.875rem; --step-0: 1rem; --step-1: 1.2rem; --step-2: 1.9rem; --step-3: clamp(2.6rem, 9vw, 5.5rem);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--void); color: var(--ink); font-family: var(--font-body); font-size: var(--step-0); line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 48px; margin: 0;
+}
+.wrap { max-width: 1264px; margin: 0 auto; display: grid; gap: 56px; }
+h1 { font-family: var(--font-title); font-weight: 400; font-size: var(--step-3); line-height: 1; color: var(--gold); margin: 0; letter-spacing: 0.02em; }
+h2, h3, .label, kbd, .chip, button.primary, .seg button { font-family: var(--font-display); font-weight: 900; }
+h2 { font-size: var(--step-2); line-height: 1.1; margin: 0; text-wrap: balance; }
+h3 { font-size: var(--step-1); letter-spacing: 0.02em; margin: 0; }
+p { margin: 0; }
+.label { font-size: 0.875rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
+.muted { color: var(--dim); }
+
+header.top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px 32px; padding-top: 40px; }
+header.top .pitch { max-width: 60ch; margin-top: 16px; color: var(--dim); font-size: var(--step-1); line-height: 1.45; }
+.actions { display: grid; gap: 8px; justify-items: end; }
+button.primary {
+  font-size: 1rem; letter-spacing: 0.06em; text-transform: uppercase;
+  background: var(--gold); color: var(--void); border: 0; padding: 12px 18px; cursor: pointer;
+  box-shadow: 4px 4px 0 var(--magenta);
+}
+button.primary:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--magenta); }
+button:focus-visible, canvas:focus-visible { outline: 2px solid var(--beam); outline-offset: 3px; }
+#copy-status { font-size: var(--step--1); color: var(--dim); min-height: 1.5em; }
+#picks-text { width: min(420px, 100%); height: 140px; background: var(--panel); color: var(--ink); border: 1px solid var(--line); font: 12px/1.4 monospace; }
+
+/* Screen */
+.screen-block { display: grid; gap: 16px; }
+.section-head { display: grid; gap: 6px; max-width: 72ch; }
+.bezel { background: #020105; border: 1px solid var(--line); padding: clamp(6px, 1.5vw, 16px); box-shadow: 0 0 0 4px var(--panel), 0 24px 60px -30px #000; }
+#screen { display: block; width: 100%; max-width: 100%; height: auto; aspect-ratio: 416 / 228; image-rendering: pixelated; touch-action: none; }
+.controls { display: grid; gap: 10px; }
+.keys { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; }
+.keys > .label { min-width: 104px; }
+.key { display: inline-flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+kbd { font-size: 0.875rem; min-width: 26px; padding: 3px 6px; text-align: center; background: var(--panel); border: 1px solid var(--line); border-bottom-width: 3px; color: var(--ink); }
+.pad-status { font-size: var(--step--1); color: var(--dim); }
+.pad-status[data-on="true"] { color: var(--beam); }
+.seg { display: inline-flex; border: 1px solid var(--line); }
+.seg button { font-size: 0.875rem; background: var(--panel); color: var(--dim); border: 0; padding: 6px 10px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--gold); color: var(--void); }
+.screen-notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 12px 24px; }
+.screen-notes div { display: grid; gap: 2px; min-width: 0; align-content: start; }
+
+/* Landscape layers */
+.layers { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 0 32px; counter-reset: layer; }
+.layers div { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; border-top: 1px solid var(--line); padding: 12px 0; align-content: start; min-width: 0; }
+.layers .depth { font-family: var(--font-display); font-weight: 900; color: var(--magenta); font-variant-numeric: tabular-nums; grid-row: span 2; min-width: 3.2em; }
+.layers strong { font-family: var(--font-display); font-weight: 900; color: var(--gold); }
+
+/* Slot panels */
+.section { display: grid; gap: 20px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 296px), 1fr)); gap: 16px; }
+.card { background: var(--panel); border: 1px solid var(--line); padding: 16px; display: grid; gap: 14px; align-content: start; min-width: 0; }
+.card-head { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: center; }
+.hero-sprite { width: 96px; height: 96px; image-rendering: pixelated; background: var(--void); border: 1px solid var(--line); }
+.hero-sprite.turn { transform: rotate(90deg); }
+.card-title { display: grid; gap: 4px; min-width: 0; justify-items: start; }
+.chip { font-size: 0.875rem; color: var(--void); background: var(--gold); padding: 1px 6px; font-variant-numeric: tabular-nums; }
+.chip.ghost { background: transparent; color: var(--gold); border: 1px solid var(--gold); }
+.card p { font-size: 0.95rem; }
+.cands { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.cand { padding: 0; aspect-ratio: 1; background: var(--void); border: 1px solid var(--line); cursor: pointer; display: grid; place-items: center; }
+.cand img { width: 75%; height: 75%; image-rendering: pixelated; }
+.cand:hover { border-color: var(--dim); }
+.cand[aria-pressed="true"] { border-color: var(--gold); box-shadow: inset 0 0 0 2px var(--gold); }
+.meta { font-size: 0.8125rem; color: var(--dim); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+
+/* Rules */
+.rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 16px 32px; }
+.rules div { display: grid; gap: 4px; border-top: 1px solid var(--line); padding-top: 12px; align-content: start; }
+.rules strong { font-family: var(--font-display); font-weight: 900; color: var(--gold); font-size: 1.1rem; font-variant-numeric: tabular-nums; }
+.lineage { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 16px; }
+.lineage div { background: var(--panel); border: 1px solid var(--line); padding: 16px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.lineage ul { margin: 0; padding-left: 1.1em; display: grid; gap: 4px; }
+footer { border-top: 1px solid var(--line); padding-top: 16px; font-size: var(--step--1); color: var(--dim); display: grid; gap: 6px; }
+footer a { color: var(--beam); }
+@media (prefers-reduced-motion: reduce) { button.primary:active { transform: none; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <p class="label">Concept sheet · v0.3</p>
+      <h1>OVERTONE</h1>
+      <p class="pitch">Fly through a cosmos that plays music. Every enemy keeps time, every shot is a note, and a living orb of sound rides on your nose. Hold the beam, wait for the beat, and let it ring.</p>
+    </div>
+    <div class="actions">
+      <button class="primary" id="copy-picks" type="button">Copy my picks</button>
+      <span id="copy-status" role="status"></span>
+      <textarea id="picks-text" hidden readonly aria-label="Your picks as JSON"></textarea>
+    </div>
+  </header>
+
+  <section class="screen-block" aria-labelledby="screen-h">
+    <div class="section-head">
+      <h2 id="screen-h">Movement I · Pulse</h2>
+      <p class="muted">Live mockup at the game's real resolution (416&times;228), drawn at 4&times; like the game. It plays a demo until you click the screen and take over. The music starts once you click (M or the speaker turns it off). Sprites you pick below swap in here.</p>
+    </div>
+    <div class="bezel"><canvas id="screen" width="1664" height="912" tabindex="0" aria-label="Game screen mockup. Click it, then fly with the arrow keys or W A S D, fire with Z or Space, charge with X, launch or recall the Echo with C."></canvas></div>
+    <div class="controls">
+      <div class="keys" aria-label="Keyboard and mouse">
+        <span class="label">Keyboard</span>
+        <span class="key"><kbd>&larr;</kbd><kbd>&uarr;</kbd><kbd>&darr;</kbd><kbd>&rarr;</kbd>&nbsp;or&nbsp;<kbd>WASD</kbd>&nbsp;fly</span>
+        <span class="key"><kbd>Z</kbd>&nbsp;/&nbsp;<kbd>Space</kbd>&nbsp;/&nbsp;<kbd>Click</kbd>&nbsp;fire (hold)</span>
+        <span class="key"><kbd>X</kbd>&nbsp;/&nbsp;<kbd>Right-click</kbd>&nbsp;charge (hold, release)</span>
+        <span class="key"><kbd>C</kbd>&nbsp;/&nbsp;<kbd>Shift</kbd>&nbsp;Echo</span>
+        <span class="key"><kbd>P</kbd>&nbsp;pause</span>
+        <span class="key"><kbd>M</kbd>&nbsp;sound</span>
+      </div>
+      <div class="keys" aria-label="Controller">
+        <span class="label">Controller</span>
+        <span class="key"><kbd>L stick</kbd>&nbsp;/&nbsp;<kbd>D-pad</kbd>&nbsp;fly</span>
+        <span class="key"><kbd>A</kbd>&nbsp;fire</span>
+        <span class="key"><kbd>X</kbd>&nbsp;/&nbsp;<kbd>RT</kbd>&nbsp;charge</span>
+        <span class="key"><kbd>B</kbd>&nbsp;/&nbsp;<kbd>RB</kbd>&nbsp;Echo</span>
+        <span class="key"><kbd>Start</kbd>&nbsp;pause</span>
+        <span class="key"><kbd>Y</kbd>&nbsp;sound</span>
+        <span class="pad-status" id="pad-status" role="status">No controller yet. Press any button on it.</span>
+      </div>
+      <div class="keys" aria-label="Touch">
+        <span class="label">Touch</span>
+        <span class="key">Left thumb: stick to fly. Fire is automatic.</span>
+        <span class="key">Right thumb: CHARGE (hold), ECHO (tap)</span>
+        <span class="seg" role="group" aria-label="Touch controls"><button type="button" id="touch-off" data-touch="off" aria-pressed="true">Hide</button><button type="button" id="touch-on" data-touch="on" aria-pressed="false">Show</button></span>
+      </div>
+      <div class="keys" aria-label="Preview">
+        <span class="label">Crystal</span>
+        <span class="seg" role="group" aria-label="Echo weapon"><button type="button" data-weapon="spiral" aria-pressed="true">Spiral</button><button type="button" data-weapon="prism" aria-pressed="false">Prism</button><button type="button" data-weapon="sonar" aria-pressed="false">Sonar</button></span>
+        <span class="label">Frame</span>
+        <span class="seg" role="group" aria-label="Frame style"><button type="button" data-frame="eq" aria-pressed="true">Equalizer</button><button type="button" data-frame="grid" aria-pressed="false">Neon grid</button><button type="button" data-frame="circuit" aria-pressed="false">Circuit</button></span>
+        <span class="label">Show</span>
+        <span class="seg" role="group" aria-label="What to draw"><button type="button" data-show="game" aria-pressed="true">Game</button><button type="button" data-show="land" aria-pressed="false">Landscape only</button></span>
+      </div>
+    </div>
+    <div class="screen-notes">
+      <div><span class="label">Top bar</span><span>Score and HI, the HARMONY multiplier, the beat lamp (four boxes, the current beat filled, the downbeat taller), the Echo's weapon and level, Harmonics, speed, ships, pause and sound.</span></div>
+      <div><span class="label">The beat</span><span>Everything moves and fires on the beat. Anything about to fire turns white for the half-beat before. Release a charge on the beat, when its ring goes solid, for a RESONANT beam.</span></div>
+      <div><span class="label">Readable first</span><span>The landscape is dim and cool; everything that can hurt you is bright, outlined and on top. Hue is only decoration: shots, pickups and warnings differ by shape.</span></div>
+      <div><span class="label">What's solid</span><span>Only the frame above and below. Try its three styles with <em>Frame</em>. In every style its edge is the brightest thing behind the action, and it's exactly where you collide.</span></div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="land-h">
+    <div class="section-head">
+      <h2 id="land-h">The landscape, far to near</h2>
+      <p class="muted">Movement I is drawn in code as pixel art, in seven layers that scroll at their own speeds. Every layer answers the music somewhere. Use <em>Landscape only</em> above to see it without the action. Movements II and III use the same layers with their own shapes and palettes.</p>
+    </div>
+    <div class="layers">
+      <div><span class="depth">0.00</span><strong>Sky</strong><span>A dithered dusk from indigo to a magenta horizon. A few stars twinkle on the beat.</span></div>
+      <div><span class="depth">0.02</span><strong>Speaker moon</strong><span>A huge speaker cone hanging in the sky. Its rings ripple outward on every kick.</span></div>
+      <div><span class="depth">0.12</span><strong>Spectrum range</strong><span>Far mountains built from the bars of a spectrum analyser. They bounce with the music, and each peak hangs for a moment before it falls.</span></div>
+      <div><span class="depth">0.30</span><strong>Instrument city</strong><span>Silhouettes of organ ranks, harps, tuning-fork towers, metronome pyramids, violin-scroll spires and speaker stacks. Their lights play in turn through each bar.</span></div>
+      <div><span class="depth">0.50</span><strong>The score</strong><span>A five-line stave drifts across the sky. The note heads on it light up as the music reaches them.</span></div>
+      <div><span class="depth">0.70</span><strong>Motes</strong><span>Sparks of sound rising slowly, brighter on each beat.</span></div>
+      <div><span class="depth">1.00</span><strong>The frame</strong><span>The only solid ground, above and below, in one of three styles: an <em>Equalizer</em> of LED cells that jump with the music, a <em>Neon grid</em> whose lines flow in from the edge on every beat, or a <em>Circuit</em> with light racing along its traces. In all three a pulse of light runs along both edges each beat.</span></div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="ship-h">
+    <div class="section-head">
+      <h2 id="ship-h">Your craft &amp; its Echo</h2>
+      <p class="muted">Pick a craft drawn from above with the nose up. The game turns it to fly right (the large picture shows it that way) and squashes it a quarter as it banks into a climb or dive, so every pixel stays square.</p>
+    </div>
+    <div class="grid" id="ship-grid"></div>
+  </section>
+
+  <section class="section" aria-labelledby="enemy-h">
+    <div class="section-head">
+      <h2 id="enemy-h">The ensemble</h2>
+      <p class="muted">Eight roles from a neon cosmos: creatures and machines, not instruments, but every one of them keeps time. Each one either warns you before it fires (a white flash for half a beat) or shows a chevron at the edge a beat before it arrives.</p>
+    </div>
+    <div class="grid" id="enemy-grid"></div>
+  </section>
+
+  <section class="section" aria-labelledby="kit-h">
+    <div class="section-head">
+      <h2 id="kit-h">Pickups &amp; bosses</h2>
+      <p class="muted">Couriers drop pickups. Each pickup carries a glyph drawn over it, so you can tell them apart without colour.</p>
+    </div>
+    <div class="grid" id="kit-grid"></div>
+  </section>
+
+  <section class="section" aria-labelledby="rules-h">
+    <div class="section-head"><h2 id="rules-h">How a movement plays</h2></div>
+    <div class="rules">
+      <div><strong>Three movements</strong><span>I Pulse (128 BPM, a dusk over the instrument city), II Strings (140 BPM, a cave strung with vibrating strings), III Crescendo (152 BPM, everything at once). A new wave arrives every bar. About 2½ minutes each, then a boss. After III the ensemble plays again, faster.</span></div>
+      <div><strong>Everything keeps time</strong><span>Enemies move and fire on the beat, and anything about to fire turns white for the half-beat before. The beat lamp shows where you are in the bar.</span></div>
+      <div><strong>Fire, or charge</strong><span>Hold FIRE for a steady stream. Hold CHARGE instead (you stop shooting while you do) and a ring round your craft fills one segment per beat, up to three. Release for a beam that pierces everything.</span></div>
+      <div><strong>Resonate</strong><span>Release with two or more segments exactly on the beat (the ring goes solid white) for a RESONANT beam: half as wide again, double points, and every kill adds 1 to HARMONY.</span></div>
+      <div><strong>Harmony &times;1&ndash;&times;8</strong><span>Multiplies every point. Resonant kills and CHORD bonuses (a whole formation) raise it. It drops back to &times;1 when you're hit.</span></div>
+      <div><strong>The Echo</strong><span>Can't be destroyed. Touch it to attach it to your nose or tail. Attached, it blocks shots and fires the crystal's weapon (backwards from the tail). Launched, it hovers ahead and repeats your shots. Recall brings it home.</span></div>
+      <div><strong>Hits cost power</strong><span>A hit takes a Harmonic first, then a weapon level, then knocks the Echo loose (it drifts until you touch it). Hit with nothing left and you lose a ship, respawn on the spot, and blink for 2&nbsp;s. The frame is a hit too, and bounces you off.</span></div>
+      <div><strong>3 ships</strong><span>+1 every 50,000. At game over you can continue from the start of the movement with your score reset, or start again from Movement I. HI keeps your best full run.</span></div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="lineage-h">
+    <div class="section-head">
+      <h2 id="lineage-h">From the 1987 original</h2>
+      <p class="muted">Overtone borrows the mechanics of Irem's <em>R-Type</em>. The name, setting, characters, levels and art are new.</p>
+    </div>
+    <div class="lineage">
+      <div><span class="label">Kept</span><ul>
+        <li>A side-scroller with terrain to thread</li>
+        <li>Hold to charge a beam that pierces</li>
+        <li>An indestructible pod for nose or tail that blocks shots, launches and comes back</li>
+        <li>Bits above and below, speed-ups and homing missiles</li>
+        <li>Three weapons from crystals, levelled by repeats</li>
+        <li>Carriers that drop power-ups, a boss per stage</li>
+      </ul></div>
+      <div><span class="label">Changed</span><ul>
+        <li>A neon cosmos that keeps time instead of a biomechanical empire</li>
+        <li>Separate fire and charge buttons: no mashing</li>
+        <li>Hits cost power, not lives; terrain bounces you off</li>
+        <li>Respawn on the spot, no checkpoint restarts</li>
+        <li>Crystals cycle their weapon so you choose</li>
+      </ul></div>
+      <div><span class="label">Added</span><ul>
+        <li>Everything on the beat, with a half-beat warning</li>
+        <li>Resonant releases and the Harmony multiplier</li>
+        <li>Shots pitched by height: fly higher, play higher</li>
+        <li>A landscape that plays along: the frame, the moon, the skyline</li>
+        <li>Controller and touch from day one</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Sprites: <a href="https://huggingface.co/spaces/cfahlgren1/pixel-search" target="_blank" rel="noopener">Pixel Search</a> catalog of <a href="https://huggingface.co/datasets/Angais/pixel-art-atlas-1.4m" target="_blank" rel="noopener">Angais/pixel-art-atlas-1.4m</a>, CC0, AI-generated. Numbers under each sprite are its catalog id.</span>
+    <span>Fonts: Monoton, Doto and Sora (SIL OFL). Inspired by R-Type (Irem, 1987); not affiliated with or endorsed by its rights holders.</span>
+  </footer>
+</div>
+
+<script>
+const SPRITES = /*SPRITES*/{};
+
+const SHIP = [
+  { slot: "player", name: "The Overtone", turn: true, text: "Your craft. It flies nose-right and squashes as it banks. Pick the one that reads best at 1×, the size it plays at." },
+  { slot: "echo", name: "Echo", pts: "can't be hit", ghost: true, text: "A living orb of sound, drawn at half size (8 px). On your nose or tail it blocks shots, hurts what it touches and fires the crystal's weapon. Launched, it hovers ahead and repeats your shots." },
+  { slot: "harmonic", name: "Harmonic", anim: true, text: "A speaker that rides above or below your craft (up to two). Drawn at half size (8 px). It blocks shots and, while you fire, plays a stream of music notes on every half-beat, kicking with each one. A hit costs one." },
+];
+const ENEMIES = [
+  { slot: "chirp", name: "Flutter", pts: "100", text: "Glowing moths that fly in fives, swaying in time and flapping as they go. Destroy all five for a CHORD: 1,000 and +1 Harmony." },
+  { slot: "jelly", name: "Jelly", pts: "150", text: "Drifts and lurches up on every beat. Every fourth beat it fires a ring of six notes." },
+  { slot: "drummer", name: "Sentry", pts: "200", text: "A turret standing on the floor or hanging from the ceiling. Fires an aimed note every second beat." },
+  { slot: "metronome", name: "Strider", pts: "150", text: "A small mech that walks the floor and hops every other beat. On the last beat of each bar it fires two notes up and forward." },
+  { slot: "cymbal", name: "Saw", pts: "120", text: "Spinning blades thrown in pairs, on arcs toward you. A chevron at the edge shows where, a beat early. Takes two hits." },
+  { slot: "horn", name: "Snapper", pts: "400", text: "A plant rooted to the floor or the ceiling. Every four beats it spits a fan of five notes. Takes eight hits." },
+  { slot: "eel", name: "Eel", pts: "50 · 500", text: "The head of a serpent with seven glowing segments that weaves across the screen. 50 a segment, 500 for the head." },
+  { slot: "carrier", name: "Courier", pts: "300", text: "A slow saucer that never shoots. Destroy it for a pickup." },
+];
+const KIT = [
+  { slot: "crystal", name: "Crystal", text: "Sets the Echo's weapon. It cycles SPIRAL (a double helix), PRISM (a triangle) and SONAR (an arc) every 1.5 s, so grab it when it shows the one you want. The same one again levels it up, to 3." },
+  { slot: "speed", name: "Star", text: "+1 speed, up to 3. Glyph: a double chevron." },
+  { slot: "fork", name: "Tuning fork", text: "Grace notes: two small homing notes every second while you fire. Glyph: a fork." },
+  { slot: "core", name: "Boss core", text: "The eye at the heart of each movement's boss: the Halo, a ring of Sentries (I), a great Eel through the strings (II), the Conductor (III). It opens on the first beat of every bar and can only be hurt while open." },
+];
+
+// Picks: first candidate by default (the build puts the chosen sprite first). Remembered per viewer when storage allows.
+const picks = {};
+for (const slot in SPRITES) picks[slot] = SPRITES[slot][0]?.id;
+try {
+  const saved = JSON.parse(localStorage.getItem("overtone-picks") || "{}");
+  for (const slot in saved) if (SPRITES[slot]?.some((s) => s.id === saved[slot])) picks[slot] = saved[slot];
+} catch (e) {}
+function save() { try { localStorage.setItem("overtone-picks", JSON.stringify(picks)); } catch (e) {} }
+
+const images = {}, whites = {};
+for (const slot in SPRITES) for (const s of SPRITES[slot]) {
+  const img = new Image();
+  img.onload = () => {
+    const c = document.createElement("canvas"); c.width = img.width; c.height = img.height;
+    const g = c.getContext("2d"); g.drawImage(img, 0, 0); g.globalCompositeOperation = "source-in"; g.fillStyle = "#ffffff"; g.fillRect(0, 0, c.width, c.height);
+    whites[s.id] = c;
+  };
+  img.src = s.src; images[s.id] = img;
+}
+const entry = (slot) => SPRITES[slot]?.find((s) => s.id === picks[slot]);
+
+function candidates(slot) {
+  const box = document.createElement("div");
+  box.className = "cands";
+  for (const s of SPRITES[slot] || []) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "cand"; b.dataset.slot = slot; b.dataset.id = s.id;
+    b.title = `${s.subject} · #${s.id}`;
+    b.setAttribute("aria-label", `${s.subject}, catalog ${s.id}`);
+    const img = document.createElement("img"); img.src = s.src; img.alt = "";
+    b.append(img); box.append(b);
+  }
+  return box;
+}
+function card({ slot, name, pts, ghost, text, turn, anim }) {
+  const c = document.createElement("article");
+  c.className = "card"; c.dataset.slot = slot;
+  const head = document.createElement("div"); head.className = "card-head";
+  let hero;
+  if (anim) { hero = document.createElement("canvas"); hero.width = hero.height = 96; hero.className = "hero-sprite"; hero.dataset.anim = slot; hero.setAttribute("role", "img"); hero.setAttribute("aria-label", `${name} firing music notes`); }
+  else { hero = document.createElement("img"); hero.className = turn ? "hero-sprite turn" : "hero-sprite"; hero.alt = name; hero.dataset.hero = slot; }
+  const title = document.createElement("div"); title.className = "card-title";
+  const h = document.createElement("h3"); h.textContent = name; title.append(h);
+  if (pts) { const chip = document.createElement("span"); chip.className = ghost ? "chip ghost" : "chip"; chip.textContent = ghost ? pts : `${pts} pts`; title.append(chip); }
+  const meta = document.createElement("span"); meta.className = "meta"; meta.dataset.meta = slot; title.append(meta);
+  head.append(hero, title); c.append(head);
+  if (text) { const p = document.createElement("p"); p.textContent = text; c.append(p); }
+  c.append(candidates(slot));
+  return c;
+}
+for (const s of SHIP) document.getElementById("ship-grid").append(card(s));
+for (const e of ENEMIES) document.getElementById("enemy-grid").append(card(e));
+for (const k of KIT) document.getElementById("kit-grid").append(card(k));
+
+function refreshCards() {
+  document.querySelectorAll("[data-hero]").forEach((img) => { const e = entry(img.dataset.hero); if (e) img.src = e.src; });
+  document.querySelectorAll("[data-meta]").forEach((m) => { const s = entry(m.dataset.meta); if (s) m.textContent = `${s.subject} · #${s.id}`; });
+  document.querySelectorAll(".cand").forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.id) === picks[b.dataset.slot])));
+}
+refreshCards();
+document.addEventListener("click", (ev) => {
+  const b = ev.target.closest(".cand");
+  if (!b) return;
+  picks[b.dataset.slot] = Number(b.dataset.id);
+  save(); refreshCards();
+});
+document.getElementById("copy-picks").addEventListener("click", () => {
+  const json = JSON.stringify({ ...picks, frame: frameStyle }, null, 2);
+  const status = document.getElementById("copy-status");
+  const area = document.getElementById("picks-text");
+  const fallback = () => { area.value = json; area.hidden = false; area.focus(); area.select(); status.textContent = "Copy the selected text below."; };
+  try {
+    navigator.clipboard.writeText(json).then(() => { area.hidden = true; status.textContent = "Copied. Paste it back to Claude."; }, fallback);
+  } catch (e) { fallback(); }
+});
+
+// ---- Screen mockup ----
+const cv = document.getElementById("screen");
+const ctx = cv.getContext("2d");
+const S = 4, W = 416, H = 228, TOP = 16;
+const C = { void: "#07040f", ink: "#f1ebff", dim: "#a497cc", gold: "#ffd84d", beam: "#5ff3ff", danger: "#ff5c8a", line: "#2a1d4d", panel: "#120b24", magenta: "#ff4fd8" };
+const POINTS = { chirp: 100, jelly: 150, drummer: 200, metronome: 150, cymbal: 120, horn: 400, eel: 50, eelhead: 500, carrier: 300 };
+const HP = { chirp: 1, jelly: 3, drummer: 3, metronome: 2, cymbal: 2, horn: 8, eel: 2, eelhead: 6, carrier: 4 };
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const BPM = 128, SPB = 60 / BPM, SCROLL = 44, WINDOW = 0.09;
+const rand = Math.random;
+const mod = (a, n) => ((a % n) + n) % n;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const TAU = Math.PI * 2;
+function mulberry32(a) { return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+const hash = (n) => { let t = Math.imul(n ^ 0x9e3779b9, 0x85ebca6b); t ^= t >>> 13; t = Math.imul(t, 0xc2b2ae35); t ^= t >>> 16; return (t >>> 0) / 4294967296; };
+
+// ---- Landscape: the frame (the only solid ground) ----
+// One smooth shape above and below, from a few sines (original, not R-Type's). The Equalizer style steps it into
+// 6 px columns of 3 px cells. In every style the drawn edge is the collision edge.
+const COL = 6, CELL = 3;
+let frameStyle = "eq";
+try { const f = localStorage.getItem("overtone-frame"); if (["eq", "grid", "circuit"].includes(f)) frameStyle = f; } catch (e) {}
+const ceilSmooth = (wx) => 11 + 6 * (1 + Math.sin(wx * 0.012)) + 24 * Math.max(0, Math.sin(wx * 0.0041 + 0.6)) ** 3;
+const floorSmooth = (wx) => 27 + 6 * (1 + Math.sin(wx * 0.01 + 2)) + 24 * Math.max(0, Math.sin(wx * 0.0037 + 2.4)) ** 3;
+const cells = (v) => Math.max(1, Math.round(v / CELL)) * CELL;
+function ceilY(wx) { return TOP + (frameStyle === "eq" ? cells(ceilSmooth(Math.floor(wx / COL) * COL + 3)) : Math.round(ceilSmooth(wx))); }
+function floorY(wx) { return H - (frameStyle === "eq" ? cells(floorSmooth(Math.floor(wx / COL) * COL + 3)) : Math.round(floorSmooth(wx))); }
+
+// ---- Landscape: baked pixel layers (1 px = 1 game px) ----
+const RGB = new Map();
+const rgbOf = (hex) => { let v = RGB.get(hex); if (!v) { v = [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)]; RGB.set(hex, v); } return v; };
+function pixLayer(w, h, paint) {
+  const c = document.createElement("canvas"); c.width = w; c.height = h;
+  const g = c.getContext("2d"), img = g.createImageData(w, h);
+  const set = (x, y, hex, a = 255) => { x = Math.round(x); y = Math.round(y); if (x < 0 || y < 0 || x >= w || y >= h) return; const [r, gg, b] = rgbOf(hex), o = (y * w + x) * 4; img.data[o] = r; img.data[o + 1] = gg; img.data[o + 2] = b; img.data[o + 3] = a; };
+  const rect = (x, y, rw, rh, hex) => { for (let yy = 0; yy < rh; yy++) for (let xx = 0; xx < rw; xx++) set(x + xx, y + yy, hex); };
+  const disc = (cx, cy, r, hex) => { for (let dy = -r; dy <= r; dy++) { const half = Math.round(Math.sqrt(r * r - dy * dy)); rect(cx - half, cy + dy, half * 2 + 1, 1, hex); } };
+  paint({ set, rect, disc, w, h });
+  g.putImageData(img, 0, 0);
+  return c;
+}
+const BAYER = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]];
+const PAL = {
+  sky: ["#0a0420", "#110630", "#1a0a3e", "#25104c", "#341559", "#4a1a66", "#62206e", "#7e2a74"],
+  spec: ["#1d2559", "#243069", "#2c3d7c", "#354d90", "#3f60a4", "#4b74b8"], peak: "#8fdcff",
+  city: "#150a2b", cityRim: "#2c1a58", cityDetail: "#1f1140", string: "#3a2670",
+  mass: "#0a0518", eqDim: ["#4a2478", "#3a1d64", "#2d1752", "#231243", "#1b0f37"], grid: "#ff4fd8",
+  circ: { plate: "#0e0822", seam: "#1b1238", trace: "#2b1f58", pad: "#45327f" },
+};
+const SKY = pixLayer(W, H, ({ set }) => {
+  const bands = PAL.sky.length - 1, HZ = 184;
+  for (let y = TOP; y < H; y++) {
+    const v = clamp((y - TOP) / (HZ - TOP), 0, 1) * bands, i = Math.floor(v), f = v - i;
+    for (let x = 0; x < W; x++) set(x, y, f * 16 > BAYER[y & 3][x & 3] ? PAL.sky[Math.min(i + 1, bands)] : PAL.sky[i]);
+  }
+  const r = mulberry32(7);
+  for (let i = 0; i < 110; i++) { const y = TOP + r() * 120, b = r(); set(r() * W, y, b > 0.9 ? "#ffffff" : b > 0.6 ? "#b9a8ff" : "#5a4a9a"); }
+});
+const TWINKLE = Array.from({ length: 18 }, (_, i) => ({ x: Math.floor(hash(i * 3 + 1) * W), y: TOP + 4 + Math.floor(hash(i * 3 + 2) * 110), k: i }));
+
+// The instrument city, 1024 px wide and tiling. Lights are recorded so they can play in turn.
+const CITY_W = 1024, CITY_H = 124, cityLights = [];
+const CITY = pixLayer(CITY_W, CITY_H, ({ set, rect, disc, h }) => {
+  const r = mulberry32(21), body = PAL.city, rim = PAL.cityRim;
+  const light = (x, y, kind) => cityLights.push({ x, y, kind, k: cityLights.length });
+  const organ = (x) => {
+    const n = 5 + Math.floor(r() * 5), top = 46 + r() * 50, vee = r() < 0.5;
+    for (let i = 0; i < n; i++) {
+      const t = vee ? 1 - Math.abs(i - (n - 1) / 2) / ((n - 1) / 2 || 1) : i / (n - 1), ph = Math.round(top * (0.5 + 0.5 * t)), px = x + i * 5;
+      rect(px, h - ph, 4, ph, body); rect(px, h - ph, 1, ph, rim); rect(px + 1, h - ph - 1, 2, 1, rim);
+      rect(px + 1, h - 15, 2, 2, "#07030f"); light(px + 1, h - 16, "pipe");
+    }
+    return n * 5;
+  };
+  const harp = (x) => {
+    const wd = 26, hh = 68 + Math.round(r() * 22), top = h - hh;
+    rect(x, top, 3, hh, body); rect(x, top, 1, hh, rim);
+    const neck = (sx) => top + Math.round(7 * Math.sin(((sx - x) / wd) * Math.PI));
+    for (let sx = x; sx <= x + wd; sx++) { const ny = neck(sx); rect(sx, ny, 1, 3, body); set(sx, ny, rim); }
+    const sb = (sx) => Math.round(h - 3 - ((sx - x - 3) / (wd - 3)) * (hh - 12));
+    for (let sx = x + 3; sx <= x + wd; sx++) rect(sx, sb(sx), 1, 3, body);
+    for (let sx = x + 5; sx < x + wd - 1; sx += 3) for (let y = neck(sx) + 3; y < sb(sx); y++) set(sx, y, PAL.string);
+    light(x + 1, top - 1, "tip");
+    return wd + 2;
+  };
+  const fork = (x) => {
+    const tall = 70 + Math.round(r() * 20);
+    rect(x + 2, h - 4, 9, 4, body); rect(x + 5, h - 40, 3, 36, body); rect(x + 5, h - 40, 1, 36, rim);
+    rect(x, h - 46, 13, 6, body); rect(x, h - tall, 3, tall - 40, body); rect(x + 10, h - tall, 3, tall - 40, body);
+    rect(x, h - tall, 1, tall - 40, rim); rect(x + 10, h - tall, 1, tall - 40, rim);
+    light(x + 1, h - tall - 1, "tip"); light(x + 11, h - tall - 1, "tip");
+    return 14;
+  };
+  const metronome = (x) => {
+    const hh = 48 + Math.round(r() * 14), cx = x + 11;
+    for (let row = 0; row < hh; row++) { const half = Math.round(3 + 8 * (row / hh)); rect(cx - half, h - hh + row, half * 2, 1, body); set(cx - half, h - hh + row, rim); }
+    rect(cx - 2, h - hh + 10, 4, hh - 16, PAL.cityDetail);
+    for (let i = 0; i < hh - 18; i++) set(cx + Math.round(i * 0.12) - 1, h - 8 - i, PAL.string);
+    light(cx - 1, h - hh - 1, "tip");
+    return 24;
+  };
+  const speakers = (x) => {
+    const wd = 14 + Math.round(r() * 6), hh = 26 + Math.round(r() * 18);
+    rect(x, h - hh, wd, hh, body); rect(x, h - hh, 1, hh, rim);
+    const cx = x + Math.floor(wd / 2);
+    for (const cy of [h - hh + 8, h - 9]) { disc(cx, cy, 5, "#0c0618"); disc(cx, cy, 4, PAL.cityDetail); disc(cx, cy, 2, rim); set(cx, cy, "#4a3484"); }
+    light(cx, h - hh + 8, "cone");
+    return wd;
+  };
+  const spire = (x) => {
+    const hh = 60 + Math.round(r() * 30);
+    rect(x + 3, h - hh, 2, hh, body); set(x + 3, h - hh + 4, rim);
+    for (let a = 0; a < TAU * 1.6; a += 0.12) { const rr = 4 - a * 0.7; set(x + 4 + Math.cos(a) * rr * 1.2, h - hh - 4 + Math.sin(a) * rr, rim); }
+    light(x + 4, h - hh - 4, "tip");
+    return 9;
+  };
+  const kinds = [organ, harp, fork, metronome, speakers, spire, organ, speakers];
+  let x = 6;
+  while (x < CITY_W - 40) { x += kinds[Math.floor(r() * kinds.length)](x) + 3 + Math.floor(r() * 14); }
+  rect(0, h - 3, CITY_W, 3, body);
+});
+
+// Circuit texture for the Circuit frame: 256 px, tiling, hung from the edge. Its traces are kept so light can run along them.
+const CIRC_W = 256, CIRC_H = 96, traces = [];
+const CIRC = pixLayer(CIRC_W, CIRC_H, ({ set, rect }) => {
+  const P = PAL.circ;
+  rect(0, 0, CIRC_W, CIRC_H, P.plate);
+  for (let x = 0; x < CIRC_W; x += 32) { rect(x, 0, 1, CIRC_H, P.seam); for (let y = 6; y < CIRC_H; y += 18) { set(x + 3, y, P.seam); set(x + 28, y, P.seam); } }
+  const r = mulberry32(44);
+  for (let i = 0; i < 10; i++) { const x = Math.floor(r() * (CIRC_W - 14)), y = 12 + Math.floor(r() * 50); rect(x, y, 12, 7, "#150c2e"); rect(x, y, 12, 1, P.pad); for (let q = 1; q < 12; q += 2) { set(x + q, y - 1, P.trace); set(x + q, y + 7, P.trace); } }
+  for (let i = 0; i < 26; i++) {
+    const y = 3 + Math.floor(r() * 60), x0 = Math.floor(r() * CIRC_W), len = 14 + Math.floor(r() * 60);
+    for (let x = x0; x < x0 + len; x++) set(mod(x, CIRC_W), y, P.trace);
+    const drop = 3 + Math.floor(r() * 10);
+    for (let y2 = y; y2 < Math.min(CIRC_H - 2, y + drop); y2++) set(mod(x0 + len, CIRC_W), y2, P.trace);
+    rect(mod(x0 - 1, CIRC_W), y - 1, 3, 3, P.pad); set(mod(x0, CIRC_W), y, "#8f7ad8");
+    traces.push({ x0, len, y, k: i });
+  }
+});
+const CIRC_UP = (() => { const c = document.createElement("canvas"); c.width = CIRC_W; c.height = CIRC_H; const g = c.getContext("2d"); g.translate(0, CIRC_H); g.scale(1, -1); g.drawImage(CIRC, 0, 0); return c; })();
+const MOTES = Array.from({ length: 34 }, (_, i) => ({ x: hash(i * 7 + 3) * W, y: TOP + hash(i * 7 + 4) * (H - TOP), z: hash(i * 7 + 5) }));
+const peaks = new Map();
+
+// ---- World state ----
+let clock = 0, scrollX = 0, beatNo = -1, beatFrac = 0, beatEnv = 0, hue = 285, paused = false, frameDt = 0, landOnly = false;
+const player = { x: 90, y: 112, vx: 0, vy: 0, bank: 1, invuln: 0, speed: 1, weapon: "spiral", level: 2, harm: 1, fork: true, charge: 0, charging: false, cool: 0, wcool: 0, hcool: 0, gcool: 0 };
+const echo = { state: "front", x: 104, y: 112, vx: 0, hoverX: 300, cool: 0 };
+let score = 0, hi = 48200, mult = 1, lives = 3, muted = false;
+let foes = [], shots = [], bullets = [], beams = [], pickups = [], sparks = [], rings = [], popups = [], warns = [];
+let harmPunch = 0, shake = 0, shakeMax = 0.001, flash = 0, nextPattern = 0, groupNo = 0, dropNo = 0;
+const PATTERNS = ["chirp", "drummer", "jelly", "carrier", "cymbal", "metronome", "chirp", "horn", "eel", "carrier"];
+
+function addFoe(kind, x, y, extra = {}) {
+  const e = { kind, x, y, y0: y, hp: HP[kind], t: 0, spin: 0, flash: 0, vx: 0, vy: 0, every: 0, phase: 0, r: 6, ...extra };
+  foes.push(e); return e;
+}
+function spawnPattern(kind) {
+  const R = W + 14;
+  if (kind === "chirp") { const g = ++groupNo, y0 = 76 + rand() * 80; for (let i = 0; i < 5; i++) addFoe("chirp", R + i * 16, y0, { group: g, i }); }
+  else if (kind === "drummer") { addFoe("drummer", R, 0, { ground: 1, every: 2, phase: 0 }); addFoe("drummer", R + 40, 0, { ground: -1, every: 2, phase: 1 }); }
+  else if (kind === "jelly") { addFoe("jelly", R, 90, { every: 4, phase: 0 }); addFoe("jelly", R + 30, 150, { every: 4, phase: 2 }); }
+  else if (kind === "carrier") addFoe("carrier", R, 100 + rand() * 50);
+  else if (kind === "cymbal") for (const y of [86, 170]) warns.push({ y, t: SPB });
+  else if (kind === "metronome") { addFoe("metronome", R, 0, { ground: 1, every: 4, phase: 3 }); addFoe("metronome", R + 28, 0, { ground: 1, every: 4, phase: 3 }); }
+  else if (kind === "horn") addFoe("horn", R + 6, 0, { ground: rand() < 0.5 ? 1 : -1, every: 4, phase: 1, r: 7 });
+  else if (kind === "eel") { const head = addFoe("eelhead", R, 125, { trail: [], r: 7 }); for (let i = 1; i <= 7; i++) addFoe("eel", R + i * 9, 125, { head, i, r: 5 }); }
+}
+spawnPattern("chirp"); spawnPattern("drummer");
+foes.forEach((e) => { e.x -= 120; });
+
+// ---- Effects: sparks with depth and tilted rings, coloured round the colour wheel ----
+function burst(x, y, n, h = hue, speed = 1) {
+  const k = reduceMotion ? Math.ceil(n / 3) : n;
+  for (let i = 0; i < k; i++) {
+    const a = rand() * TAU, b = Math.acos(2 * rand() - 1), v = (40 + rand() * 90) * speed;
+    sparks.push({ x, y, z: 0, vx: Math.sin(b) * Math.cos(a) * v, vy: Math.sin(b) * Math.sin(a) * v, vz: Math.cos(b) * v, life: 0.4 + rand() * 0.4, max: 0.8, h: h + rand() * 120 });
+  }
+}
+function ring(x, y, r, dr, life, h = hue, w = 1) { rings.push({ x, y, r, dr, life, max: life, h, w, tilt: reduceMotion ? 0 : rand() * 1.2, rot: rand() * TAU }); }
+function shakeIt(mag, t) { if (reduceMotion) return; if (mag * t > shake * shakeMax) { shakeMax = mag; shake = t; } }
+function popup(x, y, text, color = C.gold) { popups.push({ x, y, text, life: 1, color }); }
+function addScore(n) { const before = Math.floor(score / 50000); score += n; if (Math.floor(score / 50000) > before) { lives++; popup(player.x, player.y - 16, "+SHIP", C.beam); } }
+
+function damage(e, d, resonant = false) {
+  if (e.dead) return;
+  e.hp -= d; e.flash = 0.08;
+  if (e.hp <= 0) kill(e, resonant);
+}
+function kill(e, resonant) {
+  e.dead = true;
+  if (resonant) { mult = Math.min(8, mult + 1); popup(e.x, e.y - 18, "RESONANT", C.beam); }
+  const pts = POINTS[e.kind] * mult; addScore(pts); popup(e.x, e.y - 10, String(pts));
+  const big = e.kind === "horn" || e.kind === "eelhead" || e.kind === "carrier";
+  burst(e.x, e.y, big ? 40 : 18, hue + e.kind.length * 40, big ? 1.4 : 1);
+  ring(e.x, e.y, 2, 120, 0.4, hue + 180, 1.5); if (big || resonant) ring(e.x, e.y, 2, 70, 0.6, hue + 60, 1);
+  shakeIt(big ? 2.5 : 1, big ? 0.3 : 0.12);
+  sfxKill(e.y);
+  if (e.kind === "carrier") { const kinds = ["crystal", "harmonic", "speed", "fork"]; pickups.push({ kind: kinds[dropNo++ % 4], x: e.x, y: e.y, t: 0 }); }
+  if (e.group && !foes.some((f) => f.group === e.group && !f.dead)) {
+    const bonus = 1000 * mult; mult = Math.min(8, mult + 1); addScore(bonus);
+    popup(e.x, e.y - 26, `CHORD ${bonus}`, C.magenta); ring(e.x, e.y, 4, 200, 0.6, hue + 90, 2);
+  }
+  if (e.kind === "eelhead") for (const f of foes) if (f.head === e && !f.dead) kill(f, false);
+}
+
+function hitPlayer() {
+  if (player.invuln > 0) return;
+  mult = 1; flash = reduceMotion ? 0 : 0.1; shakeIt(3, 0.35);
+  burst(player.x, player.y, 26, hue + 200); ring(player.x, player.y, 2, 150, 0.45, hue, 2);
+  let msg;
+  if (player.harm > 0) { player.harm--; msg = "-HARMONIC"; }
+  else if (echo.state !== "loose" && player.level > 1) { player.level--; msg = "-LEVEL"; }
+  else if (echo.state !== "loose") { echo.state = "loose"; echo.vx = -24; echo.x = player.x + 12; player.level = 1; msg = "ECHO LOOSE"; }
+  else {
+    lives = lives > 1 ? lives - 1 : 3; msg = "SHIP LOST";
+    burst(player.x, player.y, 50, hue, 1.6); ring(player.x, player.y, 2, 90, 0.7, hue + 120, 2); flash = reduceMotion ? 0 : 0.2; shakeIt(4.5, 0.6);
+    echo.state = "front"; player.level = 1; player.invuln = 2; player.charge = 0; player.charging = false;
+    popup(player.x, player.y - 14, msg, C.danger); return;
+  }
+  player.invuln = 1.2; popup(player.x, player.y - 14, msg, C.danger);
+}
+
+function launchEcho() {
+  if (echo.state === "front" || echo.state === "back") {
+    const back = echo.state === "back";
+    echo.state = "flying"; echo.vx = back ? -260 : 260; echo.hoverX = back ? 34 : 300; sfxBlip(660);
+  } else if (echo.state === "flying" || echo.state === "hover") { echo.state = "returning"; sfxBlip(440); }
+}
+function onBeatWindow() { return Math.min(beatFrac, 1 - beatFrac) * SPB < WINDOW; }
+function tier() { const beats = player.charge / SPB; return beats >= 2.85 ? 3 : beats >= 1.85 ? 2 : beats >= 0.85 ? 1 : 0; } // a segment per beat held
+function releaseCharge() {
+  const t = tier(), resonant = t >= 2 && onBeatWindow();
+  if (t > 0) {
+    const w = [0, 6, 10, 16][t] * (resonant ? 1.5 : 1);
+    beams.push({ x0: player.x + 8, head: player.x + 8, y: player.y, w, t, resonant, hit: new Set(), dmg: [0, 3, 6, 12][t] * (resonant ? 1.5 : 1) });
+    if (resonant) { ring(player.x + 10, player.y, 4, 260, 0.5, hue + 40, 2); ring(player.x + 10, player.y, 4, 160, 0.6, hue + 160, 1); shakeIt(1.5, 0.2); popup(player.x, player.y - 14, "ON THE BEAT", C.beam); }
+    sfxBeam(t, resonant);
+  }
+  player.charge = 0; player.charging = false; sfxChargeStop();
+}
+
+function enemyFire(e) {
+  const aim = Math.atan2(player.y - e.y, player.x - e.x), sp = 84;
+  const shoot = (a, s = sp) => bullets.push({ x: e.x, y: e.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s });
+  if (e.kind === "drummer") shoot(aim);
+  else if (e.kind === "jelly") for (let i = 0; i < 6; i++) shoot((i / 6) * TAU + e.t, 52);
+  else if (e.kind === "metronome") { shoot(-Math.PI * 0.75, 70); shoot(-Math.PI * 0.6, 70); }
+  else if (e.kind === "horn") for (let i = -2; i <= 2; i++) shoot(aim + i * 0.22, 66);
+}
+function onBeat(b) {
+  beatNo = b;
+  if (mod(b, 4) === 0 && !reduceMotion) hue = (hue + 37) % 360;
+  for (const e of foes) if (!e.dead && e.every && e.x < W - 4 && e.x > 4 && mod(b - e.phase, e.every) === 0) enemyFire(e);
+  for (const e of foes) if (e.kind === "metronome" && mod(b, 2) === 0 && e.onGround) { e.vy = -78; e.onGround = false; }
+  for (const e of foes) if (e.kind === "jelly") e.vy = -34;
+  if (b >= nextPattern) { spawnPattern(PATTERNS[mod((b / 4) | 0, PATTERNS.length)]); nextPattern = b + 4; }
+  sfxBeat(b);
+}
+
+// ---- Input ----
+const keys = new Set();
+let mouseFire = false, mouseCharge = false, lastInput = -1e9, lastDevice = matchMedia("(pointer: coarse)").matches ? "touch" : "kbm", padLabel = "", padWas = {}, autoWas = -1;
+const touch = { shown: matchMedia("(pointer: coarse)").matches, mx: 0, my: 0, charge: false };
+const TOUCH = { stick: { x: 48, y: 176, r: 24 }, charge: { x: 382, y: 176, r: 16 }, echo: { x: 342, y: 198, r: 11 } };
+const touchPointers = new Map();
+const KEYMAP = { arrowleft: "left", a: "left", arrowright: "right", d: "right", arrowup: "up", w: "up", arrowdown: "down", s: "down", " ": "fire", z: "fire", j: "fire", x: "charge", k: "charge", c: "echo", l: "echo", shift: "echo", m: "mute", p: "pause" };
+function toGame(ev) { const r = cv.getBoundingClientRect(); return { x: ((ev.clientX - r.left) / r.width) * W, y: ((ev.clientY - r.top) / r.height) * H }; }
+const near = (p, b, extra = 6) => Math.hypot(p.x - b.x, p.y - b.y) < b.r + extra;
+function stickFrom(p) {
+  const dx = p.x - TOUCH.stick.x, dy = p.y - TOUCH.stick.y, d = Math.hypot(dx, dy), k = d > TOUCH.stick.r ? TOUCH.stick.r / d : 1;
+  touch.mx = (dx * k) / TOUCH.stick.r; touch.my = (dy * k) / TOUCH.stick.r;
+}
+function syncTouch() {
+  const roles = [...touchPointers.values()];
+  touch.charge = roles.includes("charge");
+  if (!roles.includes("stick")) { touch.mx = 0; touch.my = 0; }
+}
+function toggleMute() { muted = !muted; if (master) master.gain.value = muted ? 0 : 0.22; if (!muted) audioOn(); }
+cv.addEventListener("contextmenu", (ev) => ev.preventDefault());
+cv.addEventListener("pointerdown", (ev) => {
+  cv.focus(); lastInput = performance.now(); audioOn();
+  const p = toGame(ev);
+  if (p.y < TOP && p.x > 398) { toggleMute(); return; }
+  if (p.y < TOP && p.x > 380) { paused = !paused; return; }
+  if (paused) { paused = false; return; }
+  if (ev.pointerType === "touch" || touch.shown) {
+    let role = null;
+    if (near(p, TOUCH.charge)) role = "charge";
+    else if (near(p, TOUCH.echo)) { launchEcho(); role = "echo"; }
+    else if (p.x < W / 2 && p.y > TOP) { role = "stick"; stickFrom(p); }
+    if (role || ev.pointerType === "touch") {
+      if (ev.pointerType === "touch") { lastDevice = "touch"; touch.shown = true; syncSeg(); }
+      touchPointers.set(ev.pointerId, role); syncTouch(); cv.setPointerCapture?.(ev.pointerId); return;
+    }
+  }
+  lastDevice = "kbm";
+  if (ev.button === 2) mouseCharge = true; else if (ev.button === 1) launchEcho(); else mouseFire = true;
+});
+cv.addEventListener("pointermove", (ev) => { if (touchPointers.get(ev.pointerId) === "stick") { stickFrom(toGame(ev)); lastInput = performance.now(); } });
+const endPointer = (ev) => { touchPointers.delete(ev.pointerId); syncTouch(); if (ev.pointerType !== "touch") { if (ev.button === 2) mouseCharge = false; else mouseFire = false; } };
+window.addEventListener("pointerup", endPointer);
+window.addEventListener("pointercancel", endPointer);
+cv.addEventListener("keydown", (ev) => {
+  const k = KEYMAP[ev.key.toLowerCase()];
+  if (!k) return;
+  ev.preventDefault(); lastInput = performance.now(); lastDevice = "kbm"; audioOn();
+  if (ev.repeat) return;
+  if (k === "echo") launchEcho();
+  else if (k === "mute") toggleMute();
+  else if (k === "pause") paused = !paused;
+  else keys.add(k);
+});
+cv.addEventListener("keyup", (ev) => keys.delete(KEYMAP[ev.key.toLowerCase()]));
+cv.addEventListener("blur", () => { keys.clear(); mouseFire = false; mouseCharge = false; });
+
+function setPadStatus(label, on) {
+  if (label === padLabel) return;
+  padLabel = label;
+  const el = document.getElementById("pad-status"); el.textContent = label; el.dataset.on = String(on);
+}
+function readPad(now) {
+  let pads;
+  try { pads = navigator.getGamepads ? navigator.getGamepads() : []; }
+  catch (e) { setPadStatus("This viewer blocks controller input. Open design/concept-sheet.html in a browser tab to use it.", false); return null; }
+  const p = [...pads].find((g) => g && g.connected);
+  if (!p) { setPadStatus("No controller yet. Press any button on it.", false); return null; }
+  setPadStatus(`Connected: ${p.id.replace(/\s*\(.*\)\s*/g, " ").trim()}`, true);
+  const dz = (v) => (Math.abs(v) < 0.2 ? 0 : v);
+  const b = (i) => Boolean(p.buttons[i] && p.buttons[i].pressed);
+  const out = { mx: dz(p.axes[0] || 0), my: dz(p.axes[1] || 0), fire: b(0), charge: b(2) || b(7), echo: b(1) || b(5), pause: b(9), mute: b(3) };
+  if (b(12)) out.my = -1; if (b(13)) out.my = 1; if (b(14)) out.mx = -1; if (b(15)) out.mx = 1;
+  if (out.echo && !padWas.echo) launchEcho();
+  if (out.pause && !padWas.pause) paused = !paused;
+  if (out.mute && !padWas.mute) toggleMute();
+  padWas = out;
+  if (out.mx || out.my || p.buttons.some((x) => x.pressed)) { lastInput = now; lastDevice = "pad"; audioOn(); }
+  return out;
+}
+
+// Demo pilot: grab pickups and a loose Echo, line up with the nearest enemy ahead, sidestep shots, keep off the
+// pipes and keys, and every eight beats charge for two beats and release on the beat (a resonant beam).
+function autopilot() {
+  const out = { mx: 0, my: 0, fire: true, charge: false };
+  let ty = 120, tx = 96;
+  const pk = pickups.find((p) => p.x > 16 && p.x < W - 16);
+  if (echo.state === "loose") { ty = echo.y; tx = clamp(echo.x, 30, 300); }
+  else if (pk) { ty = pk.y; tx = clamp(pk.x - 6, 30, 260); }
+  else {
+    let best = null, bd = 1e9;
+    for (const e of foes) { if (e.dead || e.x < player.x + 12 || e.x > W) continue; const d = e.x - player.x + Math.abs(e.y - player.y) * 0.6; if (d < bd) { bd = d; best = e; } }
+    if (best) ty = best.y;
+  }
+  for (const b of bullets) { const dx = b.x - player.x, dy = b.y - player.y; if (dx > -8 && dx < 46 && Math.abs(dy) < 12) { ty = player.y + (dy > 0 ? -26 : 26); break; } }
+  let lo = -1e9, hiY = 1e9;
+  for (let dx = -8; dx <= 28; dx += 4) { lo = Math.max(lo, ceilY(scrollX + player.x + dx) + 15); hiY = Math.min(hiY, floorY(scrollX + player.x + dx) - 15); }
+  ty = clamp(ty, lo, hiY);
+  out.my = clamp((ty - player.y) / 10, -1, 1); out.mx = clamp((tx - player.x) / 24, -1, 1);
+  const b8 = mod(beatNo, 8);
+  out.charge = b8 === 4 || b8 === 5;
+  const b32 = mod(beatNo, 32);
+  if ((b32 === 18 || b32 === 26) && autoWas !== beatNo) { autoWas = beatNo; launchEcho(); }
+  return out;
+}
+
+// ---- Update ----
+function update(dt, now) {
+  const pad = readPad(now);
+  if (paused) return;
+  clock += dt; scrollX += SCROLL * dt;
+  const bf = clock / SPB, b = Math.floor(bf); beatFrac = bf - b; beatEnv = Math.exp(-beatFrac * 5);
+  if (b !== beatNo) onBeat(b);
+  const demo = now - lastInput > 3500 && touchPointers.size === 0;
+  let mx = (keys.has("right") ? 1 : 0) - (keys.has("left") ? 1 : 0), my = (keys.has("down") ? 1 : 0) - (keys.has("up") ? 1 : 0);
+  let fire = keys.has("fire") || mouseFire || (touch.shown && lastDevice === "touch"), charge = keys.has("charge") || mouseCharge || touch.charge;
+  if (mx && my) { mx *= Math.SQRT1_2; my *= Math.SQRT1_2; }
+  if (touch.mx || touch.my) { mx = touch.mx; my = touch.my; }
+  if (pad) { if (pad.mx || pad.my) { mx = pad.mx; my = pad.my; } fire = fire || pad.fire; charge = charge || pad.charge; }
+  if (demo) { const a = autopilot(); mx = a.mx; my = a.my; fire = a.fire; charge = a.charge; }
+
+  // Craft: direct, responsive movement. It squashes (in whole-pixel steps) while it climbs or dives: a bank.
+  const sp = 108 + 22 * (player.speed - 1);
+  player.vx = mx * sp; player.vy = my * sp;
+  player.x = clamp(player.x + player.vx * dt, 12, W - 24);
+  player.y = clamp(player.y + player.vy * dt, TOP + 6, H - 6);
+  player.bank = Math.abs(player.vy) > sp * 0.35 ? 0.75 : 1;
+  const wx = scrollX + player.x;
+  let cy = -1e9, fy = 1e9;
+  for (const dx of [-6, 0, 6]) { cy = Math.max(cy, ceilY(wx + dx)); fy = Math.min(fy, floorY(wx + dx)); }
+  if (player.y < cy + 4) { player.y = cy + 8; hitPlayer(); }
+  if (player.y > fy - 4) { player.y = fy - 8; hitPlayer(); }
+  player.invuln = Math.max(0, player.invuln - dt);
+
+  // Fire or charge: charging holds your fire.
+  player.cool -= dt; player.wcool -= dt; player.hcool -= dt; player.gcool -= dt; echo.cool -= dt;
+  if (charge) { if (!player.charging) sfxChargeStart(); player.charging = true; player.charge += dt; sfxChargeTo(tier()); }
+  else if (player.charging) releaseCharge();
+  if (fire && !player.charging) {
+    if (player.cool <= 0) { player.cool = 0.12; shots.push({ kind: "note", x: player.x + 9, y: player.y, vx: 330, vy: 0 }); sfxShot(player.y); }
+    const attached = echo.state === "front" || echo.state === "back", dir = echo.state === "back" ? -1 : 1;
+    if (attached && player.wcool <= 0) fireWeapon(dir);
+    if (!attached && echo.state !== "loose" && echo.cool <= 0) { echo.cool = 0.25; shots.push({ kind: "note", x: echo.x + 6, y: echo.y, vx: 300, vy: 0 }); }
+    if (player.harm && player.hcool <= 0) { player.hcool = SPB / 2; harmPunch = 0.08; for (const h of harmonics()) shots.push({ kind: "quaver", x: h.x + 6, y: h.y + 1, y0: h.y + 1, vx: 220, vy: 0, t: 0, ph: rand() * TAU }); }
+    if (player.fork && player.gcool <= 0) { player.gcool = 1; for (const s of [-1, 1]) shots.push({ kind: "grace", x: player.x, y: player.y + s * 6, vx: 120, vy: s * 60, life: 2.5 }); }
+  }
+
+  updateEcho(dt);
+  updateShots(dt);
+  updateFoes(dt);
+  for (const w of warns) { w.t -= dt; if (w.t <= 0) addFoe("cymbal", W + 10, w.y, { vx: -185, vy: (player.y - w.y) * 0.55, r: 6 }); }
+  warns = warns.filter((w) => w.t > 0);
+
+  // Enemy notes: the Echo and Harmonics block them.
+  const hs = harmonics();
+  for (const b of bullets) {
+    b.x += b.vx * dt; b.y += b.vy * dt;
+    if (echo.state !== "loose" && Math.hypot(b.x - echo.x, b.y - echo.y) < 5) { b.dead = true; burst(b.x, b.y, 4, hue + 90, 0.4); continue; }
+    if (hs.some((h) => Math.hypot(b.x - h.x, b.y - h.y) < 4)) { b.dead = true; burst(b.x, b.y, 4, hue, 0.4); continue; }
+    if (Math.hypot(b.x - player.x, b.y - player.y) < 4.5) { b.dead = true; hitPlayer(); }
+  }
+  bullets = bullets.filter((b) => !b.dead && b.x > -8 && b.x < W + 8 && b.y > TOP - 4 && b.y < H + 4);
+
+  for (const p of pickups) {
+    p.t += dt; p.x -= 30 * dt; p.y += Math.sin(p.t * 3) * 6 * dt;
+    if (Math.hypot(p.x - player.x, p.y - player.y) < 11) { p.dead = true; collect(p); }
+  }
+  pickups = pickups.filter((p) => !p.dead && p.x > -12);
+
+  for (const p of sparks) { p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt; p.vx *= 0.96; p.vy *= 0.96; p.vz *= 0.96; p.life -= dt; }
+  sparks = sparks.filter((p) => p.life > 0);
+  for (const r of rings) { r.r += r.dr * dt; r.life -= dt; }
+  rings = rings.filter((r) => r.life > 0);
+  for (const p of popups) { p.y -= 14 * dt; p.life -= dt; }
+  popups = popups.filter((p) => p.life > 0);
+  for (const m of MOTES) { m.y -= (3 + m.z * 6) * dt; m.x -= SCROLL * 0.7 * dt; if (m.y < TOP) m.y = H; if (m.x < 0) m.x += W; }
+  shake = Math.max(0, shake - dt); flash = Math.max(0, flash - dt); harmPunch = Math.max(0, harmPunch - dt);
+}
+
+function harmonics() {
+  // Above and below the craft, bobbing toward and away from the camera; never across the craft itself.
+  const out = [];
+  for (let i = 0; i < player.harm; i++) { const a = clock * 3.2 + i * Math.PI; out.push({ x: player.x - 2 + Math.cos(a) * 3, y: player.y + (i ? 11 : -11), z: Math.sin(a) * 4, a }); }
+  return out;
+}
+function fireWeapon(dir) {
+  const ox = echo.x + dir * 4, y = echo.y, L = player.level;
+  if (player.weapon === "spiral") { player.wcool = 0.2; const A = 4 + 3 * L; for (const ph of [0, Math.PI]) shots.push({ kind: "helix", x: ox, y, y0: y, vx: 250 * dir, vy: 0, A, ph, t: 0, z: 0 }); }
+  else if (player.weapon === "prism") {
+    player.wcool = 0.28;
+    const angles = L >= 3 ? [0, -0.35, 0.35, -0.7, 0.7] : L >= 2 ? [0, -0.35, 0.35] : [0];
+    for (const a of angles) shots.push({ kind: "prism", x: ox, y, vx: Math.cos(a) * 280 * dir, vy: Math.sin(a) * 280, bounces: 2 });
+  } else { player.wcool = 0.42; shots.push({ kind: "sonar", x: ox, y, vx: 170 * dir, vy: 0, r: 3, rmax: 10 + 6 * L, hit: new Set() }); }
+}
+function updateEcho(dt) {
+  if (echo.state === "front" || echo.state === "back") {
+    echo.x = player.x + (echo.state === "front" ? 9 : -9); echo.y = player.y;
+  } else if (echo.state === "flying") {
+    echo.x += echo.vx * dt; echo.vx *= 0.985;
+    if ((echo.vx > 0 && echo.x >= echo.hoverX) || (echo.vx < 0 && echo.x <= echo.hoverX)) echo.state = "hover";
+  } else if (echo.state === "hover") {
+    echo.y += clamp(player.y - echo.y, -40 * dt, 40 * dt);
+  } else if (echo.state === "returning") {
+    const dx = player.x - echo.x, dy = player.y - echo.y, d = Math.hypot(dx, dy) || 1;
+    echo.x += (dx / d) * 230 * dt; echo.y += (dy / d) * 230 * dt;
+  } else if (echo.state === "loose") {
+    echo.x += echo.vx * dt; echo.y += Math.sin(clock * 2) * 10 * dt;
+    if (echo.x < 24) echo.vx = Math.abs(echo.vx); if (echo.x > W - 24) echo.vx = -Math.abs(echo.vx);
+  }
+  echo.y = clamp(echo.y, TOP + 8, H - 8);
+  if (!["front", "back", "flying"].includes(echo.state) && Math.hypot(player.x - echo.x, player.y - echo.y) < 12) {
+    echo.state = echo.x >= player.x ? "front" : "back"; sfxBlip(880);
+  }
+  if (echo.state !== "loose") for (const e of foes) if (!e.dead && Math.hypot(e.x - echo.x, e.y - echo.y) < e.r + 4) { damage(e, 10 * dt); if (rand() < 0.3) burst(echo.x, echo.y, 2, hue, 0.5); }
+}
+function solidAt(x, y) { const wx = scrollX + x; return y < ceilY(wx) || y > floorY(wx); }
+function updateShots(dt) {
+  for (const s of shots) {
+    if (s.kind === "quaver") { s.t += dt; s.x += s.vx * dt; s.y = s.y0 + 2.5 * Math.sin(s.ph + s.t * 10); }
+    else if (s.kind === "helix") { s.t += dt; s.x += s.vx * dt; s.y = s.y0 + s.A * Math.sin(s.ph + s.t * 16); s.z = s.A * Math.cos(s.ph + s.t * 16); }
+    else if (s.kind === "grace") {
+      s.life -= dt; let best = null, bd = 1e9;
+      for (const e of foes) { if (e.dead) continue; const d = Math.hypot(e.x - s.x, e.y - s.y); if (d < bd) { bd = d; best = e; } }
+      if (best) { const a = Math.atan2(best.y - s.y, best.x - s.x); s.vx += Math.cos(a) * 600 * dt; s.vy += Math.sin(a) * 600 * dt; }
+      const v = Math.hypot(s.vx, s.vy); if (v > 190) { s.vx *= 190 / v; s.vy *= 190 / v; }
+      s.x += s.vx * dt; s.y += s.vy * dt; if (s.life <= 0) s.dead = true;
+    } else {
+      s.x += s.vx * dt; s.y += s.vy * dt;
+      if (s.kind === "sonar") s.r = Math.min(s.rmax, s.r + 40 * dt);
+      if (s.kind === "prism") {
+        const wx = scrollX + s.x;
+        if (s.y < ceilY(wx) && s.vy < 0) { if (s.bounces-- > 0) s.vy = -s.vy; else s.dead = true; }
+        if (s.y > floorY(wx) && s.vy > 0) { if (s.bounces-- > 0) s.vy = -s.vy; else s.dead = true; }
+      }
+    }
+    if ((s.kind === "note" || s.kind === "quaver" || s.kind === "helix" || s.kind === "grace") && solidAt(s.x, s.y)) { s.dead = true; burst(s.x, s.y, 2, hue, 0.3); }
+    for (const e of foes) {
+      if (e.dead || s.dead) continue;
+      if (s.kind === "sonar") { if (!s.hit.has(e) && Math.abs(e.x - s.x) < 5 + e.r * 0.5 && Math.abs(e.y - s.y) < s.r + e.r * 0.5) { s.hit.add(e); damage(e, 1.5); } continue; }
+      if (Math.hypot(e.x - s.x, e.y - s.y) < e.r + 2) { s.dead = true; damage(e, s.kind === "grace" ? 1.5 : 1); burst(s.x, s.y, 3, hue + 30, 0.5); }
+    }
+  }
+  shots = shots.filter((s) => !s.dead && s.x > -10 && s.x < W + 10 && s.y > TOP && s.y < H);
+  for (const b of beams) {
+    b.head += 560 * dt;
+    b.tail = Math.max(b.x0, b.head - 280);
+    for (const e of foes) if (!e.dead && !b.hit.has(e) && e.x > b.tail - e.r && e.x < b.head + e.r && Math.abs(e.y - b.y) < b.w / 2 + e.r) { b.hit.add(e); damage(e, b.dmg, b.resonant); }
+  }
+  beams = beams.filter((b) => b.tail < W + 10);
+}
+function updateFoes(dt) {
+  for (const e of foes) {
+    if (e.dead) continue;
+    e.t += dt; e.flash = Math.max(0, e.flash - dt);
+    if (e.kind === "chirp") { e.x -= (56 + 80 * beatEnv) * dt; e.y = e.y0 + 22 * Math.sin((clock / SPB) * (Math.PI / 2) + e.i * 0.7); }
+    else if (e.kind === "jelly") { e.x -= 30 * dt; e.vy += 50 * dt; e.vy *= 0.97; e.y = clamp(e.y + e.vy * dt, 70, 186); }
+    else if (e.kind === "drummer" || e.kind === "horn") { e.x -= SCROLL * dt; const wx = scrollX + e.x; e.y = e.ground > 0 ? floorY(wx) - 8 : ceilY(wx) + 8; }
+    else if (e.kind === "metronome") {
+      e.x -= (SCROLL + 12) * dt; e.vy += 260 * dt; e.y += e.vy * dt;
+      const fy = floorY(scrollX + e.x) - 8; if (e.y >= fy) { e.y = fy; e.vy = 0; e.onGround = true; }
+    } else if (e.kind === "cymbal") { e.x += e.vx * dt; e.y += e.vy * dt; e.vy -= e.vy * 0.6 * dt; e.spin += dt * 14; }
+    else if (e.kind === "carrier") { e.x -= 34 * dt; e.y = e.y0 + 18 * Math.sin(e.t * 1.6); }
+    else if (e.kind === "eelhead") { e.x -= 76 * dt; e.y = 125 + 44 * Math.sin(e.t * 2.1); e.trail.unshift({ x: e.x, y: e.y }); if (e.trail.length > 200) e.trail.pop(); }
+    else if (e.kind === "eel") { const p = e.head.trail[Math.min(e.head.trail.length - 1, e.i * 5)]; if (p) { e.x = p.x; e.y = p.y; } if (e.head.trail.length < e.i * 5) e.x = W + 10 + e.i * 9; }
+    if (Math.hypot(e.x - player.x, e.y - player.y) < e.r + 3) { hitPlayer(); damage(e, 2); }
+    if (e.x < -24) e.dead = true;
+  }
+  foes = foes.filter((e) => !e.dead);
+}
+function collect(p) {
+  burst(p.x, p.y, 12, hue + 60, 0.6); ring(p.x, p.y, 16, -30, 0.4, hue + 60);
+  if (p.kind === "crystal") {
+    const w = crystalShape(p);
+    if (w === player.weapon) player.level = Math.min(3, player.level + 1); else player.weapon = w;
+    syncWeaponSeg(); popup(p.x, p.y - 10, `${w.toUpperCase()} ${player.level}`, C.beam);
+  } else if (p.kind === "harmonic") { player.harm = Math.min(2, player.harm + 1); popup(p.x, p.y - 10, "HARMONIC", C.beam); }
+  else if (p.kind === "speed") { player.speed = Math.min(3, player.speed + 1); popup(p.x, p.y - 10, `SPEED ${player.speed}`, C.beam); }
+  else { player.fork = true; popup(p.x, p.y - 10, "GRACE NOTES", C.beam); }
+  sfxBlip(990);
+}
+const crystalShape = (p) => ["spiral", "prism", "sonar"][Math.floor(p.t / 1.5) % 3];
+
+// ---- Draw ----
+function text(str, x, y, color = C.ink, align = "left", size = 8) {
+  ctx.font = `900 ${size}px Doto, monospace`; ctx.textAlign = align; ctx.textBaseline = "top";
+  ctx.fillStyle = "#000000"; ctx.fillText(str, x + size / 10, y + size / 10);
+  ctx.fillStyle = color; ctx.fillText(str, x, y);
+}
+const blink = (hz) => Math.floor(clock * hz) % 2 === 0;
+const hsl = (h, s = 95, l = 62, a = 1) => `hsla(${mod(h, 360)},${s}%,${l}%,${a})`;
+/** A 16 px sprite at 1x. Scales are whole quarters, so every sprite pixel stays a whole number of canvas pixels. */
+function drawSprite(slot, x, y, { white = false, alpha = 1, rot = 0, flipX = false, flipY = false, sx = 1, sy = 1 } = {}) {
+  const id = picks[slot], img = white ? whites[id] : images[id];
+  if (!img || (img instanceof HTMLImageElement && !(img.complete && img.naturalWidth))) return;
+  ctx.save(); ctx.globalAlpha = alpha; ctx.translate(Math.round(x * 4) / 4, Math.round(y * 4) / 4);
+  ctx.scale((flipX ? -1 : 1) * sx, (flipY ? -1 : 1) * sy); if (rot) ctx.rotate(rot);
+  ctx.drawImage(img, -8, -8, 16, 16); ctx.restore();
+}
+/** A pixel quaver: head at (x, y), stem up, flag to the right. */
+function drawNote(g, x, y, color) { g.fillStyle = color; g.fillRect(x - 2, y, 3, 2); g.fillRect(x, y - 5, 1, 6); g.fillRect(x + 1, y - 5, 1, 1); g.fillRect(x + 2, y - 4, 1, 2); }
+function pdisc(cx, cy, r, color) { ctx.fillStyle = color; cx = Math.round(cx); cy = Math.round(cy); for (let dy = -r; dy <= r; dy++) { const half = Math.round(Math.sqrt(r * r - dy * dy)); ctx.fillRect(cx - half, cy + dy, half * 2 + 1, 1); } }
+
+function drawLandscapeBack() {
+  ctx.drawImage(SKY, 0, 0);
+  for (const s of TWINKLE) if (mod(beatNo, 8) === s.k % 8) { ctx.globalAlpha = beatEnv; ctx.fillStyle = "#ffffff"; ctx.fillRect(s.x, s.y, 1, 1); ctx.fillRect(s.x - 1, s.y, 3, 1); ctx.fillRect(s.x, s.y - 1, 1, 3); ctx.globalAlpha = 1; }
+  // Speaker moon: rings from the rim inward; on each kick the inner rings push out a pixel.
+  const mx = Math.round(mod(318 - scrollX * 0.02, W + 120) - 60), my = 66, kick = reduceMotion ? 0 : Math.round(beatEnv * 2);
+  ctx.globalAlpha = 0.5; pdisc(mx, my, 40, "#3a1660"); ctx.globalAlpha = 1;
+  const rings = [[34, "#24123f"], [32, "#3a1f66"], [28 + kick, "#2a1549"], [24 + kick, "#46287c"], [18 + kick, "#331a58"], [13 + kick, "#5b3a96"], [7, "#2a1549"], [5, "#8f6ad0"]];
+  for (const [r, c] of rings) pdisc(mx, my, r, c);
+  pdisc(mx - 1, my - 1, 2, "#d9c4ff");
+  ctx.fillStyle = "#9a7ae0"; for (let a = 2.4; a < 4.3; a += 0.05) ctx.fillRect(Math.round(mx + Math.cos(a) * 33), Math.round(my + Math.sin(a) * 33), 1, 1);
+  // Spectrum range: analyser bars standing on a hazy horizon, each peak held a moment.
+  const HZ = 186, off = scrollX * 0.12, c0 = Math.floor(off / 6);
+  for (let c = c0 - 1; c < c0 + W / 6 + 2; c++) {
+    const x = Math.round(c * 6 - off);
+    const h0 = 12 + 24 * (0.5 + 0.5 * Math.sin(c * 0.13)) + 16 * (0.5 + 0.5 * Math.sin(c * 0.047 + 1));
+    const amp = [11, 9, 7, 5, 4, 3, 3, 2][mod(c, 8)];
+    const h = Math.round(h0 + (reduceMotion ? 0 : beatEnv * amp * (0.6 + 0.4 * Math.sin(c * 1.7 + beatNo)) + 2 * Math.sin(clock * 3 + c)));
+    for (let s = 0; s * 4 < h; s++) { ctx.fillStyle = PAL.spec[Math.min(PAL.spec.length - 1, Math.floor((s * 4 / 70) * PAL.spec.length))]; ctx.fillRect(x, HZ - s * 4 - 3, 5, 3); }
+    const pk = Math.max((peaks.get(c) ?? 0) - 16 * frameDt, h); peaks.set(c, pk);
+    ctx.fillStyle = PAL.peak; ctx.fillRect(x, HZ - Math.round(pk) - 3, 5, 1);
+  }
+  for (const c of peaks.keys()) if (c < c0 - 4) peaks.delete(c);
+  let g = ctx.createLinearGradient(0, 120, 0, H); g.addColorStop(0, "rgba(42,15,79,0)"); g.addColorStop(0.6, "rgba(52,18,90,0.75)"); g.addColorStop(1, "rgba(30,10,55,0.9)");
+  ctx.fillStyle = g; ctx.fillRect(0, 120, W, H - 120);
+  // Instrument city, with its lights playing through the bar.
+  const cx = mod(scrollX * 0.3, CITY_W), cyTop = H - CITY_H - 4;
+  ctx.drawImage(CITY, Math.round(-cx), cyTop); ctx.drawImage(CITY, Math.round(CITY_W - cx), cyTop);
+  for (const l of cityLights) {
+    let x = Math.round(l.x - cx); if (x < -4) x += CITY_W; if (x > W + 4) continue;
+    const on = mod(l.k - beatNo * 3, 16) < 3, y = cyTop + l.y;
+    ctx.fillStyle = on ? hsl(hue + (l.kind === "pipe" ? 0 : 160), 100, 70, 0.35 + 0.65 * beatEnv) : "rgba(255,216,77,0.25)";
+    ctx.fillRect(x, y, l.kind === "pipe" ? 2 : 1, 1);
+    if (on && !reduceMotion) { ctx.fillStyle = hsl(hue, 100, 70, 0.18 * beatEnv); ctx.fillRect(x - 1, y - 1, 4, 3); }
+  }
+  g = ctx.createLinearGradient(0, 170, 0, H); g.addColorStop(0, "rgba(60,20,100,0)"); g.addColorStop(1, "rgba(60,20,100,0.55)");
+  ctx.fillStyle = g; ctx.fillRect(0, 170, W, H - 170);
+  // The score: a five-line stave drifting across the sky, its notes lighting as the music reaches them.
+  const so = scrollX * 0.5, base = (x) => Math.round(54 + 9 * Math.sin((x + so) * 0.006));
+  ctx.fillStyle = "rgba(205,180,255,0.16)";
+  for (let x = 0; x < W; x += 2) { const y = base(x); for (let i = 0; i < 5; i++) ctx.fillRect(x, y + i * 3, 1, 1); }
+  const n0 = Math.floor(so / 30);
+  for (let n = n0; n < n0 + W / 30 + 2; n++) {
+    const x = Math.round(n * 30 + hash(n) * 12 - so), pitch = Math.floor(hash(n + 77) * 9), y = base(x) + 12 - pitch * 1.5;
+    const lit = mod(n, 8) === mod(beatNo, 8);
+    ctx.fillStyle = lit ? hsl(hue + 40, 100, 75, 0.5 + 0.5 * beatEnv) : "rgba(205,180,255,0.28)";
+    ctx.fillRect(x, Math.round(y), 3, 2); ctx.fillRect(x + 2, Math.round(y) - 6, 1, 6);
+  }
+  for (const m of MOTES) { ctx.fillStyle = hsl(hue + 40 + m.z * 60, 100, 75, 0.25 + m.z * 0.3 + beatEnv * 0.4); ctx.fillRect(Math.round(m.x), Math.round(m.y), 1, 1); }
+}
+// The frame: the solid edges above and below, in the chosen style. Each style marks the edge with the brightest pixels
+// behind the action, so it reads by brightness, not hue.
+function edgeSweep(sx, side) {
+  // A pulse of light runs along both edges each beat: the floor's left to right, the ceiling's right to left.
+  if (reduceMotion) return 0;
+  const p = side > 0 ? beatFrac * (W + 80) - 40 : W + 40 - beatFrac * (W + 80);
+  return Math.max(0, 1 - Math.abs(sx - p) / 18) * (1 - beatFrac * 0.6);
+}
+function drawFrameEq(wx0) {
+  for (let c = Math.floor(wx0 / COL) - 1; c * COL < wx0 + W + COL; c++) {
+    const sx = c * COL - wx0;
+    for (const side of [1, -1]) {
+      const edge = side > 0 ? floorY(c * COL) : ceilY(c * COL), n = side > 0 ? (H - edge) / CELL : (edge - TOP) / CELL;
+      ctx.fillStyle = PAL.mass; ctx.fillRect(sx, side > 0 ? edge : TOP, COL, side > 0 ? H - edge : edge - TOP);
+      // Like a level meter: on each beat every column lights a few cells in from the edge, then they fade.
+      const level = reduceMotion ? 3 : 3 + Math.round(hash(c * 31 + beatNo * 7 + (side > 0 ? 0 : 999)) * 6 * beatEnv);
+      for (let i = 0; i < n; i++) {
+        const y = side > 0 ? edge + i * CELL : edge - (i + 1) * CELL + 1;
+        ctx.fillStyle = i === 0 ? "#e6dcff" : i < level ? hsl(hue + i * 18 + (side > 0 ? 0 : 180), 95, 68 - i * 6) : PAL.eqDim[Math.min(PAL.eqDim.length - 1, i - level)];
+        ctx.fillRect(sx, y, COL - 1, 2);
+      }
+      const sw = edgeSweep(sx + 2, side);
+      if (sw > 0) { ctx.fillStyle = `rgba(255,255,255,${sw})`; ctx.fillRect(sx - 1, side > 0 ? edge - 1 : edge - 2, COL + 1, 3); }
+    }
+  }
+}
+function drawFrameGrid(wx0) {
+  for (let x = -1; x <= W + 1; x++) {
+    const wx = wx0 + x;
+    for (const side of [1, -1]) {
+      const e = side > 0 ? floorY(wx) : ceilY(wx), depth = side > 0 ? H - e : e - TOP;
+      ctx.fillStyle = PAL.mass; ctx.fillRect(x, side > 0 ? e : TOP, 1, depth);
+      // Lines flow in from the edge, one step per beat, closer together near the edge like a road coming toward you.
+      ctx.fillStyle = PAL.grid;
+      for (let k = 0; k < 9; k++) {
+        const u = k + (reduceMotion ? 0 : beatFrac), d = Math.round(2 + 1.1 * u * u);
+        if (d >= depth) break;
+        ctx.globalAlpha = Math.max(0.12, 0.7 - u * 0.07) * (0.7 + 0.3 * beatEnv);
+        ctx.fillRect(x, e + side * d, 1, 1);
+      }
+      if (mod(wx, 14) === 0) { ctx.globalAlpha = 0.28; ctx.fillRect(x, side > 0 ? e + 2 : TOP, 1, depth - 2); }
+      ctx.globalAlpha = 1;
+      const sw = edgeSweep(x, side);
+      ctx.fillStyle = sw > 0.05 ? "#ffffff" : hsl(hue + 180, 100, 72); ctx.fillRect(x, e, 1, 1);
+      ctx.fillStyle = hsl(hue + 180, 100, 70, 0.3 + sw * 0.7); ctx.fillRect(x, e - side, 1, 1);
+    }
+  }
+}
+function drawFrameCircuit(wx0) {
+  for (let x = -1; x <= W + 1; x++) {
+    const wx = wx0 + x, fy = floorY(wx), cy = ceilY(wx);
+    let h = Math.min(CIRC_H, H - fy - 2); if (h > 0) ctx.drawImage(CIRC, mod(wx, CIRC_W), 0, 1, h, x, fy + 2, 1, h);
+    h = Math.min(CIRC_H, cy - 2 - TOP); if (h > 0) ctx.drawImage(CIRC_UP, mod(wx + 128, CIRC_W), CIRC_H - h, 1, h, x, cy - 2 - h, 1, h);
+    ctx.fillStyle = PAL.mass; ctx.fillRect(x, fy + 1, 1, 1); ctx.fillRect(x, cy - 2, 1, 1);
+    for (const [e, side] of [[fy, 1], [cy - 1, -1]]) {
+      const sw = edgeSweep(x, side);
+      ctx.fillStyle = sw > 0.05 ? "#ffffff" : hsl(hue + 40, 95, 66); ctx.fillRect(x, e, 1, 1);
+      ctx.fillStyle = hsl(hue + 40, 95, 66, 0.25 + sw * 0.6); ctx.fillRect(x, e - side, 1, 1);
+    }
+  }
+  // Light races along the traces: a different set of them on each beat.
+  if (reduceMotion) return;
+  for (const side of [1, -1]) {
+    const shift = side > 0 ? 0 : 128;
+    for (let tile = Math.floor((wx0 + shift) / CIRC_W) - 1; tile * CIRC_W - shift < wx0 + W + CIRC_W; tile++) {
+      for (const t of traces) {
+        if (hash(t.k * 17 + beatNo * 5 + (side > 0 ? 0 : 500)) > 0.4) continue;
+        const pwx = tile * CIRC_W - shift + t.x0 + Math.floor(beatFrac * t.len), x = pwx - wx0;
+        if (x < -2 || x > W + 2) continue;
+        const y = side > 0 ? floorY(pwx) + 2 + t.y : ceilY(pwx) - 3 - t.y;
+        if (side > 0 ? y >= H : y < TOP) continue;
+        ctx.fillStyle = hsl(hue + 160, 100, 75, 1 - beatFrac * 0.5); ctx.fillRect(x - 2, y, 3, 1); ctx.fillStyle = "#ffffff"; ctx.fillRect(x, y, 1, 1);
+      }
+    }
+  }
+}
+function drawGround() {
+  const f = scrollX - Math.floor(scrollX), wx0 = Math.floor(scrollX);
+  ctx.save(); ctx.translate(-f, 0);
+  if (frameStyle === "eq") drawFrameEq(wx0); else if (frameStyle === "grid") drawFrameGrid(wx0); else drawFrameCircuit(wx0);
+  ctx.restore();
+}
+function drawSparks(front) {
+  for (const p of sparks) {
+    if ((p.z >= 0) !== front) continue;
+    const k = 1 + p.z / 160, s = Math.max(0.5, 1.3 * k);
+    ctx.globalAlpha = Math.min(1, p.life / 0.3) * (front ? 1 : 0.7); ctx.fillStyle = hsl(p.h, 100, 64 + Math.max(0, p.z) * 0.2);
+    ctx.fillRect(p.x - s / 2, p.y + p.z * 0.25 - s / 2, s, s);
+  }
+  ctx.globalAlpha = 1;
+}
+function drawShots(front) {
+  for (const s of shots) {
+    if (s.kind === "helix") {
+      if ((s.z >= 0) !== front) continue;
+      const k = 1 + s.z / 24, r = 1.9 * k;
+      ctx.fillStyle = hsl(hue + (s.ph ? 160 : 0), 100, 60, 0.35); ctx.fillRect(s.x - 7 * Math.sign(s.vx), s.y - 0.5, 7 * Math.sign(s.vx), 1);
+      ctx.fillStyle = hsl(hue + (s.ph ? 160 : 0), 100, 60 + s.z * 1.5); ctx.beginPath(); ctx.arc(s.x, s.y, r, 0, TAU); ctx.fill();
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(s.x - 0.5, s.y - 0.5, 1, 1);
+      continue;
+    }
+    if (!front) continue;
+    if (s.kind === "quaver") { drawNote(ctx, Math.round(s.x) + 1, Math.round(s.y) + 1, "#000000"); drawNote(ctx, Math.round(s.x), Math.round(s.y), hsl(hue + 60, 100, 74)); ctx.fillStyle = "#ffffff"; ctx.fillRect(Math.round(s.x) - 1, Math.round(s.y), 1, 1); }
+    else if (s.kind === "note") { ctx.fillStyle = hsl(hue + 180, 100, 70); ctx.fillRect(s.x - 3, s.y - 0.75, 6, 1.5); ctx.fillStyle = "#fff"; ctx.fillRect(s.x - 1, s.y - 0.5, 3, 1); }
+    else if (s.kind === "prism") {
+      const a = Math.atan2(s.vy, s.vx), dx = Math.cos(a) * 6, dy = Math.sin(a) * 6, nx = -Math.sin(a), ny = Math.cos(a);
+      ctx.lineWidth = 0.75;
+      [-1, 0, 1].forEach((o, i) => { ctx.strokeStyle = i === 1 ? "#ffffff" : hsl(hue + i * 120, 100, 65); ctx.beginPath(); ctx.moveTo(s.x - dx + nx * o, s.y - dy + ny * o); ctx.lineTo(s.x + dx + nx * o, s.y + dy + ny * o); ctx.stroke(); });
+    } else if (s.kind === "sonar") {
+      for (const [o, a, w] of [[0, 1, 1.5], [-3, 0.5, 0.75], [-6, 0.25, 0.5]]) {
+        ctx.strokeStyle = hsl(hue + 120 - o * 10, 100, 66, a); ctx.lineWidth = w;
+        const fwd = Math.sign(s.vx) > 0;
+        ctx.beginPath(); ctx.ellipse(s.x + o * Math.sign(s.vx), s.y, s.r * 0.38, s.r, 0, fwd ? -Math.PI / 2 : Math.PI / 2, fwd ? Math.PI / 2 : Math.PI * 1.5); ctx.stroke();
+      }
+    } else if (s.kind === "grace") {
+      ctx.fillStyle = hsl(hue + 60, 100, 70); ctx.beginPath(); ctx.ellipse(s.x, s.y + 1, 1.5, 1.1, -0.4, 0, TAU); ctx.fill(); ctx.fillRect(s.x + 1, s.y - 3, 0.75, 4);
+    }
+  }
+}
+function drawBeams() {
+  for (const b of beams) {
+    const tail = b.tail ?? b.x0, len = b.head - tail; if (len <= 0) continue;
+    const h = b.w / 2;
+    ctx.fillStyle = hsl(hue + 180, 100, 60, 0.25); ctx.fillRect(tail, b.y - h, len, b.w);
+    ctx.fillStyle = hsl(hue + 180, 100, 75, 0.7); ctx.fillRect(tail, b.y - h * 0.45, len, h * 0.9);
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(tail, b.y - h * 0.18, len, h * 0.36);
+    // Two strands spiral round the core, the near one brighter, and rings stand across it every 14 px.
+    for (const [ph, a] of [[0, 1], [Math.PI, 0.45]]) {
+      ctx.strokeStyle = hsl(hue + 300 + ph * 30, 100, 70, a); ctx.lineWidth = 0.75; ctx.beginPath();
+      for (let x = tail; x <= b.head; x += 1.5) { const y = b.y + h * Math.sin(x * 0.18 - clock * 22 + ph); x === tail ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
+      ctx.stroke();
+    }
+    ctx.strokeStyle = hsl(hue + 60, 100, 75, 0.8); ctx.lineWidth = 0.5;
+    for (let x = tail + mod(-clock * 120, 14); x < b.head; x += 14) { ctx.beginPath(); ctx.ellipse(x, b.y, 1.6, h + 1, 0, 0, TAU); ctx.stroke(); }
+  }
+}
+function drawBullet(b) {
+  // Enemy notes are diamonds: a dark outline, a coloured edge and a white core, whatever the stage's hue.
+  ctx.fillStyle = "#000000"; ctx.beginPath(); ctx.moveTo(b.x, b.y - 3.2); ctx.lineTo(b.x + 3.2, b.y); ctx.lineTo(b.x, b.y + 3.2); ctx.lineTo(b.x - 3.2, b.y); ctx.fill();
+  ctx.fillStyle = blink(10) ? "#ffffff" : C.danger; ctx.beginPath(); ctx.moveTo(b.x, b.y - 2.4); ctx.lineTo(b.x + 2.4, b.y); ctx.lineTo(b.x, b.y + 2.4); ctx.lineTo(b.x - 2.4, b.y); ctx.fill();
+  ctx.fillStyle = "#ffffff"; ctx.fillRect(b.x - 0.75, b.y - 0.75, 1.5, 1.5);
+}
+function glyph(kind, x, y, color) {
+  ctx.strokeStyle = "#000"; ctx.lineWidth = 2.2;
+  const path = () => {
+    ctx.beginPath();
+    if (kind === "spiral") { for (const sgn of [1, -1]) for (let i = 0; i <= 12; i++) { const t = i / 12, xx = x - 4 + t * 8, yy = y + sgn * 2.4 * Math.sin(t * TAU); i ? ctx.lineTo(xx, yy) : ctx.moveTo(xx, yy); } }
+    else if (kind === "prism") { ctx.moveTo(x, y - 3.5); ctx.lineTo(x + 3.8, y + 3); ctx.lineTo(x - 3.8, y + 3); ctx.closePath(); }
+    else if (kind === "sonar") { ctx.ellipse(x - 2, y, 2.5, 4, 0, -Math.PI / 2, Math.PI / 2); ctx.moveTo(x + 1, y - 4.5); ctx.ellipse(x + 1, y, 2.5, 4.5, 0, -Math.PI / 2, Math.PI / 2); }
+    else if (kind === "speed") { ctx.moveTo(x - 3, y - 3); ctx.lineTo(x, y); ctx.lineTo(x - 3, y + 3); ctx.moveTo(x, y - 3); ctx.lineTo(x + 3, y); ctx.lineTo(x, y + 3); }
+    else if (kind === "fork") { ctx.moveTo(x - 2, y - 4); ctx.lineTo(x - 2, y + 1); ctx.lineTo(x + 2, y + 1); ctx.lineTo(x + 2, y - 4); ctx.moveTo(x, y + 1); ctx.lineTo(x, y + 4); }
+    else if (kind === "harmonic") { ctx.ellipse(x - 1, y + 2.5, 1.8, 1.3, -0.4, 0, TAU); ctx.moveTo(x + 0.7, y + 2.3); ctx.lineTo(x + 0.7, y - 4); ctx.lineTo(x + 3, y - 2.5); }
+  };
+  path(); ctx.stroke(); ctx.strokeStyle = color; ctx.lineWidth = 1; path(); ctx.stroke();
+}
+function drawWorld(ox, oy) {
+  ctx.save(); ctx.translate(ox, oy);
+  drawLandscapeBack();
+  drawGround();
+  if (landOnly) { ctx.restore(); return; }
+  drawSparks(false);
+  // Banners sit behind sprites.
+  for (const p of popups) { ctx.globalAlpha = Math.min(1, p.life * 2); text(p.text, p.x, p.y, p.color, "center", 6); }
+  ctx.globalAlpha = 1;
+  for (const p of pickups) { drawSprite(p.kind, p.x, p.y, { flipX: p.kind === "harmonic" }); glyph(p.kind === "crystal" ? crystalShape(p) : p.kind, p.x, p.y - 12, C.ink); }
+  for (const e of foes) {
+    const warn = e.every && mod(beatNo + 1 - e.phase, e.every) === 0 && beatFrac > 0.5 && e.x < W - 4;
+    const white = e.flash > 0 || (warn && blink(16));
+    if (e.kind === "eel") {
+      pdisc(e.x, e.y, 5, "#000000"); pdisc(e.x, e.y, 4, white ? "#ffffff" : hsl(hue + e.i * 40 + 30, 90, 30)); pdisc(e.x - 1, e.y - 1, 2, white ? "#ffffff" : hsl(hue + e.i * 40, 100, 62));
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(Math.round(e.x) - 2, Math.round(e.y) - 2, 1, 1);
+      continue;
+    }
+    const hop = Math.round(beatEnv * 1.2);
+    const opts = { white };
+    if (e.kind === "chirp") opts.sx = Math.floor(e.t * 8) % 2 ? 0.75 : 1;
+    if (e.kind === "cymbal") opts.rot = (Math.floor(e.spin) % 4) * (Math.PI / 2);
+    if (e.ground < 0) opts.flipY = true;
+    const bob = e.kind === "drummer" || e.kind === "horn" || e.kind === "metronome" || e.kind === "cymbal" ? 0 : hop;
+    drawSprite(e.kind === "eelhead" ? "eel" : e.kind, e.x, e.y - bob, opts);
+  }
+  drawShots(false);
+  // Speakers: a soft glow behind each so dark picks still read, and a 1 px kick back with every note.
+  const kick = harmPunch > 0 && !reduceMotion ? -1 : 0;
+  const speaker = (h, alpha) => { ctx.globalAlpha = 0.35 * alpha; pdisc(h.x, h.y, 5, hsl(hue + 60, 100, 70)); ctx.globalAlpha = 1; drawSprite("harmonic", h.x + kick, h.y, { alpha, flipX: true, sx: 0.5, sy: 0.5 }); };
+  for (const h of harmonics()) if (h.z < 0) speaker(h, 0.85);
+  const drawEcho = () => {
+    if (echo.state === "loose" && blink(4)) return;
+    if (!reduceMotion) { ctx.strokeStyle = hsl(hue + 60, 100, 70, 0.6 * beatEnv); ctx.lineWidth = 0.75; ctx.beginPath(); ctx.arc(echo.x, echo.y, 6 + beatEnv * 2, 0, TAU); ctx.stroke(); }
+    drawSprite("echo", echo.x, echo.y, { sx: 0.5, sy: 0.5 });
+  };
+  if (echo.state === "back") drawEcho();
+  if (!(player.invuln > 0 && blink(10))) {
+    if (!reduceMotion) { ctx.fillStyle = hsl(hue + 300, 100, 65, 0.8); ctx.fillRect(player.x - 11 - rand() * 2, player.y - 0.5, 3 + rand() * 2, 1); }
+    drawSprite("player", player.x, player.y, { rot: Math.PI / 2, sy: player.bank });
+  }
+  if (echo.state !== "back") drawEcho();
+  for (const h of harmonics()) if (h.z >= 0) speaker(h, 1);
+  drawShots(true);
+  drawBeams();
+  for (const b of bullets) drawBullet(b);
+  // Charge ring: three arcs that fill one by one; solid white when a release now would resonate.
+  if (player.charging) {
+    const t = tier(), solid = t >= 2 && onBeatWindow();
+    if (solid) { ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(player.x, player.y, 12, 0, TAU); ctx.stroke(); }
+    else for (let i = 0; i < 3; i++) {
+      ctx.strokeStyle = i < t ? hsl(hue + 180, 100, 70) : "rgba(241,235,255,0.25)"; ctx.lineWidth = i < t ? 1.5 : 0.75;
+      const a0 = -Math.PI / 2 + i * (TAU / 3) + 0.15; ctx.beginPath(); ctx.arc(player.x, player.y, 12, a0, a0 + TAU / 3 - 0.3); ctx.stroke();
+    }
+    const part = (player.charge % SPB) / SPB;
+    if (t < 3) { ctx.strokeStyle = hsl(hue + 180, 100, 70, 0.6); ctx.lineWidth = 0.5; ctx.beginPath(); ctx.arc(player.x, player.y, 12 + 6 * (1 - part), 0, TAU); ctx.stroke(); }
+  }
+  drawSparks(true);
+  for (const r of rings) {
+    ctx.globalAlpha = r.life / r.max; ctx.strokeStyle = hsl(r.h, 100, 66); ctx.lineWidth = r.w;
+    ctx.beginPath(); ctx.ellipse(r.x, r.y, Math.max(0.1, r.r), Math.max(0.1, r.r * Math.cos(r.tilt)), r.rot, 0, TAU); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  // Chevrons at the right edge a beat before something arrives.
+  for (const w of warns) if (blink(8)) { ctx.fillStyle = C.gold; for (let i = 0; i < 2; i++) { const x = W - 10 + i * 4; ctx.beginPath(); ctx.moveTo(x + 3, w.y - 4); ctx.lineTo(x, w.y); ctx.lineTo(x + 3, w.y + 4); ctx.lineTo(x + 4.5, w.y + 4); ctx.lineTo(x + 1.5, w.y); ctx.lineTo(x + 4.5, w.y - 4); ctx.fill(); } }
+  ctx.restore();
+}
+
+function pips(x, y, n, of, color) {
+  for (let i = 0; i < of; i++) { if (i < n) { ctx.fillStyle = color; ctx.fillRect(x + i * 4, y, 3, 4); } else { ctx.strokeStyle = C.dim; ctx.lineWidth = 0.5; ctx.strokeRect(x + i * 4 + 0.25, y + 0.25, 2.5, 3.5); } }
+}
+function drawHud() {
+  ctx.fillStyle = C.void; ctx.fillRect(0, 0, W, TOP);
+  ctx.fillStyle = hsl(hue, 95, 62, 0.6); ctx.fillRect(0, TOP - 0.5, W, 0.5);
+  text("SCORE", 4, 0.5, C.dim, "left", 5);
+  text(String(score).padStart(7, "0"), 4, 6, C.gold, "left", 9);
+  text("HI", 66, 0.5, C.dim, "left", 5);
+  text(String(Math.max(hi, score)).padStart(7, "0"), 66, 7.5, C.ink, "left", 6);
+  text("HARMONY", 108, 0.5, C.dim, "left", 5);
+  text(`x${mult}`, 108, 6, mult > 1 ? C.beam : C.ink, "left", 9);
+  // Beat lamp: four boxes, the current beat filled, the downbeat taller.
+  text("BEAT", 148, 0.5, C.dim, "left", 5);
+  for (let i = 0; i < 4; i++) {
+    const on = mod(beatNo, 4) === i, x = 148 + i * 7, h = i === 0 ? 7 : 5, y = 14 - h;
+    if (on) { ctx.fillStyle = hsl(hue, 95, 66); ctx.fillRect(x, y, 5, h); } else { ctx.strokeStyle = C.dim; ctx.lineWidth = 0.5; ctx.strokeRect(x + 0.25, y + 0.25, 4.5, h - 0.5); }
+  }
+  text("ECHO", 182, 0.5, C.dim, "left", 5);
+  glyph(player.weapon, 188, 10.5, echo.state === "loose" ? C.dim : C.beam);
+  pips(196, 8.5, player.level, 3, C.gold);
+  text("HARM", 214, 0.5, C.dim, "left", 5);
+  for (let i = 0; i < 2; i++) glyph("harmonic", 217 + i * 7, 10.5, i < player.harm ? C.beam : "#3a2d63");
+  text("SPD", 236, 0.5, C.dim, "left", 5);
+  pips(236, 8.5, player.speed, 3, C.ink);
+  text("SHIPS", 254, 0.5, C.dim, "left", 5);
+  const img = images[picks.player];
+  for (let i = 0; i < Math.min(lives, 5); i++) if (img?.complete) { ctx.save(); ctx.translate(258 + i * 9, 11); ctx.rotate(Math.PI / 2); ctx.drawImage(img, -4, -4, 8, 8); ctx.restore(); }
+  text("MOVEMENT I", 306, 0.5, C.dim, "left", 5);
+  text("PULSE", 306, 6.5, C.magenta, "left", 8);
+  // Pause (II) and sound, both tappable.
+  ctx.fillStyle = C.ink; ctx.fillRect(385, 4, 2, 8); ctx.fillRect(390, 4, 2, 8);
+  ctx.fillStyle = muted ? C.dim : C.ink;
+  ctx.fillRect(401, 6, 2, 3); ctx.fillRect(403, 5, 1, 5); ctx.fillRect(404, 4, 1, 7);
+  if (muted) { for (let i = 0; i < 4; i++) { ctx.fillRect(406 + i, 5 + i, 1, 1); ctx.fillRect(409 - i, 5 + i, 1, 1); } }
+  else { ctx.fillRect(406, 6, 1, 3); ctx.fillRect(408, 5, 1, 5); ctx.fillRect(410, 4, 1, 7); }
+
+  const demo = performance.now() - lastInput > 3500;
+  const hint = landOnly ? "LANDSCAPE ONLY" : demo ? "DEMO  ·  CLICK THE SCREEN TO FLY"
+    : lastDevice === "pad" ? "STICK FLY  ·  A FIRE  ·  X CHARGE  ·  B ECHO  ·  START PAUSE"
+    : lastDevice === "touch" ? "STICK FLY  ·  HOLD CHARGE  ·  TAP ECHO"
+    : "ARROWS FLY  ·  Z FIRE  ·  X CHARGE  ·  C ECHO  ·  P PAUSE  ·  M SOUND";
+  ctx.font = "900 5px Doto, monospace"; const hw = ctx.measureText(hint).width + 8;
+  ctx.fillStyle = "rgba(7,4,15,0.8)"; ctx.fillRect(Math.round(W / 2 - hw / 2), H - 8, Math.round(hw), 8);
+  text(hint, W / 2, H - 7, C.ink, "center", 5);
+  if (paused) {
+    ctx.fillStyle = "rgba(7,4,15,0.7)"; ctx.fillRect(0, TOP, W, H - TOP);
+    text("PAUSED", W / 2, 88, C.gold, "center", 18);
+    text("CLICK, P OR START TO RESUME", W / 2, 116, C.ink, "center", 6);
+  }
+}
+function drawTouch() {
+  if (!touch.shown || landOnly) return;
+  const st = TOUCH.stick;
+  ctx.fillStyle = "rgba(241,235,255,0.10)"; ctx.beginPath(); ctx.arc(st.x, st.y, st.r, 0, TAU); ctx.fill();
+  ctx.strokeStyle = "rgba(241,235,255,0.35)"; ctx.lineWidth = 0.75; ctx.stroke();
+  ctx.fillStyle = touch.mx || touch.my ? "rgba(255,216,77,0.6)" : "rgba(241,235,255,0.3)";
+  ctx.beginPath(); ctx.arc(st.x + touch.mx * st.r * 0.7, st.y + touch.my * st.r * 0.7, 9, 0, TAU); ctx.fill();
+  for (const [key, label] of [["charge", "CHARGE"], ["echo", "ECHO"]]) {
+    const b = TOUCH[key], on = key === "charge" && touch.charge;
+    ctx.fillStyle = on ? "rgba(95,243,255,0.45)" : "rgba(241,235,255,0.12)";
+    ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, TAU); ctx.fill();
+    ctx.strokeStyle = "rgba(241,235,255,0.4)"; ctx.stroke();
+    text(label, b.x, b.y - 2.5, C.ink, "center", 5);
+  }
+}
+
+// ---- Sound: a procedural band. Nothing starts until you click or press a key in the screen. ----
+let ac = null, master = null, chargeOsc = null;
+const SCALE = [0, 3, 5, 7, 10];
+const noteHz = (deg, base = 220) => base * 2 ** ((SCALE[mod(deg, 5)] + 12 * Math.floor(deg / 5)) / 12);
+function audioOn() {
+  if (muted) return;
+  if (!ac) { try { ac = new AudioContext(); master = ac.createGain(); master.gain.value = 0.22; master.connect(ac.destination); } catch (e) { return; } }
+  if (ac.state === "suspended") ac.resume();
+}
+const live = () => ac && !muted && ac.state === "running";
+function voice(type, f0, f1, dur, vol, when = 0) {
+  const t = ac.currentTime + when, o = ac.createOscillator(), g = ac.createGain();
+  o.type = type; o.frequency.setValueAtTime(f0, t); if (f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g).connect(master); o.start(t); o.stop(t + dur + 0.02);
+}
+let noiseBuf = null;
+function hat(vol, when) {
+  if (!noiseBuf) { noiseBuf = ac.createBuffer(1, ac.sampleRate * 0.1, ac.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+  const t = ac.currentTime + when, s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
+  s.buffer = noiseBuf; f.type = "highpass"; f.frequency.value = 7000; g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+  s.connect(f).connect(g).connect(master); s.start(t); s.stop(t + 0.06);
+}
+const BASS = [0, 0, 3, 2];
+function sfxBeat(b) {
+  if (!live()) return;
+  voice("sine", 130, 42, 0.16, 0.9);
+  hat(0.25, SPB / 2);
+  const root = BASS[mod(Math.floor(b / 4), 4)];
+  voice("triangle", noteHz(root, 55), noteHz(root, 55), SPB * 0.8, 0.35);
+  if (mod(b, 4) === 0) for (const d of [0, 2, 4]) voice("sine", noteHz(root + d, 220), noteHz(root + d, 220), SPB * 3.5, 0.05);
+}
+let lastShotSound = 0;
+function sfxShot(y) { if (!live() || clock - lastShotSound < 0.24) return; lastShotSound = clock; const deg = Math.round(((H - y) / (H - TOP)) * 9); voice("square", noteHz(deg, 440), noteHz(deg, 440), 0.06, 0.03); }
+function sfxKill(y) { if (!live()) return; const deg = Math.round(((H - y) / (H - TOP)) * 7); for (const d of [0, 2, 4]) voice("triangle", noteHz(deg + d, 330), noteHz(deg + d, 330), 0.25, 0.08); voice("sine", 400, 60, 0.18, 0.2); }
+function sfxBlip(f) { if (live()) voice("sine", f, f * 1.5, 0.08, 0.12); }
+function sfxBeam(t, res) { if (!live()) return; voice("sawtooth", 880, 110, 0.35 + t * 0.1, 0.12); if (res) for (const d of [0, 2, 4, 5]) voice("triangle", noteHz(d, 440), noteHz(d, 440), 0.5, 0.08); }
+function sfxChargeStart() { if (!live()) return; chargeOsc = ac.createOscillator(); const g = ac.createGain(); g.gain.value = 0.04; chargeOsc.type = "sine"; chargeOsc.frequency.value = 220; chargeOsc.connect(g).connect(master); chargeOsc.start(); }
+function sfxChargeTo(t) { if (chargeOsc) chargeOsc.frequency.setTargetAtTime(220 * 2 ** (t / 2) * (1 + (player.charge % SPB) / SPB * 0.5), ac.currentTime, 0.05); }
+function sfxChargeStop() { if (chargeOsc) { try { chargeOsc.stop(); } catch (e) {} chargeOsc = null; } }
+document.addEventListener("visibilitychange", () => { if (document.hidden) { paused = true; sfxChargeStop(); } });
+
+// The Harmonic card's picture: the picked speaker playing notes on every half-beat.
+const harmHero = document.querySelector("canvas[data-anim=harmonic]"), hctx = harmHero?.getContext("2d");
+const heroNotes = []; let heroStep = -1;
+function drawHarmHero(now) {
+  if (!hctx) return;
+  const t = now / 1000, half = SPB / 2, step = Math.floor(t / half), kick = t / half - step < 0.15;
+  if (step !== heroStep) { heroStep = step; heroNotes.push({ born: t, ph: rand() * TAU }); }
+  hctx.setTransform(3, 0, 0, 3, 0, 0); hctx.imageSmoothingEnabled = false;
+  hctx.fillStyle = C.void; hctx.fillRect(0, 0, 32, 32);
+  const img = images[picks.harmonic];
+  if (img?.complete && img.naturalWidth) { hctx.save(); hctx.translate(kick && !reduceMotion ? 17 : 18, 8); hctx.scale(-1, 1); hctx.drawImage(img, 0, 0, 16, 16); hctx.restore(); }
+  for (let i = heroNotes.length - 1; i >= 0; i--) {
+    const n = heroNotes[i], age = t - n.born, x = Math.round(18 + age * 26), y = Math.round(17 + 2.5 * Math.sin(n.ph + age * 10));
+    if (x > 36) { heroNotes.splice(i, 1); continue; }
+    drawNote(hctx, x + 1, y + 1, "#000000"); drawNote(hctx, x, y, hsl(hue + 60, 100, 74));
+  }
+}
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now; frameDt = paused ? 0 : dt;
+  update(dt, now);
+  ctx.setTransform(S, 0, 0, S, 0, 0);
+  ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = C.void; ctx.fillRect(0, 0, W, H);
+  const mag = shake > 0 ? shakeMax * Math.min(1, shake / 0.2) : 0;
+  drawWorld(Math.round((rand() - 0.5) * 2 * mag), Math.round((rand() - 0.5) * 2 * mag));
+  if (flash > 0) { ctx.fillStyle = `rgba(255,255,255,${Math.min(0.5, flash * 3)})`; ctx.fillRect(0, TOP, W, H - TOP); }
+  drawHud();
+  drawTouch();
+  drawHarmHero(now);
+  requestAnimationFrame(frame);
+}
+function syncSeg() {
+  document.getElementById("touch-on").setAttribute("aria-pressed", String(touch.shown));
+  document.getElementById("touch-off").setAttribute("aria-pressed", String(!touch.shown));
+}
+function syncWeaponSeg() { document.querySelectorAll("[data-weapon]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.weapon === player.weapon))); }
+document.querySelectorAll("[data-touch]").forEach((b) => b.addEventListener("click", () => { touch.shown = b.dataset.touch === "on"; syncSeg(); }));
+document.querySelectorAll("[data-weapon]").forEach((b) => b.addEventListener("click", () => { player.weapon = b.dataset.weapon; if (echo.state === "loose") echo.state = "front"; syncWeaponSeg(); }));
+document.querySelectorAll("[data-show]").forEach((b, _, all) => b.addEventListener("click", () => { landOnly = b.dataset.show === "land"; all.forEach((x) => x.setAttribute("aria-pressed", String(x === b))); }));
+function syncFrameSeg() { document.querySelectorAll("[data-frame]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.frame === frameStyle))); }
+document.querySelectorAll("[data-frame]").forEach((b) => b.addEventListener("click", () => {
+  frameStyle = b.dataset.frame; player.invuln = Math.max(player.invuln, 1); syncFrameSeg();
+  try { localStorage.setItem("overtone-frame", frameStyle); } catch (e) {}
+}));
+syncSeg(); syncWeaponSeg(); syncFrameSeg();
+document.fonts?.load("900 8px Doto").catch(() => {});
+requestAnimationFrame(frame);
+</script>

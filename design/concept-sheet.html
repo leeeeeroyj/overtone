@@ -1,0 +1,1351 @@
+<title>Overtone Concept Sheet</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Doto:wght@700;900&family=Monoton&family=Sora:wght@400;600&display=swap">
+<style>
+/* Layout: a concert programme for a cosmos that plays music. The live screen leads, then the landscape layer by layer,
+   then your craft, the ensemble, pickups and bosses, then how a movement plays. One deliberate dark look: a stage before
+   the lights. Type: Monoton (record grooves) for the name, Doto (a mixing desk's LED dots) for everything the game shows. */
+:root {
+  --void: #07040f;      /* page ground */
+  --panel: #120b24;     /* raised surfaces */
+  --line: #2a1d4d;      /* hairlines, empty cells */
+  --ink: #f1ebff;       /* primary text */
+  --dim: #a497cc;       /* secondary text */
+  --gold: #ffd84d;      /* accent: HUD, selection, points */
+  --beam: #5ff3ff;      /* your shots and the beat */
+  --magenta: #ff4fd8;   /* the stage's glow */
+  --font-title: "Monoton", "Doto", "Courier New", monospace;
+  --font-display: "Doto", "Courier New", monospace;
+  --font-body: "Sora", "Segoe UI", system-ui, sans-serif;
+  --step--1: 0.875rem; --step-0: 1rem; --step-1: 1.2rem; --step-2: 1.9rem; --step-3: clamp(2.6rem, 9vw, 5.5rem);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--void); color: var(--ink); font-family: var(--font-body); font-size: var(--step-0); line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 48px; margin: 0;
+}
+.wrap { max-width: 1264px; margin: 0 auto; display: grid; gap: 56px; }
+h1 { font-family: var(--font-title); font-weight: 400; font-size: var(--step-3); line-height: 1; color: var(--gold); margin: 0; letter-spacing: 0.02em; }
+h2, h3, .label, kbd, .chip, button.primary, .seg button { font-family: var(--font-display); font-weight: 900; }
+h2 { font-size: var(--step-2); line-height: 1.1; margin: 0; text-wrap: balance; }
+h3 { font-size: var(--step-1); letter-spacing: 0.02em; margin: 0; }
+p { margin: 0; }
+.label { font-size: 0.875rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
+.muted { color: var(--dim); }
+
+header.top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px 32px; padding-top: 40px; }
+header.top .pitch { max-width: 60ch; margin-top: 16px; color: var(--dim); font-size: var(--step-1); line-height: 1.45; }
+.actions { display: grid; gap: 8px; justify-items: end; }
+button.primary {
+  font-size: 1rem; letter-spacing: 0.06em; text-transform: uppercase;
+  background: var(--gold); color: var(--void); border: 0; padding: 12px 18px; cursor: pointer;
+  box-shadow: 4px 4px 0 var(--magenta);
+}
+button.primary:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--magenta); }
+button:focus-visible, canvas:focus-visible { outline: 2px solid var(--beam); outline-offset: 3px; }
+#copy-status { font-size: var(--step--1); color: var(--dim); min-height: 1.5em; }
+#picks-text { width: min(420px, 100%); height: 140px; background: var(--panel); color: var(--ink); border: 1px solid var(--line); font: 12px/1.4 monospace; }
+
+/* Screen */
+.screen-block { display: grid; gap: 16px; }
+.section-head { display: grid; gap: 6px; max-width: 72ch; }
+.bezel { background: #020105; border: 1px solid var(--line); padding: clamp(6px, 1.5vw, 16px); box-shadow: 0 0 0 4px var(--panel), 0 24px 60px -30px #000; }
+#screen { display: block; width: 100%; max-width: 100%; height: auto; aspect-ratio: 416 / 228; image-rendering: pixelated; touch-action: none; }
+.controls { display: grid; gap: 10px; }
+.keys { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; }
+.keys > .label { min-width: 104px; }
+.key { display: inline-flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+kbd { font-size: 0.875rem; min-width: 26px; padding: 3px 6px; text-align: center; background: var(--panel); border: 1px solid var(--line); border-bottom-width: 3px; color: var(--ink); }
+.pad-status { font-size: var(--step--1); color: var(--dim); }
+.pad-status[data-on="true"] { color: var(--beam); }
+.seg { display: inline-flex; border: 1px solid var(--line); }
+.seg button { font-size: 0.875rem; background: var(--panel); color: var(--dim); border: 0; padding: 6px 10px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--gold); color: var(--void); }
+.screen-notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 12px 24px; }
+.screen-notes div { display: grid; gap: 2px; min-width: 0; align-content: start; }
+
+/* Landscape layers */
+.layers { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 0 32px; counter-reset: layer; }
+.layers div { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; border-top: 1px solid var(--line); padding: 12px 0; align-content: start; min-width: 0; }
+.layers .depth { font-family: var(--font-display); font-weight: 900; color: var(--magenta); font-variant-numeric: tabular-nums; grid-row: span 2; min-width: 3.2em; }
+.layers strong { font-family: var(--font-display); font-weight: 900; color: var(--gold); }
+
+/* Slot panels */
+.section { display: grid; gap: 20px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 296px), 1fr)); gap: 16px; }
+.card { background: var(--panel); border: 1px solid var(--line); padding: 16px; display: grid; gap: 14px; align-content: start; min-width: 0; }
+.card-head { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: center; }
+.hero-sprite { width: 96px; height: 96px; image-rendering: pixelated; background: var(--void); border: 1px solid var(--line); }
+.hero-sprite.turn { transform: rotate(90deg); }
+.card-title { display: grid; gap: 4px; min-width: 0; justify-items: start; }
+.chip { font-size: 0.875rem; color: var(--void); background: var(--gold); padding: 1px 6px; font-variant-numeric: tabular-nums; }
+.chip.ghost { background: transparent; color: var(--gold); border: 1px solid var(--gold); }
+.card p { font-size: 0.95rem; }
+.cands { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.cand { padding: 0; aspect-ratio: 1; background: var(--void); border: 1px solid var(--line); cursor: pointer; display: grid; place-items: center; }
+.cand img { width: 75%; height: 75%; image-rendering: pixelated; }
+.cand:hover { border-color: var(--dim); }
+.cand[aria-pressed="true"] { border-color: var(--gold); box-shadow: inset 0 0 0 2px var(--gold); }
+.meta { font-size: 0.8125rem; color: var(--dim); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+
+/* Rules */
+.rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 16px 32px; }
+.rules div { display: grid; gap: 4px; border-top: 1px solid var(--line); padding-top: 12px; align-content: start; }
+.rules strong { font-family: var(--font-display); font-weight: 900; color: var(--gold); font-size: 1.1rem; font-variant-numeric: tabular-nums; }
+.lineage { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 16px; }
+.lineage div { background: var(--panel); border: 1px solid var(--line); padding: 16px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.lineage ul { margin: 0; padding-left: 1.1em; display: grid; gap: 4px; }
+footer { border-top: 1px solid var(--line); padding-top: 16px; font-size: var(--step--1); color: var(--dim); display: grid; gap: 6px; }
+footer a { color: var(--beam); }
+@media (prefers-reduced-motion: reduce) { button.primary:active { transform: none; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <p class="label">Concept sheet · v0.3</p>
+      <h1>OVERTONE</h1>
+      <p class="pitch">Fly through a cosmos that plays music. Every enemy keeps time, every shot is a note, and a living orb of sound rides on your nose. Hold the beam, wait for the beat, and let it ring.</p>
+    </div>
+    <div class="actions">
+      <button class="primary" id="copy-picks" type="button">Copy my picks</button>
+      <span id="copy-status" role="status"></span>
+      <textarea id="picks-text" hidden readonly aria-label="Your picks as JSON"></textarea>
+    </div>
+  </header>
+
+  <section class="screen-block" aria-labelledby="screen-h">
+    <div class="section-head">
+      <h2 id="screen-h">Movement I · Pulse</h2>
+      <p class="muted">Live mockup at the game's real resolution (416&times;228), drawn at 4&times; like the game. It plays a demo until you click the screen and take over. The music starts once you click (M or the speaker turns it off). Sprites you pick below swap in here.</p>
+    </div>
+    <div class="bezel"><canvas id="screen" width="1664" height="912" tabindex="0" aria-label="Game screen mockup. Click it, then fly with the arrow keys or W A S D, fire with Z or Space, charge with X, launch or recall the Echo with C."></canvas></div>
+    <div class="controls">
+      <div class="keys" aria-label="Keyboard and mouse">
+        <span class="label">Keyboard</span>
+        <span class="key"><kbd>&larr;</kbd><kbd>&uarr;</kbd><kbd>&darr;</kbd><kbd>&rarr;</kbd>&nbsp;or&nbsp;<kbd>WASD</kbd>&nbsp;fly</span>
+        <span class="key"><kbd>Z</kbd>&nbsp;/&nbsp;<kbd>Space</kbd>&nbsp;/&nbsp;<kbd>Click</kbd>&nbsp;fire (hold)</span>
+        <span class="key"><kbd>X</kbd>&nbsp;/&nbsp;<kbd>Right-click</kbd>&nbsp;charge (hold, release)</span>
+        <span class="key"><kbd>C</kbd>&nbsp;/&nbsp;<kbd>Shift</kbd>&nbsp;Echo</span>
+        <span class="key"><kbd>P</kbd>&nbsp;pause</span>
+        <span class="key"><kbd>M</kbd>&nbsp;sound</span>
+      </div>
+      <div class="keys" aria-label="Controller">
+        <span class="label">Controller</span>
+        <span class="key"><kbd>L stick</kbd>&nbsp;/&nbsp;<kbd>D-pad</kbd>&nbsp;fly</span>
+        <span class="key"><kbd>A</kbd>&nbsp;fire</span>
+        <span class="key"><kbd>X</kbd>&nbsp;/&nbsp;<kbd>RT</kbd>&nbsp;charge</span>
+        <span class="key"><kbd>B</kbd>&nbsp;/&nbsp;<kbd>RB</kbd>&nbsp;Echo</span>
+        <span class="key"><kbd>Start</kbd>&nbsp;pause</span>
+        <span class="key"><kbd>Y</kbd>&nbsp;sound</span>
+        <span class="pad-status" id="pad-status" role="status">No controller yet. Press any button on it.</span>
+      </div>
+      <div class="keys" aria-label="Touch">
+        <span class="label">Touch</span>
+        <span class="key">Left thumb: stick to fly. Fire is automatic.</span>
+        <span class="key">Right thumb: CHARGE (hold), ECHO (tap)</span>
+        <span class="seg" role="group" aria-label="Touch controls"><button type="button" id="touch-off" data-touch="off" aria-pressed="true">Hide</button><button type="button" id="touch-on" data-touch="on" aria-pressed="false">Show</button></span>
+      </div>
+      <div class="keys" aria-label="Preview">
+        <span class="label">Crystal</span>
+        <span class="seg" role="group" aria-label="Echo weapon"><button type="button" data-weapon="spiral" aria-pressed="true">Spiral</button><button type="button" data-weapon="prism" aria-pressed="false">Prism</button><button type="button" data-weapon="sonar" aria-pressed="false">Sonar</button></span>
+        <span class="label">Frame</span>
+        <span class="seg" role="group" aria-label="Frame style"><button type="button" data-frame="eq" aria-pressed="true">Equalizer</button><button type="button" data-frame="grid" aria-pressed="false">Neon grid</button><button type="button" data-frame="circuit" aria-pressed="false">Circuit</button></span>
+        <span class="label">Show</span>
+        <span class="seg" role="group" aria-label="What to draw"><button type="button" data-show="game" aria-pressed="true">Game</button><button type="button" data-show="land" aria-pressed="false">Landscape only</button></span>
+      </div>
+    </div>
+    <div class="screen-notes">
+      <div><span class="label">Top bar</span><span>Score and HI, the HARMONY multiplier, the beat lamp (four boxes, the current beat filled, the downbeat taller), the Echo's weapon and level, Harmonics, speed, ships, pause and sound.</span></div>
+      <div><span class="label">The beat</span><span>Everything moves and fires on the beat. Anything about to fire turns white for the half-beat before. Release a charge on the beat, when its ring goes solid, for a RESONANT beam.</span></div>
+      <div><span class="label">Readable first</span><span>The landscape is dim and cool; everything that can hurt you is bright, outlined and on top. Hue is only decoration: shots, pickups and warnings differ by shape.</span></div>
+      <div><span class="label">What's solid</span><span>Only the frame above and below. Try its three styles with <em>Frame</em>. In every style its edge is the brightest thing behind the action, and it's exactly where you collide.</span></div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="land-h">
+    <div class="section-head">
+      <h2 id="land-h">The landscape, far to near</h2>
+      <p class="muted">Movement I is drawn in code as pixel art, in seven layers that scroll at their own speeds. Every layer answers the music somewhere. Use <em>Landscape only</em> above to see it without the action. Movements II and III use the same layers with their own shapes and palettes.</p>
+    </div>
+    <div class="layers">
+      <div><span class="depth">0.00</span><strong>Sky</strong><span>A dithered dusk from indigo to a magenta horizon. A few stars twinkle on the beat.</span></div>
+      <div><span class="depth">0.02</span><strong>Speaker moon</strong><span>A huge speaker cone hanging in the sky. Its rings ripple outward on every kick.</span></div>
+      <div><span class="depth">0.12</span><strong>Spectrum range</strong><span>Far mountains built from the bars of a spectrum analyser. They bounce with the music, and each peak hangs for a moment before it falls.</span></div>
+      <div><span class="depth">0.30</span><strong>Instrument city</strong><span>Silhouettes of organ ranks, harps, tuning-fork towers, metronome pyramids, violin-scroll spires and speaker stacks. Their lights play in turn through each bar.</span></div>
+      <div><span class="depth">0.50</span><strong>The score</strong><span>A five-line stave drifts across the sky. The note heads on it light up as the music reaches them.</span></div>
+      <div><span class="depth">0.70</span><strong>Motes</strong><span>Sparks of sound rising slowly, brighter on each beat.</span></div>
+      <div><span class="depth">1.00</span><strong>The frame</strong><span>The only solid ground, above and below, in one of three styles: an <em>Equalizer</em> of LED cells that jump with the music, a <em>Neon grid</em> whose lines flow in from the edge on every beat, or a <em>Circuit</em> with light racing along its traces. In all three a pulse of light runs along both edges each beat.</span></div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="ship-h">
+    <div class="section-head">
+      <h2 id="ship-h">Your craft &amp; its Echo</h2>
+      <p class="muted">Pick a craft drawn from above with the nose up. The game turns it to fly right (the large picture shows it that way) and squashes it a quarter as it banks into a climb or dive, so every pixel stays square.</p>
+    </div>
+    <div class="grid" id="ship-grid"></div>
+  </section>
+
+  <section class="section" aria-labelledby="enemy-h">
+    <div class="section-head">
+      <h2 id="enemy-h">The ensemble</h2>
+      <p class="muted">Eight roles from a neon cosmos: creatures and machines, not instruments, but every one of them keeps time. Each one either warns you before it fires (a white flash for half a beat) or shows a chevron at the edge a beat before it arrives.</p>
+    </div>
+    <div class="grid" id="enemy-grid"></div>
+  </section>
+
+  <section class="section" aria-labelledby="kit-h">
+    <div class="section-head">
+      <h2 id="kit-h">Pickups &amp; bosses</h2>
+      <p class="muted">Couriers drop pickups. Each pickup carries a glyph drawn over it, so you can tell them apart without colour.</p>
+    </div>
+    <div class="grid" id="kit-grid"></div>
+  </section>
+
+  <section class="section" aria-labelledby="rules-h">
+    <div class="section-head"><h2 id="rules-h">How a movement plays</h2></div>
+    <div class="rules">
+      <div><strong>Three movements</strong><span>I Pulse (128 BPM, a dusk over the instrument city), II Strings (140 BPM, a cave strung with vibrating strings), III Crescendo (152 BPM, everything at once). A new wave arrives every bar. About 2½ minutes each, then a boss. After III the ensemble plays again, faster.</span></div>
+      <div><strong>Everything keeps time</strong><span>Enemies move and fire on the beat, and anything about to fire turns white for the half-beat before. The beat lamp shows where you are in the bar.</span></div>
+      <div><strong>Fire, or charge</strong><span>Hold FIRE for a steady stream. Hold CHARGE instead (you stop shooting while you do) and a ring round your craft fills one segment per beat, up to three. Release for a beam that pierces everything.</span></div>
+      <div><strong>Resonate</strong><span>Release with two or more segments exactly on the beat (the ring goes solid white) for a RESONANT beam: half as wide again, double points, and every kill adds 1 to HARMONY.</span></div>
+      <div><strong>Harmony &times;1&ndash;&times;8</strong><span>Multiplies every point. Resonant kills and CHORD bonuses (a whole formation) raise it. It drops back to &times;1 when you're hit.</span></div>
+      <div><strong>The Echo</strong><span>Can't be destroyed. Touch it to attach it to your nose or tail. Attached, it blocks shots and fires the crystal's weapon (backwards from the tail). Launched, it hovers ahead and repeats your shots. Recall brings it home.</span></div>
+      <div><strong>Hits cost power</strong><span>A hit takes a Harmonic first, then a weapon level, then knocks the Echo loose (it drifts until you touch it). Hit with nothing left and you lose a ship, respawn on the spot, and blink for 2&nbsp;s. The frame is a hit too, and bounces you off.</span></div>
+      <div><strong>3 ships</strong><span>+1 every 50,000. At game over you can continue from the start of the movement with your score reset, or start again from Movement I. HI keeps your best full run.</span></div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="lineage-h">
+    <div class="section-head">
+      <h2 id="lineage-h">From the 1987 original</h2>
+      <p class="muted">Overtone borrows the mechanics of Irem's <em>R-Type</em>. The name, setting, characters, levels and art are new.</p>
+    </div>
+    <div class="lineage">
+      <div><span class="label">Kept</span><ul>
+        <li>A side-scroller with terrain to thread</li>
+        <li>Hold to charge a beam that pierces</li>
+        <li>An indestructible pod for nose or tail that blocks shots, launches and comes back</li>
+        <li>Bits above and below, speed-ups and homing missiles</li>
+        <li>Three weapons from crystals, levelled by repeats</li>
+        <li>Carriers that drop power-ups, a boss per stage</li>
+      </ul></div>
+      <div><span class="label">Changed</span><ul>
+        <li>A neon cosmos that keeps time instead of a biomechanical empire</li>
+        <li>Separate fire and charge buttons: no mashing</li>
+        <li>Hits cost power, not lives; terrain bounces you off</li>
+        <li>Respawn on the spot, no checkpoint restarts</li>
+        <li>Crystals cycle their weapon so you choose</li>
+      </ul></div>
+      <div><span class="label">Added</span><ul>
+        <li>Everything on the beat, with a half-beat warning</li>
+        <li>Resonant releases and the Harmony multiplier</li>
+        <li>Shots pitched by height: fly higher, play higher</li>
+        <li>A landscape that plays along: the frame, the moon, the skyline</li>
+        <li>Controller and touch from day one</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Sprites: <a href="https://huggingface.co/spaces/cfahlgren1/pixel-search" target="_blank" rel="noopener">Pixel Search</a> catalog of <a href="https://huggingface.co/datasets/Angais/pixel-art-atlas-1.4m" target="_blank" rel="noopener">Angais/pixel-art-atlas-1.4m</a>, CC0, AI-generated. Numbers under each sprite are its catalog id.</span>
+    <span>Fonts: Monoton, Doto and Sora (SIL OFL). Inspired by R-Type (Irem, 1987); not affiliated with or endorsed by its rights holders.</span>
+  </footer>
+</div>
+
+<script>
+const SPRITES = {"player":[{"id":440106,"subject":"fighter jet","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA8UlEQVR42mNgwANYmfj/gzADOQCk8cnb7/+Li3vIN2Dx0qP/ZURVyXMFSJNx/q7/vML6pBsAc75++IL/nByK/2uWbiTeEJjm4xce/5fVywMbEBGRAuaTZAhIQ3xm538Lcy/SvQFSfO7uq/8gADMIrwHIkiA2CKAbAOKjq4Mb4ByZ/x/mbBjAZgAIbD72EGoQC8KAzLJ2cMDBwIYjlzEMAImB1MDEUVzg5p/wv2HSPrDpIAxSvHLzSRQDOufsQ8EoBsDiGRmDog4WnY52URjyKAagBw7Mn4lJ6eBoRBbDGojo0QfyArptIGcTlZhwZWFc4gBNiygGtZyaZwAAAABJRU5ErkJggg=="},{"id":1196896,"subject":"starfighter","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABQUlEQVR42mNgwANYmQX+gzADOQCk0W/O5f/SWpHkGQLS9OL1l/+p0y6Tb0Da9uf/1SOXkW4ASINr3ab/zgtugb0ga5lDmiEwA2S9Zv4XEjEhbAByaIPoZTvP/j9+4fH/DxPN/m/Yc+l/08TV/40cg1DUwA0EMfLK+//DBEEaYAb8+Xn9/7cL8XADQDRMHUwP2IAdp+6CJUGaQfi2rt7/nw9j4Aa8rtf/HyUsC1YDMrysYS5YHYYBII0gCRAfZghIc7eU8n+P4Kz/XTPWgcVBtoMMQjEA5ESQBAiDDLlsa/r/+wqn/yvk1cAaQQZYe8SCsbKqNaYBML/BwiE6s/H/nVxdsEKQ4SADkNWgGADyE3IIwwILpAmmEWQrshqQBXADtqmpoUii2wbCzlz8KGqmyMihRiVymgAFGjFiRGdjfNkaANU3MzaP3kjKAAAAAElFTkSuQmCC"},{"id":1196877,"subject":"starfighter","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA30lEQVR42mNgwAPYWYX/M5ALQJr95lz+T7YhII0OU678VzGqJs4QdEUkGYDuXBCtFTgFxQBkQzAMRDYAZrOqTd//Vbuv/xfklQEbgmyQY+0RVFeBOD4lu8G2Fpx4BTegq38d3ACQJpghKAbAbA/ffx+OQQYoSmv9D3byQzEAZgiGATBJZEV1dx6DNYPkkQ1AdgmKFzQ18+B+BGGQAciKYeEA8pqKWiSmATrKxiixgG4ADIuIWWDECljDxKm78RqAzSIUA6qrZxJlALJFBFMienyjW0QwdWJLxiRlLmIUAwCk+/oUhgNRZAAAAABJRU5ErkJggg=="},{"id":1196883,"subject":"starfighter","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA7UlEQVR42mNgwA/+QzFZ4L/fnMv/fYPzyTbkv3rksv8iUk5EGYBNwX/rvjP/VYPn4jIALvZ/wpTFyIr+wzRbmtr/F+YX/a+gEPwfLTxQ9Pw3zt/1H1kjiA/SuPLlF7i4ilE12EswPhKbAexMvfRd/6M2PAJjmAGBcfUYBoAs0A9d+1/FqhlhQGF5G1gByBAQhhmgpaKNYQDIMpCXQHrgBkyeuQGuUF4xFoxBhoBiAIRBmmFsmDqUMEAyAB6IMC+BaJCB6IGIrAfdAAZ0A5BigQGbAdjSAS4XEEo7JBlAOCnDDCA7L+DwP2mGENIMAE/J67iPyCXBAAAAAElFTkSuQmCC"},{"id":440144,"subject":"fighter jet","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA2klEQVR42mNgwAOYmXj/gzADOQCkUT1y2X/f1bfIM4QqBsjIuP73zVhBmgEgxRKiWmBNQrxC/83UDf8jixFlgIppEdwAeQl5MFsrcArxLoE5H2aAw5QrpGkGaUA2AGQ7UYbANIM0IBtg3nKBsCEwzcouLWANIANgmtBpDENAAsi2gAwBYWSNID5Mzm/OZYQhIAZIUForEq4RJoZsACwmPHuvYboEluZhGKQAOfBg4YCuDmdYgDSCAhAWDjAvEhULIA0g76DbBvISyPl4DTE1i8TpPJi4tXUOihwAkWLeTlgIw/EAAAAASUVORK5CYII="},{"id":440155,"subject":"fighter jet","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAuElEQVR42mNgwANYmPj/M5ALQJo9e6/9J9uQgTUApMkxf+N/NXk1sAEkG4JsAB8nJ3kGGAf2g73Ax6323yB1AfGGgBS6dx//rxtQiWIASIygITDNMANAtLJVItwAvIYgawZhkBewGYBhCCyUkRWAbEc3AOYiZEPABiH7GaZRVs0CwwCQGLIauEtABEgQZiIMgxQp6bqDMSwWkDFMD9ZMAzMA2TBsavDGhqGeHdwAGJukhISsAV9yBgDzP9KZhA1nowAAAABJRU5ErkJggg=="},{"id":440164,"subject":"fighter jet","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAwUlEQVR42mNgwA/+QzHZ4L+xtQ7ZBvzXjjT7n7u8kWxX/Ofhlf8fXbhwYAz4L2qgBDZARkHzv1VfAMmGgA0AhUHAxECiDEBWANYAMoCfmxfMhhmErAbdQLgCEA3SADIAhGEGgOjY5VH/kdViRBlIEUwDSLNRijncQBAbJAfjYzUAhpWdjeBhgGygtJ0uXA2GASAFSH5DCUSQRnQ5DAPQBP7zSwqBNaIZQFQegdsAcwUsZohNCxjegYUR0QbgUIhVHAAoYbPcXb/RvQAAAABJRU5ErkJggg=="},{"id":440109,"subject":"fighter jet","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA70lEQVR42mNgwAOYmHj/gzADucDRLvT/5JkbyDMAZPPHCq3/vzb7k+cKkCYjXav/eeX95BsgLiL336CpmzQDYIo/1Rn85+KW/q8X1/4fxEaWw6kJRGdltf+H+R9kAMgVIAOQ5VAMAzHOnzkFVwBSfMVeDm4AyAUgNkj896EwuCEwPXADbvuYgBWAFIMMgBkEE4PhX0fTwTROA0CaYC7AZgBMDYoBsKiC0SCM7gKYOLpajEBETkQgQ2A0NjU4YwRkc6m6DFgjCLdqy6AYgjcNgMIChEEGwPwNMgDdJXhzHwiDDICxQQYgy5GUIvH6FwgA/eoKN6Og/JMAAAAASUVORK5CYII="}],"echo":[{"id":415794,"subject":"energy orb","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA/ElEQVR42mNgwAKYGfn/Y8MMxACQwrOFb1Dwx7qPYJqgITDNIDaInup2CQXD1BDU/Pnyt/8gvCvrGlhjif3+/z5qc8EYqyHIzoZphuFe6w3/TeSzwZoTdNZjNwRmALrmVs9V/y0UmsEYpBHGRjEAm9NBeEb4AbAmkO0gDNKoJOYHxlEmsxGGIBtwpP02WCPI3yBFMM0gzM+nD8YgA1C8gWwACID8DNIMwiBb0Q0AYbwGgDTJK8aCAwxmAEgTSAyvASBnI/sZ2e8gOZhmkMEYaQLGABmA7FRkDEoLII0gA3CmBZgh2AyCRR/B1AiiQbagY4KaiVFAUo4kNjsDALptRed+a5zxAAAAAElFTkSuQmCC"},{"id":415791,"subject":"energy orb","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABGUlEQVR42mNgwAFUuPn/I2MGYgFMw4eJZv+fz3MEYxCbKINACkAafr9djoHv5OqCMU5DkDXDwO9vR1EM+Xgs6v/ZVB1MQ7BpxmXA2zXu/49ForkEmwF/Pm/+//txCljD2TI1MAaxMQwAMUCCIM0gTTDNv64m/3+9KRQcgCCbH/Sa/98XIQvGIDG4IegBB9IM0gBigxQiG7DJXP7/SjM1/AaAFIMwTDNI7EadARiDDABhDANgXkA2AGQjiN7W4Qa2ABSFyAaAvIISDiBFIH+DAgvmAhgNsg2mGWcsgBTCDABhmBdgBoD8jjUWkA0BORNkK8h52xxV4BhmM07NyIaAUhpMMTIGacSrGdkQmGKQS5A1Ep0r0bMyPo0AHwrcuVLDRW8AAAAASUVORK5CYII="},{"id":375266,"subject":"dream orb","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABhElEQVR42pWTS0sCURiG3UY/o1/Rok3bwl1EQUFtItu0TKTbRpCCiMwiCl0UREKBIKJQeAHpYgnTVFpKXsrSgjbmpC6+eL+co8JYduAZmOG8z3e+OefodBqjs6OLtNC1MzDxK6X8cPFGSf+H4E8JJpRzL1Ta9TIxg9xEyJlqLVHDylqIqsor5XMxWn2M0+agX7A/HdaWNFZGGESLEtkyPvIZbqk4YefA0ICbrCaJnK50swQvlYxMpYMjIYBs5vKew+BwPEgQgHXbTV0gqpttXHX+ycMsPEtkiaSFAMGePifTuyjTynGtFTy82TsWgI1wgib9DwyCpYCFV1fstzYJjCfpusBTyHIYK6m8b/FkgDC+VQtmSpw6SG+MtBagYjnvo88dkxAox0YWVpJLNLIXF+GWAlTAdnHfNYl87hZhZTZAo44zGnZd1QXqj8SeqwIVtWc1vCxJZC9EWaB5FuYSWeoeczONYeyAfvuaw1PBwO+nEXuPyVqgzbbuAyRa/OtGtnudvwFDKv/WQ8BBkgAAAABJRU5ErkJggg=="},{"id":289452,"subject":"cosmic orb","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABk0lEQVR42o2TvUtCYRTGXeo/aG8owuYWo4YMggicMrAhCAqyIRoKkmjpEkFIS+IWDdWQNdiHJIpQIVwwkjC1iwmWqYtUhlHY4InnxGvXrpYvPHDgnuf3no/76nQ1TnNTC9WSrpGDRJvFrdGsaft/CBIcixEqpdL0+ZKtUtH1SiODO/Uh+OCWYpycffezTp5lusvEqRTIsB6OH2tD1DfDWC6XWYj38166ieYouaKQMh0lxVWggd6NHwgCyerVmNUA6SzGM8AsAPIdvpFBb/uGCIAoXW2G7JEIDa+GqMvoJL1+hvrHDhhSBQAZAPQsjMI8ehQmw7iHOltNNDS3y7HVrTBMA8DAULIz7WPBbJwMslkIFWgAooWnXJIWrhJshPqWgmTsmKAPl8xms2GNLhyXWgD6Ccj3VMyHuA30jJuxsrZuiZOjy36Sp04ZAHgFIDaB1aBnuXBO8/Zrspg91N6zzkIMQCmxV337738BELSwFb9lk1B4M8WTr2tWQ1AySgRILU3Zf70HJKqFGVX23uiLbPQ5fwFoOOr/QRJ9gAAAAABJRU5ErkJggg=="},{"id":716865,"subject":"light orb","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA7klEQVR42mNgwAOYGXn/gzADOQCk8U2hJhiTZAjMVhD+drkCbgBRrgEpeN+t///LAnMw/v12+f9vJ8rAYpfstMAYpyEwzSBbQRrR8dcNHv+veyphNwTmPJABMA3//n6CY5gYyFUwA+CGwDT+vD4Fq2ZkQ0Cu+7k9A8UguAE/VlrC/Y3TAGB4fJ9mDcYoXgExHkRpgA0Bu+LbUZwuQLEdOQxQDADiv7+fYA0DggaAQvvnlQ6MWEDWjDMmQBKghANyKhgD/QzDIIOJSgsgA2C2wTAokJETEzuLBG4DYIpAGN3ZeG3HlheQNZGVM4nRBAC3A6mztBnHyQAAAABJRU5ErkJggg=="},{"id":415789,"subject":"energy orb","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABFUlEQVR42mNgwAJ4uLX+Y8MMxACQwg1PX8Pxypdf4JigISAFs55+hOO0Jc/+F254BKZBuPPaG9yGwDTDAMwAZGziNO1/7NKbmIaga4YZ8OL3bzAb2QCshqAbsGnr9f9OjVfgfLwGoPsbhEGaT9x4juKazA034AaAcMTkGxBDYAaABCaeevsfH+g4+PK/gmYZpgGgKAI5CxTKMH+jA5Alnr3XwAZoG7TiNmDn3Q9wPyNr9qs8A3e+ZeJWRDjADEiddhnsBRCNbABIM0gxKFxgBoAMg7sAFpAg20GKkOMdlgJBBsA0O6UeQdWMHJXoIV1w4hUYIzsdq2ZkQ0AKkA2x9V4NpkEBiFczuiEgDHI6DBOlmZzsDAB/aQYPZVi2iQAAAABJRU5ErkJggg=="},{"id":415793,"subject":"energy orb","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA5klEQVR42mNgwAKYGLj/o2MGYgFIsYijPgYmyiCQAsl0s/8Wy+0xsJixMRjjNAQkoV5t9193nef/ufdTUDC6QRiGgASUiizgml/9OA3G2AzRmWSDaQiIA5JA1oxuCMh1oLDAMACmOe9cIFjh02+7MTSDbAaFDcwAFEPQDcDmfOTYwGoAyAaYAci45UokWDFBA0ACfvt8sIY+KHBBzsfpBVg4wEIZW9RNuRP8//CTduyakaMRWwKCBSyIxmkAchIGKYBpBqULkO0wV+HUjGwISAHINTAMin+8NuMyBBsmOldiy864NAMAPrV7JzFLweUAAAAASUVORK5CYII="},{"id":375254,"subject":"dream orb","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA9UlEQVR42mNgwAFYWUT/I2MGYgFMw/e9lSiYKIOQNT7wUft/I0QdTn9dEAbGOA2BaQYp/vVh3f9fH3dB8PPe/69a7MAGVUg5/H85zRfTEJjm+xnm/2Hg+4NyMAZpRMYlorqYhsAMANkGAn9+PEDRDNIAAh8LHDENgGm+l6oGNwDkBWQDnvfZgjHIhSADQBjEBxuCbABIE8jfuJwP8wJeA5AxumaQGEkGIBsC8t677W74DQBFITZDQBikGdkLWAMSJAEyBKQYHYPEYZpB6QJrNMJswBd4sFjBmpi+HewES8IUo2NYdOJNziAMU4iOic6Z6FkZn0YAvKvStiZvAeAAAAAASUVORK5CYII="}],"harmonic":[{"id":733568,"subject":"loudspeaker","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA/klEQVR42mNgQANMjLz/0TEDMQCmeF7Svf+7sq6BMYgNwgQNAknCNEVrt4JxhlknCibKAJBCC/Gw/+JCqmAMYsPE8LoCJFFjt+y/oZgvXDNIDGYISBzENzNMwDQIxJkRfuC/o0wKXDOyATBDYPwc67moXoLZjux0UMCpKJjANcFcADMM5F2QhWBDQATIVJgBIL6vUyVeA5DDBcMFyE4nywCYRpgGAS4RFANAbJABEiJ6uA0AScLYyAaAxEHq4JqRYwJkKkxTgd9icJRhcwHMhRjpAGRAq+cqsAKQZpgBIHGYATgTE8wAGIbZBOPDDMCblGGhiw0TNABXNiYmSwMA9/Ir7HPmjwcAAAAASUVORK5CYII="},{"id":733569,"subject":"loudspeaker","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABE0lEQVR42mNgwABs/1ExSYDt/9cbmSiYBEPY/v96Xvd/Y6zm/5UhKv87veTAmEhDIDa/W2f6/9lSK7Ah8ToS/7k5BMF8kMEEDGH7//1BOdwAkAtABsDC4cvNMHwGQDSDNIIMAGFsBuyJV8YVuBDnIxtgaOABxzADQN769WEdHCMZgvA/CE/2kQNrrGlYB6ZB4QAzAEQjY6ghqC6AGYDuApAXiDZATEgejkHyIHGQC2CuBKl9O98G1QCYBMwQ5ACDBSzIEBjGGpDIhoASEVjzDkswH8RWUjAEYyxRihqQyK6A2Q5iH8/S+v/luAuuNIFqyKPZemDbYZphBoDE8CYqWAiDDANpQChmA8cEAQPwZWfsWRwAC4+DBoJLDEYAAAAASUVORK5CYII="},{"id":733553,"subject":"loudspeaker","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAvklEQVR42mNgQANMDDz/YZiBVADS9HWXBxj/enaaNENAiu9nmP93NLT+L8glB8ZEG4JNM0mG4DMA2TtYDULWjMsAEH41uQuMMQxBtx1kGwwjG3DVVB6MMQxBNwCmAYSxGQDCKOGCbgCyQlwGwMTAhqAbUKmgAcat8pqkG4AeiLeddOAYZjAIgwzB6gV0A545qsFdA4tGEJ9gTIBwkIUj2GbkvIFhO660AMIwzchqcBqAbAgMoysiaAAxWRmbHAACAUO1YTBcUAAAAABJRU5ErkJggg=="},{"id":1159862,"subject":"speaker icon","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAArUlEQVR42mNgIACYGPn+wzADqQCkySzv6H/XqU9INwCmec7Xz6QbgKwZ3QCc3kH2K0gzzABkL4CwkmE6GKMYAuJYVJ4FYyEhfbgBmQduoxigalsGlocZBDYEZmP8sTdgjGwADBNlAAwPjAHKLi1wjM8AETEL4gxA5oMwyBC8BoAkYBgWXdgMAGE5OW8wxohG9ASCbAgoegkmJFwpEmSAuts08jMTstcYyAGEsjMAF6scTEqkl0oAAAAASUVORK5CYII="},{"id":733558,"subject":"loudspeaker","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABCElEQVR42mNgwAT/kTDJ4P+na41wPCvCnCSD/j/YlvRfVFQBjq8uiPr/680sogz5//lm1381s3AUA0DiIEN+v11O0BCwQmwGgPDDvTn/nZIm4TQEbjs+A5R03f97lyzFGsBgvyMbABKLmHwDjEFiMAMs/Uvg4siG/D89MxRuAEwzyMkgPkgjSB5mgFlIAxgHNO+DG/L/0AQfFAN0XWNRXAQKH5ABMDEQBqmBG4DsApgXwOEgpodiADqGGwBKMDBBbAG5scwZxWBk2+HhAPIGLgOqnUzgoQ8Sg3kVxQCQImR/wgxA14zLALAhvUE2KAGFpBksDw4TIMaXKsGaQBhkGBaFxOULUrIzAEkKJDPVogJpAAAAAElFTkSuQmCC"},{"id":1159860,"subject":"speaker icon","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAvElEQVR42mNgwA7+48BEgf9GjUcxsF7fJaIM+d+9/Nr/HU++gDE2g/AZAteMrIGbXQaMCRmCVTO6QTC2hIQtiiFgQWTNMFvRbUbm8/Ppww1BMQCkyLP3GhjLWuagaMJrALIiE6dpYEy2AdJakWDNZBsACiQYJsoAkI3Yog6bZs38nf+V0tahGAA2BORcfFEIwiDN6LajpAU5qyqsBoBsBGGQAbg0ww0BeQemARkToxluCEghNkxSjiQ2OwMAi9lw6vgK/sIAAAAASUVORK5CYII="},{"id":771764,"subject":"megaphone","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA2ElEQVR42mNgQID/UEwW+M/PI/8/2DeAbEPgBvz7//8/qa7572xlDzYARD958gxsCJpB2DB+A5ANAuFHkcEoGNmQ/9d0tcCKYAaA8PvPv+BsED6hqIiCczW14IaADbh6/d5/K1MLFE34DDAU80UYEC8g9T8jcxr5BoA0gsIA2QCQgflls+B0EL8wGIMsA2GUMEA3AKQJOcRBGkFiMIwtiuEGYFEANuDoyctwjNMAaQl9bJL/z+oqgzWCXIcvgeGSBAcaMQbgNHjPvlPwwCXLAEL+J8oQXF4EAGGPT2eL45rmAAAAAElFTkSuQmCC"},{"id":733541,"subject":"loudspeaker","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAuElEQVR42mNgwAKYmXj/Y8MMxACQwn///2PgY2duEjYEpvna3Zf/9x8+h4IJGoJPM0FDiNGM1xAQ5+7jjygK0QMQpwHYbAeJBUTk/q+unvlfW9Pwv4iwJNwQWKAmJtVDDIEZgOwCsgxAdwFIIwyTZQBIEwwjhwOGAdjCISKqBiMQQRpgmmGWoMTC+k17MQxBxsipEmYBRlqAGYIPozgdW2oEhTwuzVhtxmYIyBaY00FsGCYpRxKbnQEj5u41x4iiPgAAAABJRU5ErkJggg=="}],"chirp":[{"id":736509,"subject":"luna moth","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABG0lEQVR42mNgwAJeJkf952CT/A/jg9ggMQZiAUjD5950sCHIbLwa0PEVj2CsbGQM1/z74WQ4TjJy+m8poQVWMNnDA4xBbJAYSA5ZLdgQmAE/18b9j9U3AbM7TLz/f1mY+v/biTIwBnkBJAaSA6n5uiAMYQDMFSBBkCQIgzSDDf5yDYxBbJAYTB5kKEqYgDg/r3TAnQZS/P3mFrgBv54eBIvB5EFqMQIVZgsMPwnwBmsEa07xhYuDXIo1RkCCD91dwBgUHiD6+84pYAwTAxkKYuM0AKQIhH0VbMA0KPGAMLIYCONME7CwQFaIbDBG4OE05NZKTAOAYgQ1IxvyZG4F3AAYm6S88Ck0Gm4AjE20AeiZB5ahSHIBMWIgAADzyV9MUn2iFgAAAABJRU5ErkJggg=="},{"id":736489,"subject":"luna moth","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABTElEQVR42mNgIBOwMov8B2EMiUddUf+/LExFkQDxQeIwTSAcY6aO3QAQuJMdCTYEpABE3wws+R9np/Tft8cJjEFsnJphzgMZkmqiC6ZBfJhmkM0gGqcBIIkPh+v/v73UCccgPkgcZLNFow3YABCNYYidoev/Fpvs/8yMzP915XTBmkE0iA8SB8kbFtpjN8BXweZ/z554sCKQRpAmGAbxQeIweQwDYJpt5IzAdEJ0JIoXQHxkeZAhcANAxOEn7WCJsrISMB0wMfD/3pkV/8/OLAbTID5IvLK3GkyD1MNt52eX+t984CpYAoZBGqSsTP5/f7nmv6avKdwAGM4+dPA/SB9KyIM0gDBIEoS1I83AtoNomBhMDUbow+IZFMIwRZ+uNaLQODUjGwCyDUSDFF5pDEehcaZ9mAEg20EGwDByusebbJENIFoD0VmTCAAAgj1LMQ9cmq8AAAAASUVORK5CYII="},{"id":170556,"subject":"butterfly","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA80lEQVR42mNgwAF+bs/4/1Zp0v/nIXr/GUgFPxZ4gDWFnTjy/9cN///IYliBALfMfxCG8VVVvf7/PO/2//erCLABHzfY/weJYVUPYjg1XgFjZENEhdRRNCCzUdTDBOKPvcFqiKFuGIpmkDoUtSDCtmgf3BAQhhkComEGoGsG6cHwBkgQhP3mXP4P8ycMg8RgGN2lYAO0PbrhBoAUmPjPgWs2zt+FIgdSi9UAGAZpRjYAWRzGRjEAOWqIxTjTA7ozQRhkM8z/eDXD4hefASihj8sAy5glKGEAYsMCEa8BsMCDaSZGDsMQWGijG4Az9AllLELiAEJiN83tYAW/AAAAAElFTkSuQmCC"},{"id":170561,"subject":"butterfly","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA7ElEQVR42mNgIBJ8nbnq/wy+Kf8ZyAGve1b8//0m5T+IDlWuIsYQjv96irb/kfkgzVpZ5v9xaoBgdDEIbaYQBJbP3uX6H6EWrh5iG8RGjv+YhiIrRqhFUg8R/Hml4/+nXju4RKCSFAqGqQOp+XWuGNOAX0fTwRLvW83AEuxs4nDNIDZIDCQHUvN9pT+mASDJH3MM4AZgcwGyGqwGIGP0MECXRwszTENAYjYysmCMbgBmgOMI4RwbNTDGEfqYmtFdgGwAARcgYgLZAG0JFQwD0KIQuwtgCuSkDOBsbPI4wwA55WFLhVg048sT+OUBtcI2LEnwib8AAAAASUVORK5CYII="},{"id":170573,"subject":"butterfly","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA9UlEQVR42mNgwAK01IP+gzAuPgpgZRb7D8MwMWFubTDfUSblP0yNqqTdf6x6QIR5ywUwRjYEWSG6GIp6mMCcr5//261+hqJBgEcRhQ9ig9T4bn2JaQBIEGSIw5QrcE0Wutn/ddXi/yNrBqnBMEA/dC1YEIb10nfB/QgyANkSmGaQHrjrkP0Fk5RSzfsP8gIIyxo0o8hjhBfFBsAMAWmCYZAmZAOQ5TA0Y4tfEIYZgC6OUzNyFKF7ARSwsEDEaghIEDkWQKkRZgAIE2UAyGaQQuRohHkFJo41AJEDEaTILO8oRoqEGUAwEGExgJ6ECcYArpxJSA4ARR48BIEjNE8AAAAASUVORK5CYII="},{"id":373519,"subject":"dragonfly","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA9klEQVR42mNgQAO63Ir/0cVsBNQwxHACWT6F/4JccigaQHxsBuMFbCzi/5FpgophGJ8YVnEQ49yLr3AMEzNMLIFjZNcgqwWLYxPs6l/3H2YIMh9ZHdwAmMnzT70FY7BGj/z/oXEd/yXY+cG0imnRf2Q1MHU4wwGElfXiwBimubTnAhhjCxcMb8zedQ+sCBR9IAyzHavz0b0AwjCbQC6wTm2A20qSF2BiIENggYkrauHg+6rj/0EY3WBkl+BMTCCNXybo/P/9JoUyQ0A4aI39f2ypVU7Tl7Ah35IP/NfKMv/ffNYdqyEglxCVP0BAqcjiP658A+MDAPYNHqviWMbYAAAAAElFTkSuQmCC"},{"id":450806,"subject":"firefly","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABLElEQVR42mNgwAI42MT+u6iY/wfRweomYJqBWABTDKK/Fhn+R+YTbcDfE95gxX9el/2fl3Tv/4+VlvhdAZJExjumBP7XNmgFawTh/PoMFJfAMFzzna+34RgmqarjAMfImtDVgg04/KT9/9+/b8H41MuZ/6VldP6X3vkI1gyiQXyYZpg6kB4UA/79+/7/1vuO/z174sEakF0A4q+6kw+WxzAA5g2QAAgntwb9Rw8TEAYZfPPdArg6jECFKbSRM/qPnA5AtntlQWKhdn4OagCiGwDTDKMDZxv/P37X5//Zx7H/k1dbgMWmGpz4jzMqJQQU4JpBttbutgdrBvkZRIP4RKcHZM0wPPGQA3HJGmbAw7epcM0gNkkGIHsBpBk5HIjOEzBDQJgkzbjyCDY1APnmUTYC1heyAAAAAElFTkSuQmCC"},{"id":450797,"subject":"firefly","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA3klEQVR42mNgwAKYmfn+EyPGgEuzjKTWf2QNILainNl/og0BAZghMAMZSAUgjeb6tmBMkvORMcjZyC6BYZyaBZRM/rfu9fk/95z3f+8CTbgG70rj/1PuBIMxSA2GISABMVMbsIRrgtr/rMUOcIUwg0FiIDkYH24Isg0wBTDDkDFMDKQZpBakB2wI2ACgc5FthdGRmUZgjCwGcyHcAGT/wzCI7xtp8n/bNVcwhgUkuhq8MRATZvK/dp4jGNtZ6xAXE+ipEeQKEEZPmUQnZ5gLyDaAbBcgG0KWZvSAxacGAKpxwih6b4MkAAAAAElFTkSuQmCC"}],"jelly":[{"id":659976,"subject":"jellyfish","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABG0lEQVR42mNgwALYWYT/Y8MMxACQwp/3ZsLxp+0JcEzQEJjmV/lmKHiJnCMYg9g4DUG2+dnLD//Xy2nCDVDmkACLL9b1+/8y3g7TELDmtXFwA0AakF0A4sPEQC65HWWNMATE+HW3Gyz561odXAM+A9rl3BCGIBtACMPCAmQAPDxwGQBSuFnNEIxBbJD/QRphGMUFH7q8wIbAMHLUwfDXaYFgTTA8y9IeNRxguELND0yni3vAxWBsZDGs0QkSPOYOcdp6Qwu4QpDzkWmc6eBjgSNcE4jNxyUHZt/2MYHQQKcftfTDng5+HW2AGwDyMyyU0fmwsEAxBMT51mwHN+DX0XSwBpgLCBqAHpAgg5C9ANIMS8JE5Ux0Rfg0AQCCvooRmo3WTgAAAABJRU5ErkJggg=="},{"id":659980,"subject":"jellyfish","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA6UlEQVR42mNgQAMcrGL/cWEGQgCk6MvCjTgxXkNgmn+9fwrGGAb4TPn/PK4duyHImmHORbcZhEEGYBiCrBhkwPdth1EMQWbDDFhvXoYwBG77y3v/v85c9f9jbhdWFyAbcFQ/HdMAGH4ZXIXVAGTbMVwAkgBphCnChWGaUVwAMwTkd3QMc8HrnhVgfKVpNxjjjAkQhjlvuXESVhpnWoB5JdsuFazosnMj3O8gGiQOE8OpGTm+YQqR+TGu4dgTE3qcf+1aiGIAenrAagAscNAVoRtwp3IBdgOwaYDxkTURzJlgP+dORlGETxMArO6VhXCEQS8AAAAASUVORK5CYII="},{"id":659995,"subject":"jellyfish","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABCklEQVR42mNgwAKYGHn/Y8MMxACQwp13P8DxjEPPwDik/RRhQ0AKNlx68x8EQDRMMwz7ZqzAbQiy5vmn3qJojNrw6L+MjCtuQ9A1Z9ul/hfiVQZrAPFjXMPh/NilN/9bZK5GNQRmAMzZIMXIBsD4IHZh8XrsBlQ07YJrgHkBxoZhkObmzB2YBsAMASnAhkGakPl4A1LJMP0/Mq1iWgQOQGQxvNGo4aMFViRlogumNW204AkJJoZTc9t6C7ji8EnWYLpsmQlcLLFbH64Gr2ZkNsgAmM1gF/maYhoC4rg2W8IV9a92Q8kDMD66WhQDQCYjK4I5HZsLYeGCNQfC2F5Zllj5ROdMZEX4NAEAb1tSyU2/VPoAAAAASUVORK5CYII="},{"id":1122519,"subject":"sky jellyfish","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABCklEQVR42mNgwAHYWMX/I2MGUgBIQ/+TZ3BsnL+LeENgmv////d/65fncEOU0tYRNgRZ87Ev71BcEbv0JmFDkA1A1kyyAchOJ8sAbJoJGgCSqNz38H/UpnMYGGYATkNAAr5p0/+rBs8FKwDhkPZT/1NSloJxYfF6sBwIyzhN+G9mlYwwBMTInLUd7G8n72p4wtE3KoGzlQzT4WyPiHawWpCFKIaANHeeefj/ytcvcL+D+MgYFLVFi86iugDZGyBbQQq0DZP/x7ZtBhvWfOAq2FaQGMilIBpvQMpZVcGdDdIAosWlPP8jy+GNRs/ea/+RaRAGBRyyGF4D/OZc/o9MYzOUYH5ApnGJwQAAsUtocR60Aa8AAAAASUVORK5CYII="},{"id":1122521,"subject":"sky jellyfish","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABI0lEQVR42mNgwAK42KT/Y8MMxACQwt/fX4Dxz0eb//84WADGTwK8CRuCrPn303lwzUQZAtP888NRrJpB+GNbxP8rHsGYhoAEQAqQnYzNdpABILzeKQzVEJgByIrRMUzzVp1g7Aa8TI6CK85UtP8fKmP8v0I993+GQeL/FGG1/74aQWDNIIw1HGBRBdIAoltssv9/6ij7/9gvDi4Go/HGwvWYWLCir3Or/3+/uQXsXJDrQGIgw/DGAshGmEtgmkFiP2+thIvD1GBo/rytFUUzzNajln5gV4HEYPJfV+dgBiIskYCi8kNhFFwxKORBNEgM5j0MryAb8LEyEyWkYeExWTsSbijWFIlsG7I/kW2EuQRvQCLHBLrrYHyiciSyBmRN6AYAANzQdLNHhP3JAAAAAElFTkSuQmCC"},{"id":1122537,"subject":"sky jellyfish","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABDUlEQVR42mNgwAHYWSX/I2MGUgBIw++n88D4e+3B/z/W3yLeEJhmEPi+LxaMPxRG/f8++TBhQ7Bphhnwyjn4/53WG7gNAUn8OFiAoRnZgE77vv+LG49gNwRmANjfaJoJGgDT/Ov+a7gGGL7s3PhfL30XWDMIq3tt+B8xGc0rMANApkdtePS/9M5HDOzZew2sGacByIq/pM/HwCB1IENgGKs3QNjEaRqYDrXsgtMm8tkocnhjIqntAlgByO8wGmaAX+UZ/Jqbtj2E2/AxF+ICkPMzzDrh4qAwwur8T+9fwBXBUh0Mf6qcDGcX+C3+n7b9OWYgwmyH8ZGTLrqhTqlHMA1ADlli+DhjgVg+DAAAk0Fw04PgoxoAAAAASUVORK5CYII="},{"id":659975,"subject":"jellyfish","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABGUlEQVR42mNgwALYWKT+Y8MMhABM4bxNt8D4+6rj/78t2fk/qe0CGOM1CKbxx7XHYNy/98H/ss1X/2cvvvH/a9dCMAYZ4lOyG9MQdM1vG+f8b9r2EGwAMsZqCIjRvfEuWOO3A9fAikBiyBq/tU2Di4Hkj2dsRxgCk/i+7TCYhvkT2QBkMZwGwPyMjtENA2GQZhQD/CrPYNUIwqnTLmPVjGIAKLqQJWAYZDAIY5MDeQMlIEEBCI53JBrM7toIoScfBrNhGGtUgvDEtCWQxJS07T+6GIzGmphgmpzj1oAVwPyIzEYWw9AMCweYAhAfzgY6H8ZOKtsMTnQohsCiCiaIYQCUjS6H4QpsBoIwKFkjG4BsGd6ciY2NzgcAiQzDr83QYH0AAAAASUVORK5CYII="},{"id":660005,"subject":"jellyfish","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAxklEQVR42mNgwALYWUX+Y8MMhABM4fdDpzDwtyU78RsE0/jr118wxmYICL9tnINpCLGacRqCbACITlvyDEMTshjIgIlpSyCGYPMzN5ccXjGKDABpBuH2sNkIA0AChPyNrBlkO9wFsDCASRLC62vWompGDshpJgU48XrzMjgbb1pY7tfyH5nGJYZV8+ueFXAFXxZuhLNh8R7n1gRWA+JjTUjISRnZMGx8jIQEswWbAhD7x4kLGC7CcAW6YdgsQFZLMFfi4iMDAFTd1/GwhlyRAAAAAElFTkSuQmCC"}],"drummer":[{"id":699876,"subject":"laser turret","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA20lEQVR42mNgQAGc/wljnIDz/79/fzDw/QdP/qeVTIRjHIZw/jexdP3Pz80LxyCNIFzUvhAsBzLs06cP/7NrZ6AbgtDsdTL4v5iZKoYBMJes23rkv75tJG4DFOI1yTMAmxdA/lU39ANrIGAAwiARfnUw5uOSg2NY4MIMIBgTIIUIWzhJNwCkeNHCLWBDQBjkDZgBkQHxxBkAC0BkDAsTPAkKohnZ/9gwyFVY0wK2VIiMQYkIhDccuYw9KmFOxeUFUHoAYVjYUNsARILCZUDFtC3/ozMbicuVpGRnACFsujEDJWVWAAAAAElFTkSuQmCC"},{"id":699897,"subject":"laser turret","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABB0lEQVR42mNgQID/JGIU8L+sYe5/WWWd/+qatlixroUDHIPUIRv038zaG6xIkF+KKAxSKy6jiDAAWTMHOzdYQrrcFYwl083gtoHkYOqQDQAbApMAsVWnevzf9qICjG33eIMNErJT+Y+uDiMcYDZPuRP8/+a7Bf/7T/v/113nCRaLPemLrBFDM9wQdANgLgAZwC8phFczXgNA3sLldLhmUBSBFIE0gQwBOR+EQf4HGQKTx2UIWAEopEEh77I5EKxJxE8L7HQ+HXm4PEEDQFFk7RELpmFRS5IBoJSGbgAIEzQAlkBgGtAxLMHhDUi0hALHIFfhsx3FEFiSBQUeCCMncQYiAVFZGAQAWeINRN8NJZ8AAAAASUVORK5CYII="},{"id":699878,"subject":"laser turret","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABFUlEQVR42mNgQAIszEL/icEM2ABI4tu9uv+/Pqz7/+vjrv9fz4Wh4N/X8v6/bzUDYwxDQALvpzvCFWMz4NfVZLgBx9xUUA2BGZCmIk0UxmoATFJXUAEsqShj/N/ONvC/qJA63O8gOZAaXwU57N4AKYAZoKdo+z8iNg9MIxsAk8cZkOBAxIZBYQD0JkHNpeoycAxyLjgAkQwAiWM1BByNx2Mx4vx9lRU4CkEG4TQAZjuIlo6r/F935zGYhgUgLCpBhuE0AJSIkA0ABR7MAJjzX+Wb4TEA6nxDfV8wBmmGGQCSA9m+yFEVtwEgBaBAA7GRNcPkVgfpwOVxxgJIYayKEkYggjTiDH1shiBjmK0ENePL0vjUAwDCbmBQOLfNEwAAAABJRU5ErkJggg=="},{"id":699902,"subject":"laser turret","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABHklEQVR42mNgQAJMTLz/icEM2ABIQl3Z4L+tbcT/kPDy/xOn7oZjEN/XN/2/ibHnfwkRPUxDYJpBikAK8GGQBSC1KIaAOGZWySgKz0jL/v/a3fb/uZzM/01iEihyIJdgGICu+WNl5v8/v07//3vC+/9na0OwGLIarN6AST7W0wZrxGUA3oAEYZCzsRmANxaQDYG54Ns2HQwDGAgBmAE/DnqAXfBjs9n/jwWOpBnQ0zX3/8R1F/639yz/P+PQs/+5tYv+27jmEOf80qpesEY7p1RwdIGiF6QZZIhHRDt+Q2AGGOqGgRXqsbH9L+MTBGpgBBtElAEghbDQBhkAwiADkOXwGiAvbQt3ATIGieFNA+iGIGNVVS/iNBPK1tjUAgB1hBaci3ZLHwAAAABJRU5ErkJggg=="},{"id":699904,"subject":"laser turret","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA40lEQVR42mNgQAJMDFz/icEM2ABIwskt8X9a4RwwbWwZCqbRsYyELnZDQILiwor/ebgEwDS6rTAxkDxOA0CmIxvi4RQDF4PJE/QGMoYZQND/uAzTULf6n1u7CI5BfKINASkEadLR9wBrBOGQ8HLiDIFpBikG+Z8oA5D9CbPZmYv//xwpObAhID5OA0ACb400/leLK4DjH4RNhcTAYiA8RUYOvwtAAtVADSBNINtAWJmdD2w7CNtycOF3AbphIBeAFJpCDQVpJskAkGJYOMAw0dGIbABFaQAWdTBMUirElqxxqQMAXRrkUzXPrP4AAAAASUVORK5CYII="},{"id":699877,"subject":"laser turret","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABPUlEQVR42mNgIAGwswj9h2EGUgFI05+f1///eVj0/8fzqaQZAtP880b0/1/P6/5/3OD//2aCHvGGgBT+enfg/9cbmWDNeA1A9icyhmnMLZwCppfYyGIaABIoaNwAxiqKlhBnP1kON+Rascl/d4+4/5u9FbFrBgcSVFNRnP//349T/v846AF2OswQkAFYNYP8CAokEAZp2BOsDnc2DOvpOYExigEgTlvP9v+dc/b9t7IMhBsAciZILLd2EdjfIOdjTQcgDkijIK8cmAZpBimGBRLIAGkxDbgBeFOYo4wwWCEI52tLgsVCggvAhmMNOHRDdqRAbAHFAMg1MAxyAcgQULjgdQUoIEEhD3MRSBMMn4/SBBuM14C3823ABoDCAUSDAhREP++zBduO1wCYIXeqTeEYFBYwNkHNhJIyLs0AlpBABQLtvSEAAAAASUVORK5CYII="},{"id":1078136,"subject":"sentry turret","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA+0lEQVR42mNgwAFYmAX/I2MGYgFMw7MEw/9PstzB9GYDTeIMA0n+fLnr/4cDYf/VVWzBWEPLC4xBYiB828cEuyEwzdgwSCPIJTP1VMEYpwEghW6h1XCnwmwFeQGkEeQSggYoyhijGIBs8ypVBbAheA0wlsVugKZeBBzjNACkGBsGGWAkogk3nIGYuG+V14RjkGaS0gN6IiJZMyjUO+fs+x8a1wFOCyAxRzE94hLSj4MF/x+VWv8/baWE4nRQDIAw3mj8Oi0QrNFXXOu/MIfE/58XMuExAXMFzCVYDQAlU5Bm5PwAwjEy6sTnBZgCEA1yDcjZOG0lJTZwqQEApLoNgVRE2ecAAAAASUVORK5CYII="},{"id":1078122,"subject":"sentry turret","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA+ElEQVR42mNgwAKYGNn+Y8MMxACQQlyAoCEwzSs3HvqvIGeFggkagmwzyABkp4MMuHb3JWEDYIpAAMRGxyK8Mv+VxDWxGwIzAGQ7NgDSDHPRFCstTENgBnBzCOK0HaQGRDsaWmM3oGniagwDrIvVUQwAyeP1xqKFW+Ca7TsM/hett//vXWkMD0wNLS/cmo+duQmWjM+dAcYyVor/sxY7gGmCCQoWjTBD0LGZVTIYE5UOQM5X1g4GY5hGkBhBA3JrF6GkBRCYudcPLAYKC7wGwAwB+R05FgJnG/8vmG743ymwmbgMBTMEFHBqYTpgDGKDvENSjiQ2OwMA31tp3JapGOcAAAAASUVORK5CYII="}],"horn":[{"id":197837,"subject":"carnivorous plant monster","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAy0lEQVR42mNgwAo4/2NiogHnf906EwxMpCGc/9936///eSP6/+9reXBMpCEQzX//vv0PAiA+O6soKYZwwhWDNMIwxQbAvAPSLGZsjN+A54E2KH6H4fsZ5mDNBAyAGPLE3QCs4VW+GZyGaSTCAIghMNuQbSVSM+6ERJTzsac6ZM04Uybn/+TVFnCMUMD536TLAq4JuxokW0BRBdJQu8EbrMB9gsV/hXhNuGYCSRthCEwBzHaQISA2TA5PeHCihLyip+Z/XLFCUgzgC0AAOPUMiTiYxZkAAAAASUVORK5CYII="},{"id":197838,"subject":"carnivorous plant monster","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABBklEQVR42mNgwAKYGLj/o2MGYgFI8feXa8D47TInMF4dpEOcITDNMI0gDBID0TdC1PEbAtP8tEwdRTM3mwTcgG2OKtgNAQneTNADKwbRMAwTB2kmaEClggZODNIcONv4v76rBm5vgCRe3jgIdgUIg/i31q8Ds1t11MC24zQAJPj78+n/EmwiYA15Cvr/1fnlwGIgGmQAQdth/sSG8WpGNgSkEBsmOjFhS4HCKhpgTFTKBEkU9lj/r53nCFeok6ADNwAkDsMYhsA0qwUrgTWBaJgBINq6WB0sBsLBHSaohiBrRnY6zHZkV4CwsrMR2BAUA2CakV0E8z9MM7IcunoGbAGDL9BgYgDPJBM9qt5cvgAAAABJRU5ErkJggg=="},{"id":197836,"subject":"carnivorous plant monster","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA/klEQVR42mNgQAKsTPz/sWEGYgBI4e972XD8fYXT//dVVmBM0BCQgv7VbmBcu8EbjH+digDjyyY6hA0BSf74fvs/Mm1YaP9/5l4/uCEfU80IG4KOQYapJkAMOmKnSboBMPw8RO//LivD/3kK+tgNQXZ6pYIGnK0daQbWDLLdUUwPvwGwQETGMM0wjSADcXoDJAFSjIxBzg6VMQZrUhVXBYcHzACsaQRfOMA0w/BtHxPc3kHHoHQBcgFMIwhjeAdZEobBYvW2cNthYQIKH2TvYA3MzQaQcADZDhK/4KEP1gSTxxuYIIUgbCSCMADkZJg4VttxhQNYA9T/ZOVQQpoAUKwjJCUKWEMAAAAASUVORK5CYII="},{"id":197832,"subject":"carnivorous plant monster","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABOElEQVR42mNgQAJMTHz/GfAAvPIgyRtndv0H0bjwoxuH/+M0BGZAa37y/5pjYf+3vaj4X7A4AMx2bbYEa96zfAJ+A0Ca595PgWuG4Usn14A1l2VGYDcAJAhTXLgtGIyRDQBhkOGx+ib/DYJ0UA0BcY5a+sHxHXMvMK6VN8EwyLfH6b9Rivl/GQ8jTEMO7ln+X4Bd5v/xjdPB9BWP4P+dUkZgPFXWHIzzFPT/uwioYRoAMwQW0iADYDTMYBBOEdcHuwKnASAFMMXIWIlbDmw7SLNdmQ12L4CcDHIeSDFIE4gNokFOh9mMVTNyQMICEIZBYqCABGlE1owzKqMW2oE1gBIPjEbXjBGN6IaAFGLDMJtBBoAs0vDRwm8QNgzSBAoLmEWEMh+KgaD8ALKZaE3IQF5aBZ4S0Q0AANapNxtcVWSQAAAAAElFTkSuQmCC"},{"id":197828,"subject":"carnivorous plant monster","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABCUlEQVR42mNgwANYmQT/wzA2cQZCmh+6u4DxIn1tuAYQ/SbS6/82NTX8hoAk71iZgxWmisiB2SF80nDNeA1AdjoMz1bXAxsA04zVAJjimmNh/+06neBY2k73P5+QNFiuVFoBjLFqBmlE14xuENYAhGmGSSJrQvYGzBCYQXDNWy9H47QVmyswDDhw1BUrBhkMY4P87cwrhuIVFC+AoqoooBiFBuHiyGZw6IPUiPPIg9MEhgEwQ94+PvcfmUZng6ISqwuQoxBkK8hGGFbjVgYbAhLHGgYwzbejrMH+BCkGaYTRsETjPN0Vu2aYAVmLHf5HLbTDwCCN7hMscGtGNgSmCBsmOgfiwrj0AADDNz4ZYnIGpgAAAABJRU5ErkJggg=="},{"id":197842,"subject":"carnivorous plant monster","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABAUlEQVR42mNgwAK+LDD/j0yjswmCGe7b/v+5HATW8PuK3X+QZh+1ucQZwMos+B+EQRqDFj3+Lyjh9//HHIP/MHGCmqeejwHjLxN0UHDiek8wxmkITDOIhilGxzA5DENgEiADvDyysBoCEls7czGYrZJgjGoIsgaYX7EZABPXyjLHNABkqpgxcRirASAJGVaB/5fOHADTD2+fBdMvn934b8gB4YNokGZJeV3c4eDMKwbWFMQvDMYgPkgziAbJY9WMbEjUQjucsYAReLgMweV3ojQjY1t1STBGF8epOXuXK0o0mXRZgDGIbVBihDs1wgIQ5EdYdKIbABKDyeM0hBQM0wcAM+Ux9yKd2eAAAAAASUVORK5CYII="},{"id":197856,"subject":"carnivorous plant monster","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA+ElEQVR42mNgwAKYGXn+wzADqQCkaXOBKRg3OKqQZghIMUgTMvZVFCfONSAF4ZOs/0vKCWNgojRn73LFiY0ydXAbApLYejn6//G7PlgxSC55tQVuQ0CCRinmYMlPnz7AaW9eCTgNMkQpwBC/K5BxuLAYHJ/UVPsftMYexQCMQIV5A0Qvqo2HawSJIWuG4da9PpiuQQ4LGA3SrB1pBlasLS8Fpms3eIPFRRz1sRsCCixkDBIDKUY2wLbKALsB2MID2QBQbLg2W4L5GAbATEfGMANAaQFkACgssGpGtx3kRBAG2QgzANk7RKVMmE0gjGwA0ZkLW1hg0wwA7w4SaqU04fkAAAAASUVORK5CYII="},{"id":1333465,"subject":"venus flytrap","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABTUlEQVR42mNgwAOYmfj+I9NEAZDirZej/4NodAOQxXBqBuErm7PB9Lsbk1DoHy8X4TYAWcHDo2X/sxY7oODaeY7/317qxG4AzGaQgpl7/f5r+Gj936uhhoLTVKT/F/ZY/19+1AnTEJjmtvUWWDXDcKWCBlgehOGGwPwHCjh8mmEGgLB5kDnCAJjtIOf1Kyli1ZgnJgP2AiiMQGpQAhREgPwNUoBumx2v4H9PcQmwYkMOgf+frjWCxWCWwg0AhfBsdT2wxlMG2mBFIAzSCDIAphGkCUaDYgZuQGS1HtiZIENipOTgBvx+OBmi4Ugu2DBQDIBcC9cMCwNQ4IE0grwBciooYGEaQWyQRhAGhVNmqQUYo0QliKNpowXWDMIgJ4I0gKIVpBjkQhCGRR/WdACyEaQZlgph8Q3CsGjDm4xBipA1wTQQzEDoyZloDVAAAJUKYbQxRraQAAAAAElFTkSuQmCC"}],"metronome":[{"id":767502,"subject":"mech walker","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABOklEQVR42mNgwA3+Y8FEAbDib9+/g/HuvYf/v7t07v9VU3miDPl/xE7z/5MA7/+3nXTAmt6/ews2BMQHsfEZ8v/woWMoNoMMK5VW+J+WXAam29sm/FfXtMVpCNhGZJu7JywEa5SR1gPj6mrcBoCdDbL51ealYEPalOX/m1oGoASiqKAMGGM1AN35yAaAbM0MTQLTOF0AcvaTJ8/+a8nI/c/Kagc7GeR8mM3m+hBDdJSNwRYgG/J/9brdYAEzdUMwDVIE04jsfJA8KGA3aUEsgRkCNh3ZryCXINsOMwhk8M0b18CuhcnDXQEKOBAGOQ/Jn3ADYIaER+SANWMLC3whTnxsgCRACQeLAnAggmIJJI8zMYESS6qIHBijGwBKXCD/g6IYq+0eTjEYfkY2OMY1HBwTsFgiJgsTlAMAhzdDfjiyr6YAAAAASUVORK5CYII="},{"id":767530,"subject":"mech walker","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABFUlEQVR42mNgwAu4/iMwSQCi6efLXWD87Ww9KQYhNILwxw3+cPyw2JCQIVz/v99bhFXzjRB1OMZhCNf/Vy12YMW4NEcpSP/PVZXEbcBZX1UUjTDN/foKYM0gWkvdHrcBIAxSNNlABIxB7C0O4mCDQRoRmjEClAsc0jD/gWyG0T4yUv/TVKThmpBdBjUEovleqhrYNhAfJglzPogN8vuvc8VgdSBcpSuJMAAkAPIjsk0wJ8OcDTIApA4Uleq84sgGoKa4wIBssGGofoVgkCYQFuIQxh2Q2hIqOCQhhpgYe+LWDLMBlwEgb+BIB8Dk+2Q52H8g5yO8gJpCQfKgcMJiCCQgQXGPPZ4h8mscFP7jyaGEcht2eQDJkDUYm+oXiQAAAABJRU5ErkJggg=="},{"id":767498,"subject":"mech walker","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABI0lEQVR42mNgwAqY/kMwLj5ewPQ/Oq74f2pG5X+YRiMT1/8NnXOINYTp/8d9zv9/f1j4/9eHdWAM4t+aZEiMAUz//zwIBWOQxhfrHcAYJvbhdBA+Q5jAikFOR9YEw8+WWoG9djzfApchEP9KS8iBDQE5GxmDNIPkcAQoE9jPIIUwQ0CuEOIVAmOQOEzz7zvxQBdVoRvCBPYfCMOceCJRGWwISPPBSBWwGCggQWpgFqEYcKfVCIz3+CqCJUE2g6IPhEFskBhIDmQIzEAMb8A0IPyJilHlsQQizM/YFRCSBwqeLVMDY1wG4JeHJiJQwOEyAJYmsPofFIAgzbgTChNYDhQDV6rMkdUwgQVAfiupnQqmMQ2BaMajBhLK2pom/3FnXexqABb2NTyDZ0NjAAAAAElFTkSuQmCC"},{"id":767500,"subject":"mech walker","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABFklEQVR42mNggAImRu7/MMyAA+BUAxIoqZ0Kxqn5dVgNgakByYdH5KCqAXFMDV3Bgv6B8f+RbULGMDkYjdUF7k4BYMmf16f8f9+iA8cgMZAcTB2GASBJmMnIGrEZgtUF0jI6YAxTrMfDjYK/95n8P+AiC1eHNSBBuFZDAawQpAHZ9k3m8v/9BOXwxxRMUkXREu5kkEYQG2YrXs0gW48Hq8I1ggwC0SBXgcRAcjCDsRpwzE0FrAHEthcWBdsKo0FiIK+BME4DouOKUZyKjkFyIDVYAxAW7zAXYLNgpr4USpSiSCKHNi4DYGGA1QCQJAjjMwAkB1MHVwPOB0JiYL+BMChPgPjIhsDUgOTg6pDVYAswfFkZWQ0AI/Au3XybPTMAAAAASUVORK5CYII="},{"id":767510,"subject":"mech walker","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABUUlEQVR42mNgQANMjJz/QZiBHADS+GyKM2UGHLHT/A9zBS6MU/PPezPhLvi03e//j3dbwWIgNlj+yfL/3y5XYBqCrLlWQwGu+d189//fVzj9fxCl8b9UWuH/+1YzsNirfDNUQ0AckMRZX1WwQhAbhkGaT1spgcVB8iAM8yaGK0zkIBIgm0B0m7I8WCNy2MDUYGjODE36z88jCZb8MNHsf2RA/P+fpxPBLgiycPy/yEAeLAdSA+LDDYH5H+RckI0gvoqY4n91XvH/6UlZ4DABaYIZPk1N7v/vB81gg8GGwPxfXT3hf6qIHDyqQAphBsG8ARMHuRDkOrgBIJtAimGKQE4E2bjJXB7sdGRnw9SDvIjiDRgGeQdkA3riAcU/LI3gTFCwAESPJljMYI0+dANytRT+GwvIYBiATRxDMyzxgPyObgAoAYFT5kp//Ibg8h8uOQDxnzPGQxlw0wAAAABJRU5ErkJggg=="},{"id":767496,"subject":"mech walker","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABK0lEQVR42mNgwAnY/qNikgDb//4nz/7/A8K6O4//68W1IxlC0DA2sCZkzbJGcf95uLXAhoSElxNyEdt/l/mHwJrVQvPABoA0E2EAxK8vv/z8Lyxj9V+pbCbYABAbZsC+i/fgBmFoBmnsXn4UTsM0wfC0rSdR1KAZwvb/3N1X/y0tXMCSIAzSgIxBYjA1IBrDgLyurWDnNnTOgRuCjD/12v1vm74N7BqQWqze4GQX+q+sav3fvHo3XKNB6gIwDRIDyeEIA1RD9PScUJw/e99FsBhIDq9mkNNAtoDYIO8gY5AYyJCKaVuwOx8kgepEtv+mlgFgDOOD5ECBiMUQNrifQdGEmmwRbFhs4IxGEAYpwu5PNnAswNRhjUYQBvkTlwEgOZg6rOFAOOtiqgEAVCBfeMlzDQUAAAAASUVORK5CYII="},{"id":767519,"subject":"mech walker","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABJUlEQVR42mNgwAGYmLj/gzAyX01eDUUMLwAplJJQ+Q8zCIQbOpYTNgCm+MuDCf+/XC+C42eTzFEMxKl5rpPs/y/HXeBYgFccTK8PVIEYCsJAPoYhIIErVeb/v54LA2uCYZDiPfHK/41MXOGGgvhYDYDbjmTTxw32cA0gGqtmFL8jOR9mwI4Uk/9VptJgeSUV4//ZuQ2ohoA4IEUgSZhXYBjkKpg4DIO8CQ8HZM0gP8MUgfwMwqaWASiaYS4D6YEbgKz5eIkuOLpA0YYcdSBbQXR19UywGgwvwJze4yCDkYBgtmZYa6OIYwRikb4YGIPYyN4BGQyzFSMAscUEyAUwV+ATx2kIyDaYS5DFQd7A8D+2DITNBaDAA2UmGytHwl7AlpVxBR4AACc61KHvg8wAAAAASUVORK5CYII="},{"id":767516,"subject":"mech walker","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABPUlEQVR42mNgwADs/1HZMEw0gClm/5/XtRWMXd0iSTEEYmNa/er/fc+r/+uu8/xvZu1NrAEIJ4NsVZ3q8V8y1u6/lLTlfyK8w/7/541osMa3sRr/Bfml/6ur2IIxiP29zwTsEpAaLIaw//++wgmsEaTo96s2sMIn7gZg/GOOwf/bTjpgOZAakFo0Q9j/96npgLGIiDZYA0jj72ueYAzSDOKD5GDqsLpCQ8sLLHHZRAfs5PctOmAMMqBSQQMshwgPNM0gv4NsALFB9Gx1PTgGaUaWQ4tWSOCB/IYc0iCFMIweCyC1v/bZwgxhB/uvVV4TrhGmAWQzzOnI4iC1X8LMUF0Bw/G5M+BhgYxBmuMzOwmlB3TvIMS/FhniSgOoBoA0w7yDHs2YBqNpBjkflAcwowriBZAcCON0PiYmLAcAk78ewxqOVpUAAAAASUVORK5CYII="}],"eel":[{"id":397397,"subject":"eel","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAy0lEQVR42mNgAIJf54r/M5ALQJr//f36H2YIEyPvf3RMlCEwzb/fLv//+1AYHN/J1YUbgtelYM1IGnEZQrRmbg5ZsNewGfDzdOJ/DAN6zFX+l6rLgHGYsgLcEHQDQHzkMCPKC4vNTPC7ANkQEJ7hbw3GRPkf3YAV6fZgDLN9ipUW8WkEZMDXDR4EQx9nGiHGABAfJA5yGVEGwBTCMEjs3Xx37OECEgRJoiciZAwSAwUwzoCFBSSyS5AxSI5grIAUbMzwwIpJilJiciYAbt05YqFmq3kAAAAASUVORK5CYII="},{"id":397391,"subject":"eel","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA80lEQVR42mNgwAM42CT+Y8MMxACQwh8HPcD41waH/7/upP7/eTkCTOM0BNmW5yF6YPzORxWOP6aagQ0DGYRhCEgAJEEIgwzCMARZ86/XG/8j8x9//w7GX799xDAEbACIAEnCMMwL6+98/b/82hMwBrFhGGQYyBCQ9+AGwBQiY5iGiMk34BgmdvrVR7ArULyAjGEakMWMY6b9j116E2w4hgG4YgM5BtANwJseQJKfb3ahON+9+ziYBhlAlObpl55ixQRTIkgBTDHI2SQnY3QDQNEFS9IgTJRB6FELiro9T16DAw+WmIgyBDlKkTHMIKK9hA8DAFaGrDdzt74xAAAAAElFTkSuQmCC"},{"id":397393,"subject":"eel","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAwElEQVR42mNgQAJMjNz/8WEGfACk4HyUJhibC3Oh0B5iPP81ONlxGwKS+LbdAY6TFARQ6GO+UnDDMAxB14zMRzYgSgnCBrkGxRCYBh5OCbCEqaYHioHohoEMArkGw5Bf7w7gxcgGTTYQAbsKwxB8+EaGPNyQLQ7iYD7BmMEWSzBDyDIA5He8BuDzAiwWYBgjSmFOBJmMDSNrxrAdPZBw4Tc1aoQTEyw5I9uOLIY14GAGwBSQnKFg/icpWrCFPjl6AaVWTHDrSbtPAAAAAElFTkSuQmCC"},{"id":397396,"subject":"eel","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABIklEQVR42mNgoCVgY5X4j4xJ1gwCZ669gdNEGQRTBAIdB1/+D2jeB8cgQx49/4bbEJhGECjc8Oi/makTCtb26P4fMfkG3DVYNYNsmPX04/9dZx//902b/j978Y3/bqHVYDo4OAZsEMw1cENgmle+/ALWvGHvIzhOnXb5v71Pyv/k6rlgQ7wTO8GGgFwCNgBZMwiDNIHEQHRs22aw7TAMMghkIMgAVdsyhAF5XVuxYuQo1NDyghsEkoMbgB7fCp4KWKML2RAMA5AVRbXYY9UMM8DYMhQcDihqQBz3CRZgzCkqAqZhCkA0KCxAGkGxAjIEQ3PAxMD/6MnWtsrgP0yzsl4cnMaaiGCC1vkm/5H5IBqkCRnjTYVGKeb/KcpQJOc4IAAA1qQ86EpW3x4AAAAASUVORK5CYII="},{"id":397401,"subject":"eel","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA9ElEQVR42mNgwAK4OWT/48IM+ABM0Y/J7nD8Jczs/2Vb0/+b1Qz/L1cxwm0ISOLX1WQw/vN5M5wNwh9TzcA0yDCQQRiGIGsGYXQ+zAAYG6chX4sMUTBIsU3JAjB2Wj3nf/TpWMKG4MIWmavBhuA1gJAhIE0wHL1rLqoBIA4olJ+4GxDE8afz/1u2LkEYAPM/KJSRAw8bBoUDVs2wkDadPQcDg/wOYxvHTMN0OnLAgBThCweMVAligPyEbAghDPIGCIMNgUURzBBiwgDkJRSvgBggAVhiQccgw2FsDM3IYQGSQMYgl4EwKCXC2CCMN0MRHXhQAABFO7gD0ajjlwAAAABJRU5ErkJggg=="},{"id":397407,"subject":"eel","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABOklEQVR42mNgwAI4WCX/48MM+ABIQdDqIjDWbU//Lxma9l/cOvL/RR2D/9/SNP//upqM3RCY6VPuBP9feiMETMMwyCBRj+j/Qmq2/5+4G2AaAtMIwzDDXnxZC8YgA53WxINdAzIEwyXIivFhkCEgl4C8877KCtMVIFy44RFWjOwSUJhgGIAvBuIWnPx/890C/AaAOCA/SqUkY2CQ5sNP2sGaQXyQARiaYdEGUogNgzTrlxaAwwBDc/zpfLhmdNtBmkA0SCNMs7R7BWoMgEzf8SThv/2MtP+EUiHImyCDvjXbQQyBGQAKoJef58GjCoRhikEYZCuMDdIMdwXMVJBGmEG/300GJyiQgSAa5DoQ3no5Ghz6oNSI4Q2QALJBMAwK3A+5qmCNt510MDWjx79aUCtBjDdHEgpEdM0Af6yy7HsU6TIAAAAASUVORK5CYII="},{"id":798766,"subject":"moray eel","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABJklEQVR42mNggAJWFpH/2DADMQCk8M/rsv/K7Hz/f39YiIJ19awJG/R9hdN/ZMzFIQdhT7MGG/Lnxw78hiA7Gd2wXzf8wa67+nEjdkOQNRXrOP1X41b+LydoBHcBzJC591NwuwIkccXJ8f+Pye4YLoAZhNcAdIOueARDaCCuN4gi3gCYIYZSiXD8scAR7AqSDMgwSARjkAtIth2kcY990v9PvXZgA0C07anjxCUwmAFHLf3AMQHS/OO873+HrSf/P7M0+/+powyOcUYpyACQxpn+WnADzBdc/x+vYvz/sZ42HH+9kYlpCLIBMAwzAOSKPzfD4Vg+YTd2A8I8l/x3s538v9vUAsUgUDiADIJhrAbADAEZAML2Bl2QNAHFIE0wTHTeIJTNARB+ZRsOIZvWAAAAAElFTkSuQmCC"},{"id":798769,"subject":"moray eel","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABHklEQVR42mNgwAOYGLn/48IMhABIkYppERwrGaaDaZf5h8AYxMdpEEjC/8G1/woKwf+fmuv8fx6i9/9Trx0Y/3wYA8YgNlYDQIIgDbb92/5fNtEBGxAsoQCmQRhmEFYDQAIgTd+nWf932Hry/zNHtf95CvpwDJIDYZBmHckw7AaAbPm1weG/WlAr2BsgjdJiFmDFIE0gb2HVDDMA5k+Q7SBXgAyAKcYZCzDBPjWEH98UaoJDG2dgIWs2SF0ADjSYAbCQBhmAHOI4bQf5C2QIiEY2ADnKQHIm/nNw+x2G31dZYTUAb8JBNmiNjQtYIbLmHws8iEu+MEO0JVTAiQlmCNHpH2bAVp1glBQHcxUDsQCkeLGZCRyTpBlbwOJTBwDgXiuoFoBtCAAAAABJRU5ErkJggg=="}],"cymbal":[{"id":1057811,"subject":"saw blade trap","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABFElEQVR42mNgwAEYGXn/M5ALQJrPXHvzH9kQEJtoQ0EKf91JhRsCwjfvf8YwlAHddGQMMgCEQRpB+H2r2f+Vm09iGgASAEmATIcpBmGYASAM0ozTAJghKRlN/0sOe8ExNgM+p2dguBTFEIMSI7gBrXt94IpgBrzRN/v/qXIy2LUY4YFuAHoMgDTDMMgrzh4ZCDWwUO488xCM44+9wWsAVs0zV57/71OyG6zZd/Wt/2ZutXAvPI9rRzEAw+kgzRY2MWAJ57g1YANAWNugFY5XyKuB/Q/CGAYgY1wGaGrm/c/InPY/Pnki/uiEuQZZs75tJ1gDSBwZY01UyN6BaYIZgDMNIBuAbjLYW8ihTkxGwpVXsKkHAGmdWFoGfcU+AAAAAElFTkSuQmCC"},{"id":247140,"subject":"circular saw blade","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABMklEQVR42mNgwAGYGHn+wzADOQCk8czlp/+rqyfADcFrILKNIDxnwfr/q9ftBuP2nuVw8f2nbmIaAhKoaV0AloTh7/sC/v9Yafn/ywJzMAYZCHIRSB1WV4AEjYyD/x/fOB2s+ferNjCGGQDDeA0AORemEGYAyBUwl5zUksFuAMxvMEUwA8KCQsEYJg7DKGEB8/+kmSvgCkAa0pOy4AHn7hSAYgBIs29kCaoBIBpZkZ6eE9wASwsXFFeAolZDywthAMwbMAV14pJgDDIEpBkUqB8mmsHlYZpRwgLEAcX3SRNpuAEgDAtUkAHvW83+98/ZhjsWQAYE+aegGHDdUwmMQQaDbIf5HWtMwFIcKD0gGwLCIGcjY6wGwJwHwiBFID7IUFggE8xgyJIwQ0CuoShHEsrSAKUGYpaAx3pZAAAAAElFTkSuQmCC"},{"id":247147,"subject":"circular saw blade","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABA0lEQVR42mNgwANYmQX/wzADMQBZAwh/e3kMjgkahqwBxP59KAyCd7qBaXR5DM0z5m2FKAZimKLXr97+X7n5JBjDDQRiDEPgBkAVgPggTcgGgPCrcn0wBqnFMADmbGSb0Q1oaJgINgAlLGB+A2nOzm1A0QBTiGxAfGoF2BC4N0DEqxY7DAPQYwSvAU9zdeAGwDAhA34/nYcwYLOBJljQ3TMZBaNrRjYAZglKIKIb4h+a/j8kvBxMgzSDaJB3MRIUTDMMm5pFYmA9RVu4PIrtMAPWaKmDvQLDIA0wDJLba64M1gxyEdbkjB5op62U4BhmAQgTzFggBbPV9eAY3WCyciU+tQDKBJzNlfQtqwAAAABJRU5ErkJggg=="},{"id":1103365,"subject":"shuriken","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA/UlEQVR42mNgwAPYWAT+o2MGYjQg839/uYCCcRoCU4yuACb+52HR/8/XE/9/v7cI0xCYop8vd2E14Nu9uv/f98X+X+gv//9GncH/+7OdUdXBnfp2OVYvgAwAacQaHshO/PW8F+4NZM0gDLIdq/9BgiCnwxSCMCzAkMXQDYC7AmYASAEMg1wD0gRTBPMCLIxQAhxErA7SQfEbzBAY/+0yJzDemakPNgzkVRCGG4At5EE2gkIepBHZdTAMEieYJkAGgGxtMlFGcR1JBkyx0sIIPKwGIIcBLBZABmDzHu6EBEqNH47CY+HTdj+sBtybZIs9OSP7ERljM4SkLIxPAwCaBHHXXjjLvQAAAABJRU5ErkJggg=="},{"id":1103364,"subject":"shuriken","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAvElEQVR42mNgZOT5D8MMRAIUPSDi95+fYEzIIJg8SO39B08QBmzdcBwsgMsgZI0wzSHh5agGLFq4BcUQZIOQxWCa4QbAbAAZsP/wObACdINgYiAMsgxFMy4DcGGsBsAMgYUFDMO8gG4AzoBGVoweiNjEqWsAcvzi8wIsdrBqRjcAG0aOYpwGgGIDFFjI6QOnAciaYZoSY6rBGOYFmDgMYyRlmGbkFIYeiDBDQRgW3XAD0G0klAOR1TNQmp0BUe3luccwZRgAAAAASUVORK5CYII="},{"id":1103376,"subject":"shuriken","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABC0lEQVR42mNgwAM42CT+gzADOQCk8fuf3/93Pr5OniEgTT++3/7fvGM/6QbAbJ96du9/Q92w/0WrD5JnyKFNp//717YQrxk50ED0y7fv/1tb56CI4TQM5uxVT+6BFR1+fR/sfxCOm9LxHybfc+kSpiEwyTU3j4EVb3/1+D/MNhgGeQUk59k5+f/kbUgxA2KAbE2fNe+/aebE//KGwf9dC4rA0QcSA2kCYZC4tLThf92ASjDbI6Id1RAQXj7l3H915ywwG2SIEK8ymK1tmAwXC7Xs+o8zLNADEaQBZBtRgYgtTJwj88GuQDaE6OgEhf6Vr1/AzgeFDVkJCWQIzP9k5QWQASAvMJALiAk0ABRi3kmGATFFAAAAAElFTkSuQmCC"},{"id":1057830,"subject":"saw blade trap","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABJklEQVR42mNgIBKwMAv/ZyBFMQzD+PtP3fxPlCEgRRv2XPp/4sbz//GZnWBNofHl/+euPIRiKF5bQRp/X8v7/+ta3f9nCYZg7Buc/x+nS0ACIBtBuL5/EVgjOn412wwsB8JYDQBhXJphBoCwrqY3dq+ABEAKkDXAFMI0g/BpKyWwWNeMdQhDYAEFMwCmGeSlktqpYPa7+e5gzSAMEoOFCVhzUk4fOOSRbYIZCsIgNkwzCMO8AbcdFOogQZAt6E5F1wwTR/E7LL4b5GRRDOiWlQJjZM0gvytIWmAaAsNHtDXAGFnTHXMtMJ0hrfbfwS8HjLEmKJAgKIC0xMz+5ynogzFIEwjDApNgakSOZ1DgwtgWNjFgTDA/IGcgkGHIBpKUI5HDBp8aAABpVmka4ZT8AAAAAElFTkSuQmCC"},{"id":247152,"subject":"circular saw blade","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABIUlEQVR42mNgwAmY/qNiogFC06U1Nf9/fnn0/8bWdmINgmgCYW+PABQMMuTDi2v4DIHYUNa1Gqzh6waP/7+Opv//83nz/587wsFi65vT/r9+cBqba5j+H5qV9X/C4l1wzWADTkWADYDxQXIgdVhcwvRfQkwDrGC/qfj/ZwmGKC6AGfAgCqIG5EUkAyDOgdkOMgCkEKQBZCgIwwyEGXCkPQnZGxDnwwILZgBII0wRiA0Th6m7dWQjwoDQ+HIUL4AwugEgzcgGIFyBpAgmedpKCYxhXoBpRjYAYQE0HEAmKsqZYRiCTTOS7YhYQPYGMkbXDAovM1N37NGI7hV0DNKMJ0kjwiIppw+MYWEAcjIIo/kbd36AaUQ2lEjN2LIyMh8TAAARLGmLOKctvQAAAABJRU5ErkJggg=="}],"carrier":[{"id":474241,"subject":"flying saucer","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABGUlEQVR42mNgGLSAhUnoPzImWfPcB0/huGjRWeINgWkGgYOv3/5ff+cV2ACfkt2EDQEpAGmAaf6+L+D/lzCz/63ymv+907eDMU5DYH6FOftTr93/J+4G/2er6/3X49MBY9foBdjDBCQAAt8/nAM7tWzzVbCtIAzTDDPgfZUV2GC4ISAGSCMIwwwBORWkGIRhTgfhTxdKwPjjmoj/t510IIaAiA+ng/7/er3xPzKAGYqOwQakmqEasN3JGuxnkEG4NILwjwUeYOdvVjP87yhkhuqNTG2z/2tsdcEYpBBkIIiGYVBswDSiaEYOyAo1P7AETBE6RlaDMyrhAfug/P/vO/H/PxY4gqMSWY7oFAkKLJCzSc4L6IkLnxoArvlLDePw62wAAAAASUVORK5CYII="},{"id":378902,"subject":"drone","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABIUlEQVR42mNggAI2FqH/yJgBDeCVBwn8eD71/8c1EXCMrgEk9n2lP5gGqYUbAtN8I0QdRUPhtmAUjCwHUgs3BGY6iE61Nfm/cvVmuAGnXs4EY5gBIDmQGhAb5BoMAxTkrP7HRWX9b++cjmEASAwkp6hphWnABQ/9/z93hMOdCFIE0jTtfDEYg9gwjTDNID0o4bDGVheMQQqNUswxDACJgeTWeZmAMdaYgGFcBuCLZhRDCBmAUzMsrnEZgJEG0DUjB6LfbCd4GvDtcYIHIkoaQNccZOEITwcgG0EaQdjIyxaeDkBqYIkPIx2AbIlPrYCzkTFIDCQHY8P0wNMBshfMVO0w8gKyGEgtRjoACYAwyI+wfIEcRiCx21HWYBpFM6XZGQAGnZTow//etgAAAABJRU5ErkJggg=="},{"id":474239,"subject":"flying saucer","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABEElEQVR42mNgoB1g+4+KSdTsMv/Q/6hN58DYtW7TfxIMZPv/79+f/9tfPQZr1vboBmNll5b/enw6cIzDEIRmkAtAGGYACKeKyP0/oq34/4yC3P88MRl0Q9jANh5+fR+u2ThmGthmkGY/QYTmPw9CcRsAwiDNBqkL/qvalv1XMkyHa4YZME9EHLsBoMACYZhmkEaYs3fLyYJtBrGxar6mq/V/igxEA0wTOgbZDFKjzK+OacCnjrL/t510wDYha4LZChIH2YxV80MnK7BmmGJkjcsVpMGaQRphmtEMYQMHDCxwkNkwjYh4h2gGiaMYAEscMMUwNsImZCdjTYmoyVScRx6MycgDCANB/qfAAJirCAMAo0waI3QEUW8AAAAASUVORK5CYII="},{"id":1056017,"subject":"satellite","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAvElEQVR42mNgwAHY2cT+I2MGUgBIAzJ4N9+dNENAikGaPs0wBtNH7DRJNwAbJkkDMvj17DRuA3EpJiQGAmBDYBLfjvv+/3avDuxvXIH46+lBsDyyOrABIAFQQIEEDxtpoBgAsh2mGGQJSB1KwMJC/JKdFlghTAKkEYZhLoBpxIgZbAEEi0IQhrmKolghOR2QnRLRAxCEvxYZ/r8Rok6cIcgBCAuH2046/9uU5UlzBQj7+qaDMVk5EtkgfGoAh5ZUgJlkSWIAAAAASUVORK5CYII="},{"id":1056042,"subject":"satellite","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA80lEQVR42mNgwA/+QzE6/z8DEeB/4npPDAOwiOE2QNLJEsMALGK4DRBx1KfMAEpc8F/KRPe/fY7PfwFRBWQNeA2Ah3DLlcj/h5+0/4/e6QTGVn0BcDkJSW2sBvyffuzOf5uSBf9VVJz/r7qT/99gouf//tP+YBpkKw+XLFyNroE/hiH/Xes2gSVACkG2gjRbLLcH2w4KTJA4SI2ZVTKYjWGAqVM62HkwA0A2gwwA0TADkNVgGAByOkgCZgBIEwgjewFZDdZwgGGQJmQMMggpNoiLRpAmkM1omhlISoEgjTDN0upqxKdAJMVwTIoBDDgUYtUMAF3KzZeXlk2yAAAAAElFTkSuQmCC"},{"id":474237,"subject":"flying saucer","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA9UlEQVR42mNgoBVgZxH5j4xJ1uxyYAUKJtoQmObfn0////Vx13+V5rr/Bk3dYEzQEJhzQQaANDutngPWqCxi+V8tNA+/d0AS//5++m/okQ82AKQZhDX1IsAGKFslgtnPyosxDYFphmGQISAbQTQy/nWu+P/nba1gDDcEWfPzED0Ug9Dxr1MRYDUgA57mZUAMAREgCWyGoLNB6mAumGigg+qKjxv88doOc8HHAsf/u6wMsYcDyBZ8+LaTzv8+NR38MSHCr44XE5UWrK1z4BgchUBMlGZkQ0Bh8uvDuv+f6gzABpCUH0CKv27wgOMn7gbkZShiciMAQqdTXdVefpAAAAAASUVORK5CYII="},{"id":378901,"subject":"drone","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA10lEQVR42mNgoDZgZRX+jw8T1Pz4zaf/IACisWGchqBrllU2QsF4DSHGZrwuAXF2n7wMlsgr78erEaQOhLEaYO0RC1egbxuJgmHiSrru/4MzWjENgGGYYhC9+vWO//V3J6KIYY0RmKmgwAJJgPggxSAXwVwAEgPJgdSk5tfB+fAAfP/5F9xv+PCynWdRAxJmwOFrD+F+g+HKfQ/BGFnMPb4abgjcG+j+AtF9b0/9hwGYIdjU4kxUuAwgOj/ELTj5v/7JdrBBAc37SDMAZghII1ma0dMHPjUAuYB4RsNLVmIAAAAASUVORK5CYII="},{"id":474258,"subject":"flying saucer","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA0UlEQVR42mNgwAOYGLj/M5ALQJq/TND5T7YhMAOmqcmRZwhFBoA0fNxgD8bP0mVIMwSk8Ps8+/8/310CuwBkAAiv0pMkbAhIAUgxSPOvzf5wzTADsqSlcRsCkmhTlocbgKwZhLc4iIMN0OPDEjMwm2H+RdeM7AIQjeIdmOZvx2PhgValII4VIxsIci3YEJgBoAAD+RuGYYZhwyDNKDGD7AVcGBQGMJfAbUcPB5AkyJ/YnA8KPGV+deyBiGwISBGIxoZhcnjTAa5Uh0+O6CyMTQ4ARlMEy26FuXEAAAAASUVORK5CYII="}],"core":[{"id":424178,"subject":"eye orb","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA/0lEQVR42mNgwAK42ST+Y8MMxACQwt3u2nB8yU4LjEOUtAgbAlLw/UE5BK/0R8EXPPTxGwKS+Ha54v/vb0f/g8CvN7PA+PeDZrAB7+a74zYEZjNMMwj8+Xnp/5/fL8E0yBCYQVgNAXF+XshEMQAEQOJgQ4AY5i0MA2Ca//zYAbEJaAhIA7oBIHGsrsBlAAjT14CfpxPBCkAhj80AUBj83BH+/0OXF/ZwAEmADIJFHwiDxEE02AKoZqyJCsS5n2EOdh5IMSwxwaIXWTMIp4jrY08LIKeBEgwIgwwCew+o+X2rGXFJGiQBUgSyDYafh+iRnh9ATgQpBtEwTJRmcrIzAG9N5JG/8nbrAAAAAElFTkSuQmCC"},{"id":424188,"subject":"eye orb","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABTklEQVR42mNgwAKYmXj/Y8MMxACQwrtfPqHg5h37/4c2LCJsEEwzDCAbcunL8/9Fqw/+NwtpwG4IumZ0A2A4qWcppgHYbJZ2T/4vouWPgmEugXkHqwEgWqWgHsy2bF3y36CpG0zDDDn8+v5/v/JpCANADJAgzInScZVgzfXXVv+XkNKDBxzIIJgBmbO2/7dOhYYFhgFApzutnvNf1igOrGDZo3Yw3fe8GuyynkuXwAbAAxPTgIr/q+7kww2A0Wcfx4INAGnGMGDn4+soXgAZcPFNMVgzzAAQH2YAyPlqZuEIA0BRA3MFKNGAFG57UQHWBMIgNbCABBlg6V+CGQugRAKKIpBBIIWgQDOZ2gHGIHmYZpDtsqrumAaA/ARSADII5CXk+AfJg+RA0QcKZJwpEWQIzCB0DNIM8reImAXu/ACLc5hByBgWaETlSlKyMwDnvs4H98T0ZgAAAABJRU5ErkJggg=="},{"id":424219,"subject":"eye orb","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABd0lEQVR42mNgwAK42WX+Y8MMxACQwu+rjoPx18qV/7+kz///PK4djAkaAlJw6MCz/39+vwTjbweuwTFBQ0ASF3a8gGve8PQ1igEg/NrW6f9l50ZMQ9BtBmGnxiv/xY3SwBim+c+DKjB90TkT1RAQB2QjsubH37//j1tw8r90XCXYkB9nb/9vnHPt/5+HRagGgBjb33wAGwDCEZNv/JcMTfv/6PcHsCK91VP+yydOAhsCUvfKOfh/ac+F/zUGdRBDYAbAsLR7BVjT/Ffn4QbYbCtFMSSpDYsBIJNhBoA0zL2fAlbw+3nO/+brOf9NZ88BGwByJVYDQPiOuRdYkVLZzP9Fp5PBCkCaYd6AWYJhAMhP8cfe/H8T6QVWADLEsnUJShjIGsWBA3C5cRI4JuAGwALyZXDV/8/pGShhARKHReXvj93/G5xngzVPMynAnhZALoE5E4ZBfoY5e715GRjjTY0gQ0CK0TFIHK9mZENACQUbJilHEpudATr+2dkWl64/AAAAAElFTkSuQmCC"},{"id":424210,"subject":"eye orb","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA/0lEQVR42mNgwArY/mPHRAG2/2KCumAswKOIgokwhO2/kmE6VgwyAGQoHkPY/ktrRf7f8+Q1GFfMOIVhCMxVWAxh+69qWwbXDMJPY7PB+KG7y/+LOgZgw8WlPHF5B9OAR5HB/48++wTWfFJFDUyDDJAWs0A3BOJvXfcmsC0gjTAMMgimGUTv1tPD5grUgIMpBjmfhVkQxQWN4prYYgXVAJBimAaQATD+bHW9/yWiutgNAHFgBoBsgdkKMwDkdJBmnAYgJxpQOIAMAWGQAWu01P+niOujaJZXjMWMBZgkKJBAGGYANs1YDEA1BBfGoxm/ITCNBDQjDEHWQKJm0rMzAJNFOBPH97UEAAAAAElFTkSuQmCC"},{"id":424643,"subject":"eyeball monster","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA7UlEQVR42mNgwAvY/kMwWYDtv5GJKxiTYQjbf20d6/9CvEJgLC0hR4ohEM0wDDKAg00ETBNpCBtYAzZMhAFs/z+9uo0TH9y8Gp8hCM1PzXXAuENUAoxh4md1lf9fOLgRmyFsKIq+fnj6/+PXb2BnL1JV+j9JQgwufzkjF5shmLbDwmKbmhrcgCYBIbBmogyABdx7N3O4AdevncdtwPracgxDQBjZ+SCNOMIBYgAI71gzCysGuQZme41PEPaABBkAUgiyDTn+QYEKoqf6xYEx3qgEKZSThoQByGZQ3MP4BDQjDAE5ERsmKT9gx5gAAPUiSa66sgqlAAAAAElFTkSuQmCC"},{"id":424660,"subject":"eyeball monster","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA10lEQVR42mNgwApY/mNiogHL/1+//v7/8vohCibSIJb/Pz+/wtAMw3fMvfAZgtAcqlz1P1q7FY5hmkH0M0szXIawgBXMCD+AgUEGIhty5cBBdEMgmls9V4ExKAyQNcMwzCs4Dai8ehKsGYS52EXBGCQGwmpBrfjCAtUAmGZsBtw3NMIWDggDQBifATgCkuX/FY9gsGTUpnNwTeiaQU6HYSwxwfL/3IbtYIUgDcgYOfCOWvrhTwsgRdgSERGaEYasdwrDionME9gyEkmZCptCknMlNoXYNQMAso6EZW8pQ/cAAAAASUVORK5CYII="},{"id":424673,"subject":"eyeball monster","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAzklEQVR42mNgwAp4/2PHRAHe/5/ev8DAy1ZeI8YQ3v////8DY2yGPI3NxmcIQjMIqwbPRcEwQ/buuo7NEIizYZqXvH8GxiCN6pHLwHjeplv4vIMwwLx6N9wAAV4NMEZ3xfWYWGQDUAPNvfs4XCMMg1wAMwAUDmiuIM0ALN7ANADZEJBmEB+vASAOSPBZeTGKITCs7NKC4Xy0gAS6onIyig3YohBmCNZYuOIRjDXxYEtMOFIlL9xp+LCvXwv+1Bgc2k+uZlRDsGGSciSx2RkAl5v1SDeCwy8AAAAASUVORK5CYII="},{"id":315470,"subject":"crystal skull","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABT0lEQVR42mNgwAJYmAX+Y8MMxACQwktfnsPxlnfH/89/df5/57xThA0CSSKD/Z+vgjXmth/6//nyNzAbZhBRmk/e2wrGSWl7/696cu//z71PwHj6yluohsCcjUvztbMX/4fnbvj/rfEm2ICp067+D0xYiDAEZgDIvyAM0wxSCPI/yAsT79/835y54//0S09RDQARd798+i8tZgHHu2bfBmNkMRAGGdIfuuF/g/NsVAMOv76PoRiXASDNGAbcvfISrujw6gc4DcFpQM7k4/+3HX+J4ZWeS5dQMEijV9TU/zUN6zADEYRBAXj7yhewl0DRBtIEijKYrVoKfmADUDQjRyXIKwK8GnAvgWhdtXiwmJNLK5gNwjgT0oqCY2CN85K2gekZ4QfAdPfkI2ADYC41FPP9jzcPgOIehGH+blh2Dm4A3nwAUogNE9RMKBvj0wwAkA3OsGYcYl4AAAAASUVORK5CYII="}],"crystal":[{"id":314992,"subject":"crystal prism","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA8klEQVR42mNgwAMYGTj/gzADOQCk8d////8/ffpAuiEwzcuvPfm/+PTj/7tm3ybeEJhmEAZpBuEj7bf/ByYsJGwIsubfn0/DDbjTeuO/hWfnf5eAftyGIGuGOd/WvBKML195BjYAhINDcRgCEgTZCsIgzSAnS4tZwDHMNSCM04C9d5+BNafX70LRDMIgsfDcDf/NDBNwGzBv063/Py6exGoASLOWehD+gARJds47BY77pLLNcM0gMZw2YzPg+6FT4IAEeQnEBwUkQdsxvLJ3z//lc16Co45ozegxAgpxsg0AeQNkAM54J8YQnHFOiiGEDAAAGTIPyDrBOSgAAAAASUVORK5CYII="},{"id":314965,"subject":"crystal prism","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA+ElEQVR42mNgwAP4ORT+gzADOQCk8e2PX//lpW3/k6UZBLa/evx/14H7pLsCpAGkGYQPr37wf+q0q8Qbgmw7VQ0ITFhI2BCYZpgBd77ehhtA0BBkzbgMiImcRZkBIBdgdQVI4PL79/+XX3sCxiA2yIAf62/9P3D9zf/c9kOkGTD90lOw5qSyzf+jqw6A0wJMMwijeAWmGaQJZgBI87xNt/43H7gKNsDFZzbYEAvPTjC7aNFZhCEwA+pW3v6//s4rsGaQJpBmZANAePHpx/9doxdgN+DmjWtwzbgMAGkGiaEYAPMGyMnoGBSAMAzigwIThrEGJCkYpg8AjoKyrgcFb3kAAAAASUVORK5CYII="},{"id":314972,"subject":"crystal prism","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA0klEQVR42mNgwAO4OWT+M5ALQJrvfL39H5shdz4f/0+U5syr6/8bLE1DMQSkecO7mf+jd839j1fztEe7wAaoTaj/b7OtFMUQnJrRbYe5QCIwFMUAvdVT8NuO7HyYAeheIWiA+cZAsD/lK4rBhknHRBFnAMi/IH8juwTkAgltF9IMqL+2GkyDNINcgR4OeA1BNwBGk2yAztJgsEb0aMQKkFMXSLHfkVbiDUBPXSDFQauLwFFntXc+cU4HhTa6V0DeAAUgUQagpy6QJqISD6EAJWQAABXG6IvgHsj8AAAAAElFTkSuQmCC"},{"id":314979,"subject":"crystal prism","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA9ElEQVR42mNgwAOYmQT+gzADOQCk8c7n4/99DySRbghMc8np1v/2M9L+qybYE28ITPOGdzPBmuvvTvyv3OT5X1TbkDhDYAbkLm8k3QCY5vjT+f8t5vr/l4y1+z/l2TxwOBhM9PwvH2GO3xCQJEgjyBAYBoWDaoHbfx4FeTAmaEDR6WSwbSBXHHi/Bq5ZxNOMsDdgBoBcAfI3yBCQZkFLnf86rWHEG2C+MRBsQNDqIrjtoHAgygCQTTADQIEIMgDkDZAYyCVExQRIAygcQJpBrgDxQZikxASyHRQWWffKSNMMMwDkXJgBRDkdq1eAeYBk20nNzgB2htYk/E59wQAAAABJRU5ErkJggg=="},{"id":314980,"subject":"crystal prism","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA4ElEQVR42mNgwA/+M1AA/v84ceE/uYaANT90svrfKyhCsiFwzdd0tcAGpPATbwhY87fpk8AG7JeSgxuQL6ZKlCH/f2zdCNa8Dai5SVgS7AqQAeqcMsQZcMpA+//3Q6fANEgzyGaQZqINWC0h+f+puQ7YVl9ufrBGHC7AaiCKATKsAv9D+KThrkDS8F/NLPw/D48kfgNMueXAAQljIxsA0gwyBMMAWMCBNCAbgM0L2FwAlgBpALkC5HxYLOAIQJyBCjYAFJUgVxAbAygGgAIOZAia30nLD0HCxv8pzpGEFAAAXOiyE7U3mhIAAAAASUVORK5CYII="},{"id":334304,"subject":"data crystal","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABJUlEQVR42mNgwAOYGPj+gzADOQCk8efnV//ft5qRbghM8/d9sWD8IEqDeEOQNVvx6YLpNxk6/4/YaRI2BKYZhL9u8Pivy60I9gLIBSdNpAkbApL8uD3s/++dbnBXCLCKg/G7+e7/41WMcRsAC3GQAR8mmsE1g8PAR+3/Hj1FsJewxgxIAOY8kHNBzn9Vrg9mg7yRIY1qQKgMkktAjD+fN////e3of5hBIP+CbAWxQQaAxEGaYQaADAcZCDYERIAC6ufpRLAhP99f+//7w0IwBotdywN7C6QJhEGGgrC3qD2qK0CGwDAoDEA0KPpAGGQbCIOcDtKI4gX0QET2BsjvIC/AMLIa/GkB6A2QK0CBCLOdpOQMMwTmfBT/kmIIwcRDjCGENAMAWssjDcO+MusAAAAASUVORK5CYII="},{"id":334331,"subject":"data crystal","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA0klEQVR42mNgwAHYmUX/I2MGUgBIw6Uvz/9b7Z0PxioF9aQZAlLscX493HZx60jSDQDZDDNA1COadANAXoBhmGEkawZp1N8+DxwGRBmCrBkUBiDNyAbg9Qqy5syr6/9rze8BY5gBIM0wjNUQdKerNNf9l8vIB7MD7u6Ea5YMTcNtAMzPIFz/ZDvYsJ2Pr/8X0fL/z8OtBcYgNl5vgGwFGQCyCRQOBk3dxGlGdwnIAJBmmO1EaUY3AOQaZANITokwA0hOyjBDQNEIMoRkzehZGp8aAEfv6wnLUGQTAAAAAElFTkSuQmCC"},{"id":316713,"subject":"cube crystal","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABSElEQVR42pWTPUhCYRSG7yI0tLk0tIj9EQ45Ga4NrRLS0JyjrgrRLtgeLQ1RQ+DsYENTS9EPtZZIQ3Ahl8okI048J05+t6vSPfBy/877fO/9fjxvRE3E4uLKi1IYqK9+R3qtA9W/QNZEffhNeTnfFP9kTXVTXpLD3PJoiBnN/HxdVMDTUVbVqa/KfXVBGhvpcBrX/Pl6Id2zvHSv1hXkAkgB+HEvO0jjmqn3u4oKc8+v/wIsFZCdzIyUEokBgFFpRjTyzIgm3nE9zv8YhwJs0lrbc/J2W1SYgYmMwcwGCgEwMuNMVruUlP5DLWBG+7l5HSQEwExMA5wWFgOxzXxZSOn3AMDMLoDl4t4AmBHfAgBbRmIhTFyHAfgdzNOTU+ENxQuaEctGswF2V2Y1OhM4djvbDsPEiG6CSIfKmvmNrVQ6+mn8CxrX8w1wHbyXG/MDKAAAAABJRU5ErkJggg=="}],"speed":[{"id":1097009,"subject":"shooting star","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAvUlEQVR42mNgwAFYmYX/wzADqQCk6fiFx//////3/8XrL6QbAtIA0kyWAeiaQXje/P2EDUH2M7JmGC5PnfUfWQ2Kgci2YtOMDU+cuhtiCIj48vkLhp+RFaPzQbilfR3CgE1br+PVgM4H2V5atgjhDRADFFAgya/TN4IxsgZkMZA6FM3I4YDuEmw4LaULe4xg8yf9DMCmGRTvMEySAaAAggUSDIMCDoZxGgCKV1jiQFcAE4O5CGcYEErv2NQAAMFY2n8dNP9PAAAAAElFTkSuQmCC"},{"id":1097016,"subject":"shooting star","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABC0lEQVR42p2Tvw4BQRDG7x0UXsR7aSkk6qsEIblOIkEldEQjolIodTqFhITCbhwyfBOz2d27Q0zyZTe7O7/5k9kg8CyfK1Dwr8EZ9g2iGwtKdZ71avR4HEmNSgwR+W8RJOEs0QGIz1O6bpoUL6uk+qEDwhvcQ07aYvEhorsesJDJJeyQDkcsgRhnAcBJdI9XvIqz6k4cpfYHh5zyGyLpI6qTURbEBqBmRMd6KQ8MQFYA7HIcgGrXTcOw15U5Rbuz0e3YY3FPXncGwg7vbttQZNAa71k2JAHImkB7FgTSOm1JDbsM/zhwqNWHcTa/Avxp8wGJEuzIiWlLAXz9dM60eYCffqwurjObap89ASTqoovzCYETAAAAAElFTkSuQmCC"},{"id":1097043,"subject":"shooting star","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAwElEQVR42mNgQAPcHFL/QZiBHADS+O/f9/9/f98lzxCYAb8fNIMx0YbAnA3SjG4AQS9h04iOX29Mxm0ISOL3t6NwG5FtRzcAq2uQFUrwKmOwvy4I+7/Iw+L/pypvOMZrCDoGGXAxwRvFAAxD8BkAcv6+BMf/Py9kgjFBA15O80XB6AZgNQTEgGlADqwnWe5g3GKTDcYEXYEeOMiGgXBXUAPcEJDBJKdWkAaQzRQZcDvKGh4uZBmwPtgOjCnKsciaAXWpWk0C0deBAAAAAElFTkSuQmCC"},{"id":274168,"subject":"comet","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABCElEQVR42mNggAI2FvH/6JiBWABSnL34BhhbJm6FY6IMg2n+9+/P/z8Pi/5/6PL6r6mZB8bYDMNpwJ+b4WD8JtLrv6155f9HkcH/Vaya4dix9sh/n5LdmIaABCIm3/hfd+fx/8qrJ/+/cM2BawIZYuI07f/jWrf/dadfg9WZ+M/BbkhI+ykw1g9d+1/TaxEKnnj/5v+vC8L+9z959r9y30OwOqyGoGNYwIIwyBCQFwtOvMJuAK4ABmGQq0A2z391/v/cB0/BhoC8Q3RUgxSCAhGkEeYKkgyAGQJyxZZ3xykzABSQsBgh2QCQzaDoJktz5oYbYANALiA5AEEaYZhsv5OVS5HTAi55ACCiIiSaMOBHAAAAAElFTkSuQmCC"},{"id":274173,"subject":"comet","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAApUlEQVR42mNgIBJwcyr/R8YMpACQhrqVt+GYJANgmi/f+wzGRBsAcypY8/v3KJrxegVZI1wzEE/b9PI/uhyGAciS2y69gGsGYeQwwOoVEAdkC7ImXBinZhjApRHkKpxOBynAZwBezej+JcrZ6LZvOw4JZWQb4XJQNs74BimCRRHMAGQ+3sQDC8Af629hOBskdvfKS8KpD184kJR0kRML2RmH1GwLADHlpLyYdy3QAAAAAElFTkSuQmCC"},{"id":1097050,"subject":"shooting star","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABCUlEQVR42mNgIAB+nYr4j8zX49P5D8MMpGq24tP9f1ZX+f87H9X/923l8Bvy62oyimSJqO7/S3Za/7/3mYAN6JQywm0AsmaYrW9jNf7/3ukGpvFrRnI2SDPI1k91Bv9Bhr4p1Py/TU2NgNOhBsA0g5wM0gwyBMQnGHigwAH5F0SDNP++l028ZpAimFNBBoA0f59nTzjEkQ349/fTf5A3SDIAFMpg24EawQZ8WPf/7wlvsEYQjhTSxW0ASAJky+8HzWCNYAOA3gCxfz+cDI46ULzjdQHIBpAhIBeANUE1gsSICjxY6IM0gZwOoomyGZsBoJQGshXEJjr0QYqQNYAwzECiDUDPosRmWwDoDyJX8iIlYgAAAABJRU5ErkJggg=="},{"id":1097010,"subject":"shooting star","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA0UlEQVR42mNgIANIcEj/J1sBSO6qlvR/nGpAEt68Ev9xycEMwGoISOBbmiYYI0vCNCJrJsoAZAwTP6kl8/9rm/7/Rwby2A14G6uBYQiMD8J/LgeBDcBwAUwhSAGyBmSNODWjG4BuCLpmnLb//rAQrhgd49UMkvzzefP/v7+fYNX8bYU+2AKQuu3KCpgG/NrgAFYIYsM0IbO/T7MGG4A1CuEGXIzFMACkEWYATBMMY3oBh99BmkFxjzf94zPkmaPaf4KZB9kQdEyUZmxpHsOvOAAAXJRrWx7tW0IAAAAASUVORK5CYII="},{"id":1097036,"subject":"shooting star","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA7UlEQVR42mNgQAMsLAL/QZiBHADS+DJHmXoGkOQamGYQPh+lCdZ4zFeKNAMexIv9/7rLCm4QzACCLkG2HdkAmGvalOX/9+sr4DYI2YA/P3b8/3khE8MgdFdhNeDXh3VgDDLg0wzj/99W6MPx3WAZsEtgGG4IiAFSDHMeyABk/u9TQXADkV0CMhBsCIh4362PsP1yxP8fBz1QMMg7yHyQN+CugBkAUgRyKrpiUCAu1BJFcT5Wb4CcBTMA5GwQBhkAokHOhxmCNVphBoA0w0IflCawxcIaBwX8UQkzANkmdIw3QT0tUyc/M8EMIUU9AKOxSKCra3nWAAAAAElFTkSuQmCC"}],"fork":[{"id":1316672,"subject":"tuning fork","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAhklEQVR42mNgwALYWMX+4+PjBSDFP788+g/ThM6njwE/Xi5CMQCZT5QBv15vpMyAb5crUAx4cz6XNAOQNZBlAMUuABlwptgErIlsA0BRB8LIhhFtwK1Jhv+/3av7/2l7Api9MED3P8mpEYQd7aLg3mAgFYA0lZYtIk8zzIC0lK4BNIDYbAwAED2XrzOvlC4AAAAASUVORK5CYII="},{"id":1316673,"subject":"tuning fork","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAq0lEQVR42mNgwAK42CX/gzAuPl4AUvjv/38whmkEsV98WUucITANt953oBjwbUUXaQZ0nnmIYsCnysmkGVC2+SqKATA5sg2oaNpFmgsq9yG88Pf3E9IMAGlANuD3lwukGQDS8OtOKtggEDupjUQDfq6NAxvQv/cB2CWrntwj3gCYIW+VJv2/7NwIx0RrRjak077vv6ZmHumaYQaAvEGW7VQzABQLZBtAbDYGANGJ3nr85BQDAAAAAElFTkSuQmCC"},{"id":1316686,"subject":"tuning fork","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAeUlEQVR42mNgwAGYmHj/Y2MTBUAafn44+h9Eg/DlXUv+k2TIMDHgy9M5cANeHo4l3YA353MpM+Dmfj/KDPj95cL/T9cawXh1kA55LgBhkO07Ukz+k5WYQDaTbDu6IWRrptgAkMa3j8/9nzxzA3mGgDSBNJNtALFeAABqnIcCYjHbEgAAAABJRU5ErkJggg=="},{"id":1316688,"subject":"tuning fork","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAgElEQVR42mNgwAI42ET+4+PjBSDFv7+/+A/ThM4ny4DvL9dQZsCna42kGfD9wzkUAx5viiDNgC9P51BmALKTQfTLw7GkGYCsgWwDpkYZgDUtzrIAY5JjARQOr0+kgQ0jyQDkgANphLmEgVQA0qRpkUWeZpgB4ZnzhrIBMEMIGQAAv0KONfpxPzoAAAAASUVORK5CYII="},{"id":1316690,"subject":"tuning fork","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAcElEQVR42mNgwAHYWMX+Y2MTBUAajhy99R9Eg/DipUf/k2TIMDHg14d1cAO+XYgf6gZ8vZFJugEf9zn///3tANj2O7m6pBsA0vhskjkYL9LX/k9Warxsa/o/RkaddM0wA95XWf13M8weqgbADCGkGQCyV5LW4LY07wAAAABJRU5ErkJggg=="},{"id":1316721,"subject":"tuning fork","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA1ElEQVR42mNgwAE42aX/Y2MTBUAaDh149h9EI7OJNkCES/r/7z8/4QaA2CAxog1QElT4//vz6f8gGoT//r4Lpok2wFhA5v/vj93/bUUVwPjP95X/QWJEG+AqJQc2IERJC4xhhhFtAExTsowcGJNsAMwFpeoy/wvlJf7/vpb3HyRGtAEg234fCgMHHsigHws8SAsDUIh/a7b7/+diLNigj6lmpEUjzBCQRhAmKQqRU2Nz5o7/tgrR/0lOyjADCovXU26AhW42+QaANEuLWZBnAMwQQpoB1IGc7vhjnagAAAAASUVORK5CYII="},{"id":1316723,"subject":"tuning fork","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA50lEQVR42mNgwAH42aX+Y2MTBUAavs6t/g+iQfjbiq7/JBmCrIloA943NMIVSHBI///z6zTcABgbrwF/f739//P6FLAiCy4RsCZ1XnEwBrFBhuLU/OvNrP8w8Kly8n9nXrH/IDGQZpBhv5734jcAbMiHdXAFYBdcjAVrBuFvx30JGwCyGd0AmAuIMgAZgP1NiQEgxa/yzcAaQQY9D9GDG4AcWwTTAkgjCCNHISi2QOmCKAOQ8VulSf9BAQ0DH3MJGALSJMmrCzcAW2wRNAAUDm/mzUExADm2CBow0UAHjEnOjejhgE8NANL4z3ZOCjJvAAAAAElFTkSuQmCC"},{"id":1316705,"subject":"tuning fork","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAVUlEQVR42mNgwAKYmfj+Y8MMxAKQ4h2n7sI1Tpy6e9SAEWpAQ8NEsCEg7OdbSJoBMENAGsnSjJ6kGcgFFBkA0njuxdf/Xf3ryDMEpAmk2dUphbZhAADYsoQm/wlCowAAAABJRU5ErkJggg=="}]};
+
+const SHIP = [
+  { slot: "player", name: "The Overtone", turn: true, text: "Your craft. It flies nose-right and squashes as it banks. Pick the one that reads best at 1×, the size it plays at." },
+  { slot: "echo", name: "Echo", pts: "can't be hit", ghost: true, text: "A living orb of sound, drawn at half size (8 px). On your nose or tail it blocks shots, hurts what it touches and fires the crystal's weapon. Launched, it hovers ahead and repeats your shots." },
+  { slot: "harmonic", name: "Harmonic", anim: true, text: "A speaker that rides above or below your craft (up to two). Drawn at half size (8 px). It blocks shots and, while you fire, plays a stream of music notes on every half-beat, kicking with each one. A hit costs one." },
+];
+const ENEMIES = [
+  { slot: "chirp", name: "Flutter", pts: "100", text: "Glowing moths that fly in fives, swaying in time and flapping as they go. Destroy all five for a CHORD: 1,000 and +1 Harmony." },
+  { slot: "jelly", name: "Jelly", pts: "150", text: "Drifts and lurches up on every beat. Every fourth beat it fires a ring of six notes." },
+  { slot: "drummer", name: "Sentry", pts: "200", text: "A turret standing on the floor or hanging from the ceiling. Fires an aimed note every second beat." },
+  { slot: "metronome", name: "Strider", pts: "150", text: "A small mech that walks the floor and hops every other beat. On the last beat of each bar it fires two notes up and forward." },
+  { slot: "cymbal", name: "Saw", pts: "120", text: "Spinning blades thrown in pairs, on arcs toward you. A chevron at the edge shows where, a beat early. Takes two hits." },
+  { slot: "horn", name: "Snapper", pts: "400", text: "A plant rooted to the floor or the ceiling. Every four beats it spits a fan of five notes. Takes eight hits." },
+  { slot: "eel", name: "Eel", pts: "50 · 500", text: "The head of a serpent with seven glowing segments that weaves across the screen. 50 a segment, 500 for the head." },
+  { slot: "carrier", name: "Courier", pts: "300", text: "A slow saucer that never shoots. Destroy it for a pickup." },
+];
+const KIT = [
+  { slot: "crystal", name: "Crystal", text: "Sets the Echo's weapon. It cycles SPIRAL (a double helix), PRISM (a triangle) and SONAR (an arc) every 1.5 s, so grab it when it shows the one you want. The same one again levels it up, to 3." },
+  { slot: "speed", name: "Star", text: "+1 speed, up to 3. Glyph: a double chevron." },
+  { slot: "fork", name: "Tuning fork", text: "Grace notes: two small homing notes every second while you fire. Glyph: a fork." },
+  { slot: "core", name: "Boss core", text: "The eye at the heart of each movement's boss: the Halo, a ring of Sentries (I), a great Eel through the strings (II), the Conductor (III). It opens on the first beat of every bar and can only be hurt while open." },
+];
+
+// Picks: first candidate by default (the build puts the chosen sprite first). Remembered per viewer when storage allows.
+const picks = {};
+for (const slot in SPRITES) picks[slot] = SPRITES[slot][0]?.id;
+try {
+  const saved = JSON.parse(localStorage.getItem("overtone-picks") || "{}");
+  for (const slot in saved) if (SPRITES[slot]?.some((s) => s.id === saved[slot])) picks[slot] = saved[slot];
+} catch (e) {}
+function save() { try { localStorage.setItem("overtone-picks", JSON.stringify(picks)); } catch (e) {} }
+
+const images = {}, whites = {};
+for (const slot in SPRITES) for (const s of SPRITES[slot]) {
+  const img = new Image();
+  img.onload = () => {
+    const c = document.createElement("canvas"); c.width = img.width; c.height = img.height;
+    const g = c.getContext("2d"); g.drawImage(img, 0, 0); g.globalCompositeOperation = "source-in"; g.fillStyle = "#ffffff"; g.fillRect(0, 0, c.width, c.height);
+    whites[s.id] = c;
+  };
+  img.src = s.src; images[s.id] = img;
+}
+const entry = (slot) => SPRITES[slot]?.find((s) => s.id === picks[slot]);
+
+function candidates(slot) {
+  const box = document.createElement("div");
+  box.className = "cands";
+  for (const s of SPRITES[slot] || []) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "cand"; b.dataset.slot = slot; b.dataset.id = s.id;
+    b.title = `${s.subject} · #${s.id}`;
+    b.setAttribute("aria-label", `${s.subject}, catalog ${s.id}`);
+    const img = document.createElement("img"); img.src = s.src; img.alt = "";
+    b.append(img); box.append(b);
+  }
+  return box;
+}
+function card({ slot, name, pts, ghost, text, turn, anim }) {
+  const c = document.createElement("article");
+  c.className = "card"; c.dataset.slot = slot;
+  const head = document.createElement("div"); head.className = "card-head";
+  let hero;
+  if (anim) { hero = document.createElement("canvas"); hero.width = hero.height = 96; hero.className = "hero-sprite"; hero.dataset.anim = slot; hero.setAttribute("role", "img"); hero.setAttribute("aria-label", `${name} firing music notes`); }
+  else { hero = document.createElement("img"); hero.className = turn ? "hero-sprite turn" : "hero-sprite"; hero.alt = name; hero.dataset.hero = slot; }
+  const title = document.createElement("div"); title.className = "card-title";
+  const h = document.createElement("h3"); h.textContent = name; title.append(h);
+  if (pts) { const chip = document.createElement("span"); chip.className = ghost ? "chip ghost" : "chip"; chip.textContent = ghost ? pts : `${pts} pts`; title.append(chip); }
+  const meta = document.createElement("span"); meta.className = "meta"; meta.dataset.meta = slot; title.append(meta);
+  head.append(hero, title); c.append(head);
+  if (text) { const p = document.createElement("p"); p.textContent = text; c.append(p); }
+  c.append(candidates(slot));
+  return c;
+}
+for (const s of SHIP) document.getElementById("ship-grid").append(card(s));
+for (const e of ENEMIES) document.getElementById("enemy-grid").append(card(e));
+for (const k of KIT) document.getElementById("kit-grid").append(card(k));
+
+function refreshCards() {
+  document.querySelectorAll("[data-hero]").forEach((img) => { const e = entry(img.dataset.hero); if (e) img.src = e.src; });
+  document.querySelectorAll("[data-meta]").forEach((m) => { const s = entry(m.dataset.meta); if (s) m.textContent = `${s.subject} · #${s.id}`; });
+  document.querySelectorAll(".cand").forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.id) === picks[b.dataset.slot])));
+}
+refreshCards();
+document.addEventListener("click", (ev) => {
+  const b = ev.target.closest(".cand");
+  if (!b) return;
+  picks[b.dataset.slot] = Number(b.dataset.id);
+  save(); refreshCards();
+});
+document.getElementById("copy-picks").addEventListener("click", () => {
+  const json = JSON.stringify({ ...picks, frame: frameStyle }, null, 2);
+  const status = document.getElementById("copy-status");
+  const area = document.getElementById("picks-text");
+  const fallback = () => { area.value = json; area.hidden = false; area.focus(); area.select(); status.textContent = "Copy the selected text below."; };
+  try {
+    navigator.clipboard.writeText(json).then(() => { area.hidden = true; status.textContent = "Copied. Paste it back to Claude."; }, fallback);
+  } catch (e) { fallback(); }
+});
+
+// ---- Screen mockup ----
+const cv = document.getElementById("screen");
+const ctx = cv.getContext("2d");
+const S = 4, W = 416, H = 228, TOP = 16;
+const C = { void: "#07040f", ink: "#f1ebff", dim: "#a497cc", gold: "#ffd84d", beam: "#5ff3ff", danger: "#ff5c8a", line: "#2a1d4d", panel: "#120b24", magenta: "#ff4fd8" };
+const POINTS = { chirp: 100, jelly: 150, drummer: 200, metronome: 150, cymbal: 120, horn: 400, eel: 50, eelhead: 500, carrier: 300 };
+const HP = { chirp: 1, jelly: 3, drummer: 3, metronome: 2, cymbal: 2, horn: 8, eel: 2, eelhead: 6, carrier: 4 };
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const BPM = 128, SPB = 60 / BPM, SCROLL = 44, WINDOW = 0.09;
+const rand = Math.random;
+const mod = (a, n) => ((a % n) + n) % n;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const TAU = Math.PI * 2;
+function mulberry32(a) { return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+const hash = (n) => { let t = Math.imul(n ^ 0x9e3779b9, 0x85ebca6b); t ^= t >>> 13; t = Math.imul(t, 0xc2b2ae35); t ^= t >>> 16; return (t >>> 0) / 4294967296; };
+
+// ---- Landscape: the frame (the only solid ground) ----
+// One smooth shape above and below, from a few sines (original, not R-Type's). The Equalizer style steps it into
+// 6 px columns of 3 px cells. In every style the drawn edge is the collision edge.
+const COL = 6, CELL = 3;
+let frameStyle = "eq";
+try { const f = localStorage.getItem("overtone-frame"); if (["eq", "grid", "circuit"].includes(f)) frameStyle = f; } catch (e) {}
+const ceilSmooth = (wx) => 11 + 6 * (1 + Math.sin(wx * 0.012)) + 24 * Math.max(0, Math.sin(wx * 0.0041 + 0.6)) ** 3;
+const floorSmooth = (wx) => 27 + 6 * (1 + Math.sin(wx * 0.01 + 2)) + 24 * Math.max(0, Math.sin(wx * 0.0037 + 2.4)) ** 3;
+const cells = (v) => Math.max(1, Math.round(v / CELL)) * CELL;
+function ceilY(wx) { return TOP + (frameStyle === "eq" ? cells(ceilSmooth(Math.floor(wx / COL) * COL + 3)) : Math.round(ceilSmooth(wx))); }
+function floorY(wx) { return H - (frameStyle === "eq" ? cells(floorSmooth(Math.floor(wx / COL) * COL + 3)) : Math.round(floorSmooth(wx))); }
+
+// ---- Landscape: baked pixel layers (1 px = 1 game px) ----
+const RGB = new Map();
+const rgbOf = (hex) => { let v = RGB.get(hex); if (!v) { v = [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)]; RGB.set(hex, v); } return v; };
+function pixLayer(w, h, paint) {
+  const c = document.createElement("canvas"); c.width = w; c.height = h;
+  const g = c.getContext("2d"), img = g.createImageData(w, h);
+  const set = (x, y, hex, a = 255) => { x = Math.round(x); y = Math.round(y); if (x < 0 || y < 0 || x >= w || y >= h) return; const [r, gg, b] = rgbOf(hex), o = (y * w + x) * 4; img.data[o] = r; img.data[o + 1] = gg; img.data[o + 2] = b; img.data[o + 3] = a; };
+  const rect = (x, y, rw, rh, hex) => { for (let yy = 0; yy < rh; yy++) for (let xx = 0; xx < rw; xx++) set(x + xx, y + yy, hex); };
+  const disc = (cx, cy, r, hex) => { for (let dy = -r; dy <= r; dy++) { const half = Math.round(Math.sqrt(r * r - dy * dy)); rect(cx - half, cy + dy, half * 2 + 1, 1, hex); } };
+  paint({ set, rect, disc, w, h });
+  g.putImageData(img, 0, 0);
+  return c;
+}
+const BAYER = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]];
+const PAL = {
+  sky: ["#0a0420", "#110630", "#1a0a3e", "#25104c", "#341559", "#4a1a66", "#62206e", "#7e2a74"],
+  spec: ["#1d2559", "#243069", "#2c3d7c", "#354d90", "#3f60a4", "#4b74b8"], peak: "#8fdcff",
+  city: "#150a2b", cityRim: "#2c1a58", cityDetail: "#1f1140", string: "#3a2670",
+  mass: "#0a0518", eqDim: ["#4a2478", "#3a1d64", "#2d1752", "#231243", "#1b0f37"], grid: "#ff4fd8",
+  circ: { plate: "#0e0822", seam: "#1b1238", trace: "#2b1f58", pad: "#45327f" },
+};
+const SKY = pixLayer(W, H, ({ set }) => {
+  const bands = PAL.sky.length - 1, HZ = 184;
+  for (let y = TOP; y < H; y++) {
+    const v = clamp((y - TOP) / (HZ - TOP), 0, 1) * bands, i = Math.floor(v), f = v - i;
+    for (let x = 0; x < W; x++) set(x, y, f * 16 > BAYER[y & 3][x & 3] ? PAL.sky[Math.min(i + 1, bands)] : PAL.sky[i]);
+  }
+  const r = mulberry32(7);
+  for (let i = 0; i < 110; i++) { const y = TOP + r() * 120, b = r(); set(r() * W, y, b > 0.9 ? "#ffffff" : b > 0.6 ? "#b9a8ff" : "#5a4a9a"); }
+});
+const TWINKLE = Array.from({ length: 18 }, (_, i) => ({ x: Math.floor(hash(i * 3 + 1) * W), y: TOP + 4 + Math.floor(hash(i * 3 + 2) * 110), k: i }));
+
+// The instrument city, 1024 px wide and tiling. Lights are recorded so they can play in turn.
+const CITY_W = 1024, CITY_H = 124, cityLights = [];
+const CITY = pixLayer(CITY_W, CITY_H, ({ set, rect, disc, h }) => {
+  const r = mulberry32(21), body = PAL.city, rim = PAL.cityRim;
+  const light = (x, y, kind) => cityLights.push({ x, y, kind, k: cityLights.length });
+  const organ = (x) => {
+    const n = 5 + Math.floor(r() * 5), top = 46 + r() * 50, vee = r() < 0.5;
+    for (let i = 0; i < n; i++) {
+      const t = vee ? 1 - Math.abs(i - (n - 1) / 2) / ((n - 1) / 2 || 1) : i / (n - 1), ph = Math.round(top * (0.5 + 0.5 * t)), px = x + i * 5;
+      rect(px, h - ph, 4, ph, body); rect(px, h - ph, 1, ph, rim); rect(px + 1, h - ph - 1, 2, 1, rim);
+      rect(px + 1, h - 15, 2, 2, "#07030f"); light(px + 1, h - 16, "pipe");
+    }
+    return n * 5;
+  };
+  const harp = (x) => {
+    const wd = 26, hh = 68 + Math.round(r() * 22), top = h - hh;
+    rect(x, top, 3, hh, body); rect(x, top, 1, hh, rim);
+    const neck = (sx) => top + Math.round(7 * Math.sin(((sx - x) / wd) * Math.PI));
+    for (let sx = x; sx <= x + wd; sx++) { const ny = neck(sx); rect(sx, ny, 1, 3, body); set(sx, ny, rim); }
+    const sb = (sx) => Math.round(h - 3 - ((sx - x - 3) / (wd - 3)) * (hh - 12));
+    for (let sx = x + 3; sx <= x + wd; sx++) rect(sx, sb(sx), 1, 3, body);
+    for (let sx = x + 5; sx < x + wd - 1; sx += 3) for (let y = neck(sx) + 3; y < sb(sx); y++) set(sx, y, PAL.string);
+    light(x + 1, top - 1, "tip");
+    return wd + 2;
+  };
+  const fork = (x) => {
+    const tall = 70 + Math.round(r() * 20);
+    rect(x + 2, h - 4, 9, 4, body); rect(x + 5, h - 40, 3, 36, body); rect(x + 5, h - 40, 1, 36, rim);
+    rect(x, h - 46, 13, 6, body); rect(x, h - tall, 3, tall - 40, body); rect(x + 10, h - tall, 3, tall - 40, body);
+    rect(x, h - tall, 1, tall - 40, rim); rect(x + 10, h - tall, 1, tall - 40, rim);
+    light(x + 1, h - tall - 1, "tip"); light(x + 11, h - tall - 1, "tip");
+    return 14;
+  };
+  const metronome = (x) => {
+    const hh = 48 + Math.round(r() * 14), cx = x + 11;
+    for (let row = 0; row < hh; row++) { const half = Math.round(3 + 8 * (row / hh)); rect(cx - half, h - hh + row, half * 2, 1, body); set(cx - half, h - hh + row, rim); }
+    rect(cx - 2, h - hh + 10, 4, hh - 16, PAL.cityDetail);
+    for (let i = 0; i < hh - 18; i++) set(cx + Math.round(i * 0.12) - 1, h - 8 - i, PAL.string);
+    light(cx - 1, h - hh - 1, "tip");
+    return 24;
+  };
+  const speakers = (x) => {
+    const wd = 14 + Math.round(r() * 6), hh = 26 + Math.round(r() * 18);
+    rect(x, h - hh, wd, hh, body); rect(x, h - hh, 1, hh, rim);
+    const cx = x + Math.floor(wd / 2);
+    for (const cy of [h - hh + 8, h - 9]) { disc(cx, cy, 5, "#0c0618"); disc(cx, cy, 4, PAL.cityDetail); disc(cx, cy, 2, rim); set(cx, cy, "#4a3484"); }
+    light(cx, h - hh + 8, "cone");
+    return wd;
+  };
+  const spire = (x) => {
+    const hh = 60 + Math.round(r() * 30);
+    rect(x + 3, h - hh, 2, hh, body); set(x + 3, h - hh + 4, rim);
+    for (let a = 0; a < TAU * 1.6; a += 0.12) { const rr = 4 - a * 0.7; set(x + 4 + Math.cos(a) * rr * 1.2, h - hh - 4 + Math.sin(a) * rr, rim); }
+    light(x + 4, h - hh - 4, "tip");
+    return 9;
+  };
+  const kinds = [organ, harp, fork, metronome, speakers, spire, organ, speakers];
+  let x = 6;
+  while (x < CITY_W - 40) { x += kinds[Math.floor(r() * kinds.length)](x) + 3 + Math.floor(r() * 14); }
+  rect(0, h - 3, CITY_W, 3, body);
+});
+
+// Circuit texture for the Circuit frame: 256 px, tiling, hung from the edge. Its traces are kept so light can run along them.
+const CIRC_W = 256, CIRC_H = 96, traces = [];
+const CIRC = pixLayer(CIRC_W, CIRC_H, ({ set, rect }) => {
+  const P = PAL.circ;
+  rect(0, 0, CIRC_W, CIRC_H, P.plate);
+  for (let x = 0; x < CIRC_W; x += 32) { rect(x, 0, 1, CIRC_H, P.seam); for (let y = 6; y < CIRC_H; y += 18) { set(x + 3, y, P.seam); set(x + 28, y, P.seam); } }
+  const r = mulberry32(44);
+  for (let i = 0; i < 10; i++) { const x = Math.floor(r() * (CIRC_W - 14)), y = 12 + Math.floor(r() * 50); rect(x, y, 12, 7, "#150c2e"); rect(x, y, 12, 1, P.pad); for (let q = 1; q < 12; q += 2) { set(x + q, y - 1, P.trace); set(x + q, y + 7, P.trace); } }
+  for (let i = 0; i < 26; i++) {
+    const y = 3 + Math.floor(r() * 60), x0 = Math.floor(r() * CIRC_W), len = 14 + Math.floor(r() * 60);
+    for (let x = x0; x < x0 + len; x++) set(mod(x, CIRC_W), y, P.trace);
+    const drop = 3 + Math.floor(r() * 10);
+    for (let y2 = y; y2 < Math.min(CIRC_H - 2, y + drop); y2++) set(mod(x0 + len, CIRC_W), y2, P.trace);
+    rect(mod(x0 - 1, CIRC_W), y - 1, 3, 3, P.pad); set(mod(x0, CIRC_W), y, "#8f7ad8");
+    traces.push({ x0, len, y, k: i });
+  }
+});
+const CIRC_UP = (() => { const c = document.createElement("canvas"); c.width = CIRC_W; c.height = CIRC_H; const g = c.getContext("2d"); g.translate(0, CIRC_H); g.scale(1, -1); g.drawImage(CIRC, 0, 0); return c; })();
+const MOTES = Array.from({ length: 34 }, (_, i) => ({ x: hash(i * 7 + 3) * W, y: TOP + hash(i * 7 + 4) * (H - TOP), z: hash(i * 7 + 5) }));
+const peaks = new Map();
+
+// ---- World state ----
+let clock = 0, scrollX = 0, beatNo = -1, beatFrac = 0, beatEnv = 0, hue = 285, paused = false, frameDt = 0, landOnly = false;
+const player = { x: 90, y: 112, vx: 0, vy: 0, bank: 1, invuln: 0, speed: 1, weapon: "spiral", level: 2, harm: 1, fork: true, charge: 0, charging: false, cool: 0, wcool: 0, hcool: 0, gcool: 0 };
+const echo = { state: "front", x: 104, y: 112, vx: 0, hoverX: 300, cool: 0 };
+let score = 0, hi = 48200, mult = 1, lives = 3, muted = false;
+let foes = [], shots = [], bullets = [], beams = [], pickups = [], sparks = [], rings = [], popups = [], warns = [];
+let harmPunch = 0, shake = 0, shakeMax = 0.001, flash = 0, nextPattern = 0, groupNo = 0, dropNo = 0;
+const PATTERNS = ["chirp", "drummer", "jelly", "carrier", "cymbal", "metronome", "chirp", "horn", "eel", "carrier"];
+
+function addFoe(kind, x, y, extra = {}) {
+  const e = { kind, x, y, y0: y, hp: HP[kind], t: 0, spin: 0, flash: 0, vx: 0, vy: 0, every: 0, phase: 0, r: 6, ...extra };
+  foes.push(e); return e;
+}
+function spawnPattern(kind) {
+  const R = W + 14;
+  if (kind === "chirp") { const g = ++groupNo, y0 = 76 + rand() * 80; for (let i = 0; i < 5; i++) addFoe("chirp", R + i * 16, y0, { group: g, i }); }
+  else if (kind === "drummer") { addFoe("drummer", R, 0, { ground: 1, every: 2, phase: 0 }); addFoe("drummer", R + 40, 0, { ground: -1, every: 2, phase: 1 }); }
+  else if (kind === "jelly") { addFoe("jelly", R, 90, { every: 4, phase: 0 }); addFoe("jelly", R + 30, 150, { every: 4, phase: 2 }); }
+  else if (kind === "carrier") addFoe("carrier", R, 100 + rand() * 50);
+  else if (kind === "cymbal") for (const y of [86, 170]) warns.push({ y, t: SPB });
+  else if (kind === "metronome") { addFoe("metronome", R, 0, { ground: 1, every: 4, phase: 3 }); addFoe("metronome", R + 28, 0, { ground: 1, every: 4, phase: 3 }); }
+  else if (kind === "horn") addFoe("horn", R + 6, 0, { ground: rand() < 0.5 ? 1 : -1, every: 4, phase: 1, r: 7 });
+  else if (kind === "eel") { const head = addFoe("eelhead", R, 125, { trail: [], r: 7 }); for (let i = 1; i <= 7; i++) addFoe("eel", R + i * 9, 125, { head, i, r: 5 }); }
+}
+spawnPattern("chirp"); spawnPattern("drummer");
+foes.forEach((e) => { e.x -= 120; });
+
+// ---- Effects: sparks with depth and tilted rings, coloured round the colour wheel ----
+function burst(x, y, n, h = hue, speed = 1) {
+  const k = reduceMotion ? Math.ceil(n / 3) : n;
+  for (let i = 0; i < k; i++) {
+    const a = rand() * TAU, b = Math.acos(2 * rand() - 1), v = (40 + rand() * 90) * speed;
+    sparks.push({ x, y, z: 0, vx: Math.sin(b) * Math.cos(a) * v, vy: Math.sin(b) * Math.sin(a) * v, vz: Math.cos(b) * v, life: 0.4 + rand() * 0.4, max: 0.8, h: h + rand() * 120 });
+  }
+}
+function ring(x, y, r, dr, life, h = hue, w = 1) { rings.push({ x, y, r, dr, life, max: life, h, w, tilt: reduceMotion ? 0 : rand() * 1.2, rot: rand() * TAU }); }
+function shakeIt(mag, t) { if (reduceMotion) return; if (mag * t > shake * shakeMax) { shakeMax = mag; shake = t; } }
+function popup(x, y, text, color = C.gold) { popups.push({ x, y, text, life: 1, color }); }
+function addScore(n) { const before = Math.floor(score / 50000); score += n; if (Math.floor(score / 50000) > before) { lives++; popup(player.x, player.y - 16, "+SHIP", C.beam); } }
+
+function damage(e, d, resonant = false) {
+  if (e.dead) return;
+  e.hp -= d; e.flash = 0.08;
+  if (e.hp <= 0) kill(e, resonant);
+}
+function kill(e, resonant) {
+  e.dead = true;
+  if (resonant) { mult = Math.min(8, mult + 1); popup(e.x, e.y - 18, "RESONANT", C.beam); }
+  const pts = POINTS[e.kind] * mult; addScore(pts); popup(e.x, e.y - 10, String(pts));
+  const big = e.kind === "horn" || e.kind === "eelhead" || e.kind === "carrier";
+  burst(e.x, e.y, big ? 40 : 18, hue + e.kind.length * 40, big ? 1.4 : 1);
+  ring(e.x, e.y, 2, 120, 0.4, hue + 180, 1.5); if (big || resonant) ring(e.x, e.y, 2, 70, 0.6, hue + 60, 1);
+  shakeIt(big ? 2.5 : 1, big ? 0.3 : 0.12);
+  sfxKill(e.y);
+  if (e.kind === "carrier") { const kinds = ["crystal", "harmonic", "speed", "fork"]; pickups.push({ kind: kinds[dropNo++ % 4], x: e.x, y: e.y, t: 0 }); }
+  if (e.group && !foes.some((f) => f.group === e.group && !f.dead)) {
+    const bonus = 1000 * mult; mult = Math.min(8, mult + 1); addScore(bonus);
+    popup(e.x, e.y - 26, `CHORD ${bonus}`, C.magenta); ring(e.x, e.y, 4, 200, 0.6, hue + 90, 2);
+  }
+  if (e.kind === "eelhead") for (const f of foes) if (f.head === e && !f.dead) kill(f, false);
+}
+
+function hitPlayer() {
+  if (player.invuln > 0) return;
+  mult = 1; flash = reduceMotion ? 0 : 0.1; shakeIt(3, 0.35);
+  burst(player.x, player.y, 26, hue + 200); ring(player.x, player.y, 2, 150, 0.45, hue, 2);
+  let msg;
+  if (player.harm > 0) { player.harm--; msg = "-HARMONIC"; }
+  else if (echo.state !== "loose" && player.level > 1) { player.level--; msg = "-LEVEL"; }
+  else if (echo.state !== "loose") { echo.state = "loose"; echo.vx = -24; echo.x = player.x + 12; player.level = 1; msg = "ECHO LOOSE"; }
+  else {
+    lives = lives > 1 ? lives - 1 : 3; msg = "SHIP LOST";
+    burst(player.x, player.y, 50, hue, 1.6); ring(player.x, player.y, 2, 90, 0.7, hue + 120, 2); flash = reduceMotion ? 0 : 0.2; shakeIt(4.5, 0.6);
+    echo.state = "front"; player.level = 1; player.invuln = 2; player.charge = 0; player.charging = false;
+    popup(player.x, player.y - 14, msg, C.danger); return;
+  }
+  player.invuln = 1.2; popup(player.x, player.y - 14, msg, C.danger);
+}
+
+function launchEcho() {
+  if (echo.state === "front" || echo.state === "back") {
+    const back = echo.state === "back";
+    echo.state = "flying"; echo.vx = back ? -260 : 260; echo.hoverX = back ? 34 : 300; sfxBlip(660);
+  } else if (echo.state === "flying" || echo.state === "hover") { echo.state = "returning"; sfxBlip(440); }
+}
+function onBeatWindow() { return Math.min(beatFrac, 1 - beatFrac) * SPB < WINDOW; }
+function tier() { const beats = player.charge / SPB; return beats >= 2.85 ? 3 : beats >= 1.85 ? 2 : beats >= 0.85 ? 1 : 0; } // a segment per beat held
+function releaseCharge() {
+  const t = tier(), resonant = t >= 2 && onBeatWindow();
+  if (t > 0) {
+    const w = [0, 6, 10, 16][t] * (resonant ? 1.5 : 1);
+    beams.push({ x0: player.x + 8, head: player.x + 8, y: player.y, w, t, resonant, hit: new Set(), dmg: [0, 3, 6, 12][t] * (resonant ? 1.5 : 1) });
+    if (resonant) { ring(player.x + 10, player.y, 4, 260, 0.5, hue + 40, 2); ring(player.x + 10, player.y, 4, 160, 0.6, hue + 160, 1); shakeIt(1.5, 0.2); popup(player.x, player.y - 14, "ON THE BEAT", C.beam); }
+    sfxBeam(t, resonant);
+  }
+  player.charge = 0; player.charging = false; sfxChargeStop();
+}
+
+function enemyFire(e) {
+  const aim = Math.atan2(player.y - e.y, player.x - e.x), sp = 84;
+  const shoot = (a, s = sp) => bullets.push({ x: e.x, y: e.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s });
+  if (e.kind === "drummer") shoot(aim);
+  else if (e.kind === "jelly") for (let i = 0; i < 6; i++) shoot((i / 6) * TAU + e.t, 52);
+  else if (e.kind === "metronome") { shoot(-Math.PI * 0.75, 70); shoot(-Math.PI * 0.6, 70); }
+  else if (e.kind === "horn") for (let i = -2; i <= 2; i++) shoot(aim + i * 0.22, 66);
+}
+function onBeat(b) {
+  beatNo = b;
+  if (mod(b, 4) === 0 && !reduceMotion) hue = (hue + 37) % 360;
+  for (const e of foes) if (!e.dead && e.every && e.x < W - 4 && e.x > 4 && mod(b - e.phase, e.every) === 0) enemyFire(e);
+  for (const e of foes) if (e.kind === "metronome" && mod(b, 2) === 0 && e.onGround) { e.vy = -78; e.onGround = false; }
+  for (const e of foes) if (e.kind === "jelly") e.vy = -34;
+  if (b >= nextPattern) { spawnPattern(PATTERNS[mod((b / 4) | 0, PATTERNS.length)]); nextPattern = b + 4; }
+  sfxBeat(b);
+}
+
+// ---- Input ----
+const keys = new Set();
+let mouseFire = false, mouseCharge = false, lastInput = -1e9, lastDevice = matchMedia("(pointer: coarse)").matches ? "touch" : "kbm", padLabel = "", padWas = {}, autoWas = -1;
+const touch = { shown: matchMedia("(pointer: coarse)").matches, mx: 0, my: 0, charge: false };
+const TOUCH = { stick: { x: 48, y: 176, r: 24 }, charge: { x: 382, y: 176, r: 16 }, echo: { x: 342, y: 198, r: 11 } };
+const touchPointers = new Map();
+const KEYMAP = { arrowleft: "left", a: "left", arrowright: "right", d: "right", arrowup: "up", w: "up", arrowdown: "down", s: "down", " ": "fire", z: "fire", j: "fire", x: "charge", k: "charge", c: "echo", l: "echo", shift: "echo", m: "mute", p: "pause" };
+function toGame(ev) { const r = cv.getBoundingClientRect(); return { x: ((ev.clientX - r.left) / r.width) * W, y: ((ev.clientY - r.top) / r.height) * H }; }
+const near = (p, b, extra = 6) => Math.hypot(p.x - b.x, p.y - b.y) < b.r + extra;
+function stickFrom(p) {
+  const dx = p.x - TOUCH.stick.x, dy = p.y - TOUCH.stick.y, d = Math.hypot(dx, dy), k = d > TOUCH.stick.r ? TOUCH.stick.r / d : 1;
+  touch.mx = (dx * k) / TOUCH.stick.r; touch.my = (dy * k) / TOUCH.stick.r;
+}
+function syncTouch() {
+  const roles = [...touchPointers.values()];
+  touch.charge = roles.includes("charge");
+  if (!roles.includes("stick")) { touch.mx = 0; touch.my = 0; }
+}
+function toggleMute() { muted = !muted; if (master) master.gain.value = muted ? 0 : 0.22; if (!muted) audioOn(); }
+cv.addEventListener("contextmenu", (ev) => ev.preventDefault());
+cv.addEventListener("pointerdown", (ev) => {
+  cv.focus(); lastInput = performance.now(); audioOn();
+  const p = toGame(ev);
+  if (p.y < TOP && p.x > 398) { toggleMute(); return; }
+  if (p.y < TOP && p.x > 380) { paused = !paused; return; }
+  if (paused) { paused = false; return; }
+  if (ev.pointerType === "touch" || touch.shown) {
+    let role = null;
+    if (near(p, TOUCH.charge)) role = "charge";
+    else if (near(p, TOUCH.echo)) { launchEcho(); role = "echo"; }
+    else if (p.x < W / 2 && p.y > TOP) { role = "stick"; stickFrom(p); }
+    if (role || ev.pointerType === "touch") {
+      if (ev.pointerType === "touch") { lastDevice = "touch"; touch.shown = true; syncSeg(); }
+      touchPointers.set(ev.pointerId, role); syncTouch(); cv.setPointerCapture?.(ev.pointerId); return;
+    }
+  }
+  lastDevice = "kbm";
+  if (ev.button === 2) mouseCharge = true; else if (ev.button === 1) launchEcho(); else mouseFire = true;
+});
+cv.addEventListener("pointermove", (ev) => { if (touchPointers.get(ev.pointerId) === "stick") { stickFrom(toGame(ev)); lastInput = performance.now(); } });
+const endPointer = (ev) => { touchPointers.delete(ev.pointerId); syncTouch(); if (ev.pointerType !== "touch") { if (ev.button === 2) mouseCharge = false; else mouseFire = false; } };
+window.addEventListener("pointerup", endPointer);
+window.addEventListener("pointercancel", endPointer);
+cv.addEventListener("keydown", (ev) => {
+  const k = KEYMAP[ev.key.toLowerCase()];
+  if (!k) return;
+  ev.preventDefault(); lastInput = performance.now(); lastDevice = "kbm"; audioOn();
+  if (ev.repeat) return;
+  if (k === "echo") launchEcho();
+  else if (k === "mute") toggleMute();
+  else if (k === "pause") paused = !paused;
+  else keys.add(k);
+});
+cv.addEventListener("keyup", (ev) => keys.delete(KEYMAP[ev.key.toLowerCase()]));
+cv.addEventListener("blur", () => { keys.clear(); mouseFire = false; mouseCharge = false; });
+
+function setPadStatus(label, on) {
+  if (label === padLabel) return;
+  padLabel = label;
+  const el = document.getElementById("pad-status"); el.textContent = label; el.dataset.on = String(on);
+}
+function readPad(now) {
+  let pads;
+  try { pads = navigator.getGamepads ? navigator.getGamepads() : []; }
+  catch (e) { setPadStatus("This viewer blocks controller input. Open design/concept-sheet.html in a browser tab to use it.", false); return null; }
+  const p = [...pads].find((g) => g && g.connected);
+  if (!p) { setPadStatus("No controller yet. Press any button on it.", false); return null; }
+  setPadStatus(`Connected: ${p.id.replace(/\s*\(.*\)\s*/g, " ").trim()}`, true);
+  const dz = (v) => (Math.abs(v) < 0.2 ? 0 : v);
+  const b = (i) => Boolean(p.buttons[i] && p.buttons[i].pressed);
+  const out = { mx: dz(p.axes[0] || 0), my: dz(p.axes[1] || 0), fire: b(0), charge: b(2) || b(7), echo: b(1) || b(5), pause: b(9), mute: b(3) };
+  if (b(12)) out.my = -1; if (b(13)) out.my = 1; if (b(14)) out.mx = -1; if (b(15)) out.mx = 1;
+  if (out.echo && !padWas.echo) launchEcho();
+  if (out.pause && !padWas.pause) paused = !paused;
+  if (out.mute && !padWas.mute) toggleMute();
+  padWas = out;
+  if (out.mx || out.my || p.buttons.some((x) => x.pressed)) { lastInput = now; lastDevice = "pad"; audioOn(); }
+  return out;
+}
+
+// Demo pilot: grab pickups and a loose Echo, line up with the nearest enemy ahead, sidestep shots, keep off the
+// pipes and keys, and every eight beats charge for two beats and release on the beat (a resonant beam).
+function autopilot() {
+  const out = { mx: 0, my: 0, fire: true, charge: false };
+  let ty = 120, tx = 96;
+  const pk = pickups.find((p) => p.x > 16 && p.x < W - 16);
+  if (echo.state === "loose") { ty = echo.y; tx = clamp(echo.x, 30, 300); }
+  else if (pk) { ty = pk.y; tx = clamp(pk.x - 6, 30, 260); }
+  else {
+    let best = null, bd = 1e9;
+    for (const e of foes) { if (e.dead || e.x < player.x + 12 || e.x > W) continue; const d = e.x - player.x + Math.abs(e.y - player.y) * 0.6; if (d < bd) { bd = d; best = e; } }
+    if (best) ty = best.y;
+  }
+  for (const b of bullets) { const dx = b.x - player.x, dy = b.y - player.y; if (dx > -8 && dx < 46 && Math.abs(dy) < 12) { ty = player.y + (dy > 0 ? -26 : 26); break; } }
+  let lo = -1e9, hiY = 1e9;
+  for (let dx = -8; dx <= 28; dx += 4) { lo = Math.max(lo, ceilY(scrollX + player.x + dx) + 15); hiY = Math.min(hiY, floorY(scrollX + player.x + dx) - 15); }
+  ty = clamp(ty, lo, hiY);
+  out.my = clamp((ty - player.y) / 10, -1, 1); out.mx = clamp((tx - player.x) / 24, -1, 1);
+  const b8 = mod(beatNo, 8);
+  out.charge = b8 === 4 || b8 === 5;
+  const b32 = mod(beatNo, 32);
+  if ((b32 === 18 || b32 === 26) && autoWas !== beatNo) { autoWas = beatNo; launchEcho(); }
+  return out;
+}
+
+// ---- Update ----
+function update(dt, now) {
+  const pad = readPad(now);
+  if (paused) return;
+  clock += dt; scrollX += SCROLL * dt;
+  const bf = clock / SPB, b = Math.floor(bf); beatFrac = bf - b; beatEnv = Math.exp(-beatFrac * 5);
+  if (b !== beatNo) onBeat(b);
+  const demo = now - lastInput > 3500 && touchPointers.size === 0;
+  let mx = (keys.has("right") ? 1 : 0) - (keys.has("left") ? 1 : 0), my = (keys.has("down") ? 1 : 0) - (keys.has("up") ? 1 : 0);
+  let fire = keys.has("fire") || mouseFire || (touch.shown && lastDevice === "touch"), charge = keys.has("charge") || mouseCharge || touch.charge;
+  if (mx && my) { mx *= Math.SQRT1_2; my *= Math.SQRT1_2; }
+  if (touch.mx || touch.my) { mx = touch.mx; my = touch.my; }
+  if (pad) { if (pad.mx || pad.my) { mx = pad.mx; my = pad.my; } fire = fire || pad.fire; charge = charge || pad.charge; }
+  if (demo) { const a = autopilot(); mx = a.mx; my = a.my; fire = a.fire; charge = a.charge; }
+
+  // Craft: direct, responsive movement. It squashes (in whole-pixel steps) while it climbs or dives: a bank.
+  const sp = 108 + 22 * (player.speed - 1);
+  player.vx = mx * sp; player.vy = my * sp;
+  player.x = clamp(player.x + player.vx * dt, 12, W - 24);
+  player.y = clamp(player.y + player.vy * dt, TOP + 6, H - 6);
+  player.bank = Math.abs(player.vy) > sp * 0.35 ? 0.75 : 1;
+  const wx = scrollX + player.x;
+  let cy = -1e9, fy = 1e9;
+  for (const dx of [-6, 0, 6]) { cy = Math.max(cy, ceilY(wx + dx)); fy = Math.min(fy, floorY(wx + dx)); }
+  if (player.y < cy + 4) { player.y = cy + 8; hitPlayer(); }
+  if (player.y > fy - 4) { player.y = fy - 8; hitPlayer(); }
+  player.invuln = Math.max(0, player.invuln - dt);
+
+  // Fire or charge: charging holds your fire.
+  player.cool -= dt; player.wcool -= dt; player.hcool -= dt; player.gcool -= dt; echo.cool -= dt;
+  if (charge) { if (!player.charging) sfxChargeStart(); player.charging = true; player.charge += dt; sfxChargeTo(tier()); }
+  else if (player.charging) releaseCharge();
+  if (fire && !player.charging) {
+    if (player.cool <= 0) { player.cool = 0.12; shots.push({ kind: "note", x: player.x + 9, y: player.y, vx: 330, vy: 0 }); sfxShot(player.y); }
+    const attached = echo.state === "front" || echo.state === "back", dir = echo.state === "back" ? -1 : 1;
+    if (attached && player.wcool <= 0) fireWeapon(dir);
+    if (!attached && echo.state !== "loose" && echo.cool <= 0) { echo.cool = 0.25; shots.push({ kind: "note", x: echo.x + 6, y: echo.y, vx: 300, vy: 0 }); }
+    if (player.harm && player.hcool <= 0) { player.hcool = SPB / 2; harmPunch = 0.08; for (const h of harmonics()) shots.push({ kind: "quaver", x: h.x + 6, y: h.y + 1, y0: h.y + 1, vx: 220, vy: 0, t: 0, ph: rand() * TAU }); }
+    if (player.fork && player.gcool <= 0) { player.gcool = 1; for (const s of [-1, 1]) shots.push({ kind: "grace", x: player.x, y: player.y + s * 6, vx: 120, vy: s * 60, life: 2.5 }); }
+  }
+
+  updateEcho(dt);
+  updateShots(dt);
+  updateFoes(dt);
+  for (const w of warns) { w.t -= dt; if (w.t <= 0) addFoe("cymbal", W + 10, w.y, { vx: -185, vy: (player.y - w.y) * 0.55, r: 6 }); }
+  warns = warns.filter((w) => w.t > 0);
+
+  // Enemy notes: the Echo and Harmonics block them.
+  const hs = harmonics();
+  for (const b of bullets) {
+    b.x += b.vx * dt; b.y += b.vy * dt;
+    if (echo.state !== "loose" && Math.hypot(b.x - echo.x, b.y - echo.y) < 5) { b.dead = true; burst(b.x, b.y, 4, hue + 90, 0.4); continue; }
+    if (hs.some((h) => Math.hypot(b.x - h.x, b.y - h.y) < 4)) { b.dead = true; burst(b.x, b.y, 4, hue, 0.4); continue; }
+    if (Math.hypot(b.x - player.x, b.y - player.y) < 4.5) { b.dead = true; hitPlayer(); }
+  }
+  bullets = bullets.filter((b) => !b.dead && b.x > -8 && b.x < W + 8 && b.y > TOP - 4 && b.y < H + 4);
+
+  for (const p of pickups) {
+    p.t += dt; p.x -= 30 * dt; p.y += Math.sin(p.t * 3) * 6 * dt;
+    if (Math.hypot(p.x - player.x, p.y - player.y) < 11) { p.dead = true; collect(p); }
+  }
+  pickups = pickups.filter((p) => !p.dead && p.x > -12);
+
+  for (const p of sparks) { p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt; p.vx *= 0.96; p.vy *= 0.96; p.vz *= 0.96; p.life -= dt; }
+  sparks = sparks.filter((p) => p.life > 0);
+  for (const r of rings) { r.r += r.dr * dt; r.life -= dt; }
+  rings = rings.filter((r) => r.life > 0);
+  for (const p of popups) { p.y -= 14 * dt; p.life -= dt; }
+  popups = popups.filter((p) => p.life > 0);
+  for (const m of MOTES) { m.y -= (3 + m.z * 6) * dt; m.x -= SCROLL * 0.7 * dt; if (m.y < TOP) m.y = H; if (m.x < 0) m.x += W; }
+  shake = Math.max(0, shake - dt); flash = Math.max(0, flash - dt); harmPunch = Math.max(0, harmPunch - dt);
+}
+
+function harmonics() {
+  // Above and below the craft, bobbing toward and away from the camera; never across the craft itself.
+  const out = [];
+  for (let i = 0; i < player.harm; i++) { const a = clock * 3.2 + i * Math.PI; out.push({ x: player.x - 2 + Math.cos(a) * 3, y: player.y + (i ? 11 : -11), z: Math.sin(a) * 4, a }); }
+  return out;
+}
+function fireWeapon(dir) {
+  const ox = echo.x + dir * 4, y = echo.y, L = player.level;
+  if (player.weapon === "spiral") { player.wcool = 0.2; const A = 4 + 3 * L; for (const ph of [0, Math.PI]) shots.push({ kind: "helix", x: ox, y, y0: y, vx: 250 * dir, vy: 0, A, ph, t: 0, z: 0 }); }
+  else if (player.weapon === "prism") {
+    player.wcool = 0.28;
+    const angles = L >= 3 ? [0, -0.35, 0.35, -0.7, 0.7] : L >= 2 ? [0, -0.35, 0.35] : [0];
+    for (const a of angles) shots.push({ kind: "prism", x: ox, y, vx: Math.cos(a) * 280 * dir, vy: Math.sin(a) * 280, bounces: 2 });
+  } else { player.wcool = 0.42; shots.push({ kind: "sonar", x: ox, y, vx: 170 * dir, vy: 0, r: 3, rmax: 10 + 6 * L, hit: new Set() }); }
+}
+function updateEcho(dt) {
+  if (echo.state === "front" || echo.state === "back") {
+    echo.x = player.x + (echo.state === "front" ? 9 : -9); echo.y = player.y;
+  } else if (echo.state === "flying") {
+    echo.x += echo.vx * dt; echo.vx *= 0.985;
+    if ((echo.vx > 0 && echo.x >= echo.hoverX) || (echo.vx < 0 && echo.x <= echo.hoverX)) echo.state = "hover";
+  } else if (echo.state === "hover") {
+    echo.y += clamp(player.y - echo.y, -40 * dt, 40 * dt);
+  } else if (echo.state === "returning") {
+    const dx = player.x - echo.x, dy = player.y - echo.y, d = Math.hypot(dx, dy) || 1;
+    echo.x += (dx / d) * 230 * dt; echo.y += (dy / d) * 230 * dt;
+  } else if (echo.state === "loose") {
+    echo.x += echo.vx * dt; echo.y += Math.sin(clock * 2) * 10 * dt;
+    if (echo.x < 24) echo.vx = Math.abs(echo.vx); if (echo.x > W - 24) echo.vx = -Math.abs(echo.vx);
+  }
+  echo.y = clamp(echo.y, TOP + 8, H - 8);
+  if (!["front", "back", "flying"].includes(echo.state) && Math.hypot(player.x - echo.x, player.y - echo.y) < 12) {
+    echo.state = echo.x >= player.x ? "front" : "back"; sfxBlip(880);
+  }
+  if (echo.state !== "loose") for (const e of foes) if (!e.dead && Math.hypot(e.x - echo.x, e.y - echo.y) < e.r + 4) { damage(e, 10 * dt); if (rand() < 0.3) burst(echo.x, echo.y, 2, hue, 0.5); }
+}
+function solidAt(x, y) { const wx = scrollX + x; return y < ceilY(wx) || y > floorY(wx); }
+function updateShots(dt) {
+  for (const s of shots) {
+    if (s.kind === "quaver") { s.t += dt; s.x += s.vx * dt; s.y = s.y0 + 2.5 * Math.sin(s.ph + s.t * 10); }
+    else if (s.kind === "helix") { s.t += dt; s.x += s.vx * dt; s.y = s.y0 + s.A * Math.sin(s.ph + s.t * 16); s.z = s.A * Math.cos(s.ph + s.t * 16); }
+    else if (s.kind === "grace") {
+      s.life -= dt; let best = null, bd = 1e9;
+      for (const e of foes) { if (e.dead) continue; const d = Math.hypot(e.x - s.x, e.y - s.y); if (d < bd) { bd = d; best = e; } }
+      if (best) { const a = Math.atan2(best.y - s.y, best.x - s.x); s.vx += Math.cos(a) * 600 * dt; s.vy += Math.sin(a) * 600 * dt; }
+      const v = Math.hypot(s.vx, s.vy); if (v > 190) { s.vx *= 190 / v; s.vy *= 190 / v; }
+      s.x += s.vx * dt; s.y += s.vy * dt; if (s.life <= 0) s.dead = true;
+    } else {
+      s.x += s.vx * dt; s.y += s.vy * dt;
+      if (s.kind === "sonar") s.r = Math.min(s.rmax, s.r + 40 * dt);
+      if (s.kind === "prism") {
+        const wx = scrollX + s.x;
+        if (s.y < ceilY(wx) && s.vy < 0) { if (s.bounces-- > 0) s.vy = -s.vy; else s.dead = true; }
+        if (s.y > floorY(wx) && s.vy > 0) { if (s.bounces-- > 0) s.vy = -s.vy; else s.dead = true; }
+      }
+    }
+    if ((s.kind === "note" || s.kind === "quaver" || s.kind === "helix" || s.kind === "grace") && solidAt(s.x, s.y)) { s.dead = true; burst(s.x, s.y, 2, hue, 0.3); }
+    for (const e of foes) {
+      if (e.dead || s.dead) continue;
+      if (s.kind === "sonar") { if (!s.hit.has(e) && Math.abs(e.x - s.x) < 5 + e.r * 0.5 && Math.abs(e.y - s.y) < s.r + e.r * 0.5) { s.hit.add(e); damage(e, 1.5); } continue; }
+      if (Math.hypot(e.x - s.x, e.y - s.y) < e.r + 2) { s.dead = true; damage(e, s.kind === "grace" ? 1.5 : 1); burst(s.x, s.y, 3, hue + 30, 0.5); }
+    }
+  }
+  shots = shots.filter((s) => !s.dead && s.x > -10 && s.x < W + 10 && s.y > TOP && s.y < H);
+  for (const b of beams) {
+    b.head += 560 * dt;
+    b.tail = Math.max(b.x0, b.head - 280);
+    for (const e of foes) if (!e.dead && !b.hit.has(e) && e.x > b.tail - e.r && e.x < b.head + e.r && Math.abs(e.y - b.y) < b.w / 2 + e.r) { b.hit.add(e); damage(e, b.dmg, b.resonant); }
+  }
+  beams = beams.filter((b) => b.tail < W + 10);
+}
+function updateFoes(dt) {
+  for (const e of foes) {
+    if (e.dead) continue;
+    e.t += dt; e.flash = Math.max(0, e.flash - dt);
+    if (e.kind === "chirp") { e.x -= (56 + 80 * beatEnv) * dt; e.y = e.y0 + 22 * Math.sin((clock / SPB) * (Math.PI / 2) + e.i * 0.7); }
+    else if (e.kind === "jelly") { e.x -= 30 * dt; e.vy += 50 * dt; e.vy *= 0.97; e.y = clamp(e.y + e.vy * dt, 70, 186); }
+    else if (e.kind === "drummer" || e.kind === "horn") { e.x -= SCROLL * dt; const wx = scrollX + e.x; e.y = e.ground > 0 ? floorY(wx) - 8 : ceilY(wx) + 8; }
+    else if (e.kind === "metronome") {
+      e.x -= (SCROLL + 12) * dt; e.vy += 260 * dt; e.y += e.vy * dt;
+      const fy = floorY(scrollX + e.x) - 8; if (e.y >= fy) { e.y = fy; e.vy = 0; e.onGround = true; }
+    } else if (e.kind === "cymbal") { e.x += e.vx * dt; e.y += e.vy * dt; e.vy -= e.vy * 0.6 * dt; e.spin += dt * 14; }
+    else if (e.kind === "carrier") { e.x -= 34 * dt; e.y = e.y0 + 18 * Math.sin(e.t * 1.6); }
+    else if (e.kind === "eelhead") { e.x -= 76 * dt; e.y = 125 + 44 * Math.sin(e.t * 2.1); e.trail.unshift({ x: e.x, y: e.y }); if (e.trail.length > 200) e.trail.pop(); }
+    else if (e.kind === "eel") { const p = e.head.trail[Math.min(e.head.trail.length - 1, e.i * 5)]; if (p) { e.x = p.x; e.y = p.y; } if (e.head.trail.length < e.i * 5) e.x = W + 10 + e.i * 9; }
+    if (Math.hypot(e.x - player.x, e.y - player.y) < e.r + 3) { hitPlayer(); damage(e, 2); }
+    if (e.x < -24) e.dead = true;
+  }
+  foes = foes.filter((e) => !e.dead);
+}
+function collect(p) {
+  burst(p.x, p.y, 12, hue + 60, 0.6); ring(p.x, p.y, 16, -30, 0.4, hue + 60);
+  if (p.kind === "crystal") {
+    const w = crystalShape(p);
+    if (w === player.weapon) player.level = Math.min(3, player.level + 1); else player.weapon = w;
+    syncWeaponSeg(); popup(p.x, p.y - 10, `${w.toUpperCase()} ${player.level}`, C.beam);
+  } else if (p.kind === "harmonic") { player.harm = Math.min(2, player.harm + 1); popup(p.x, p.y - 10, "HARMONIC", C.beam); }
+  else if (p.kind === "speed") { player.speed = Math.min(3, player.speed + 1); popup(p.x, p.y - 10, `SPEED ${player.speed}`, C.beam); }
+  else { player.fork = true; popup(p.x, p.y - 10, "GRACE NOTES", C.beam); }
+  sfxBlip(990);
+}
+const crystalShape = (p) => ["spiral", "prism", "sonar"][Math.floor(p.t / 1.5) % 3];
+
+// ---- Draw ----
+function text(str, x, y, color = C.ink, align = "left", size = 8) {
+  ctx.font = `900 ${size}px Doto, monospace`; ctx.textAlign = align; ctx.textBaseline = "top";
+  ctx.fillStyle = "#000000"; ctx.fillText(str, x + size / 10, y + size / 10);
+  ctx.fillStyle = color; ctx.fillText(str, x, y);
+}
+const blink = (hz) => Math.floor(clock * hz) % 2 === 0;
+const hsl = (h, s = 95, l = 62, a = 1) => `hsla(${mod(h, 360)},${s}%,${l}%,${a})`;
+/** A 16 px sprite at 1x. Scales are whole quarters, so every sprite pixel stays a whole number of canvas pixels. */
+function drawSprite(slot, x, y, { white = false, alpha = 1, rot = 0, flipX = false, flipY = false, sx = 1, sy = 1 } = {}) {
+  const id = picks[slot], img = white ? whites[id] : images[id];
+  if (!img || (img instanceof HTMLImageElement && !(img.complete && img.naturalWidth))) return;
+  ctx.save(); ctx.globalAlpha = alpha; ctx.translate(Math.round(x * 4) / 4, Math.round(y * 4) / 4);
+  ctx.scale((flipX ? -1 : 1) * sx, (flipY ? -1 : 1) * sy); if (rot) ctx.rotate(rot);
+  ctx.drawImage(img, -8, -8, 16, 16); ctx.restore();
+}
+/** A pixel quaver: head at (x, y), stem up, flag to the right. */
+function drawNote(g, x, y, color) { g.fillStyle = color; g.fillRect(x - 2, y, 3, 2); g.fillRect(x, y - 5, 1, 6); g.fillRect(x + 1, y - 5, 1, 1); g.fillRect(x + 2, y - 4, 1, 2); }
+function pdisc(cx, cy, r, color) { ctx.fillStyle = color; cx = Math.round(cx); cy = Math.round(cy); for (let dy = -r; dy <= r; dy++) { const half = Math.round(Math.sqrt(r * r - dy * dy)); ctx.fillRect(cx - half, cy + dy, half * 2 + 1, 1); } }
+
+function drawLandscapeBack() {
+  ctx.drawImage(SKY, 0, 0);
+  for (const s of TWINKLE) if (mod(beatNo, 8) === s.k % 8) { ctx.globalAlpha = beatEnv; ctx.fillStyle = "#ffffff"; ctx.fillRect(s.x, s.y, 1, 1); ctx.fillRect(s.x - 1, s.y, 3, 1); ctx.fillRect(s.x, s.y - 1, 1, 3); ctx.globalAlpha = 1; }
+  // Speaker moon: rings from the rim inward; on each kick the inner rings push out a pixel.
+  const mx = Math.round(mod(318 - scrollX * 0.02, W + 120) - 60), my = 66, kick = reduceMotion ? 0 : Math.round(beatEnv * 2);
+  ctx.globalAlpha = 0.5; pdisc(mx, my, 40, "#3a1660"); ctx.globalAlpha = 1;
+  const rings = [[34, "#24123f"], [32, "#3a1f66"], [28 + kick, "#2a1549"], [24 + kick, "#46287c"], [18 + kick, "#331a58"], [13 + kick, "#5b3a96"], [7, "#2a1549"], [5, "#8f6ad0"]];
+  for (const [r, c] of rings) pdisc(mx, my, r, c);
+  pdisc(mx - 1, my - 1, 2, "#d9c4ff");
+  ctx.fillStyle = "#9a7ae0"; for (let a = 2.4; a < 4.3; a += 0.05) ctx.fillRect(Math.round(mx + Math.cos(a) * 33), Math.round(my + Math.sin(a) * 33), 1, 1);
+  // Spectrum range: analyser bars standing on a hazy horizon, each peak held a moment.
+  const HZ = 186, off = scrollX * 0.12, c0 = Math.floor(off / 6);
+  for (let c = c0 - 1; c < c0 + W / 6 + 2; c++) {
+    const x = Math.round(c * 6 - off);
+    const h0 = 12 + 24 * (0.5 + 0.5 * Math.sin(c * 0.13)) + 16 * (0.5 + 0.5 * Math.sin(c * 0.047 + 1));
+    const amp = [11, 9, 7, 5, 4, 3, 3, 2][mod(c, 8)];
+    const h = Math.round(h0 + (reduceMotion ? 0 : beatEnv * amp * (0.6 + 0.4 * Math.sin(c * 1.7 + beatNo)) + 2 * Math.sin(clock * 3 + c)));
+    for (let s = 0; s * 4 < h; s++) { ctx.fillStyle = PAL.spec[Math.min(PAL.spec.length - 1, Math.floor((s * 4 / 70) * PAL.spec.length))]; ctx.fillRect(x, HZ - s * 4 - 3, 5, 3); }
+    const pk = Math.max((peaks.get(c) ?? 0) - 16 * frameDt, h); peaks.set(c, pk);
+    ctx.fillStyle = PAL.peak; ctx.fillRect(x, HZ - Math.round(pk) - 3, 5, 1);
+  }
+  for (const c of peaks.keys()) if (c < c0 - 4) peaks.delete(c);
+  let g = ctx.createLinearGradient(0, 120, 0, H); g.addColorStop(0, "rgba(42,15,79,0)"); g.addColorStop(0.6, "rgba(52,18,90,0.75)"); g.addColorStop(1, "rgba(30,10,55,0.9)");
+  ctx.fillStyle = g; ctx.fillRect(0, 120, W, H - 120);
+  // Instrument city, with its lights playing through the bar.
+  const cx = mod(scrollX * 0.3, CITY_W), cyTop = H - CITY_H - 4;
+  ctx.drawImage(CITY, Math.round(-cx), cyTop); ctx.drawImage(CITY, Math.round(CITY_W - cx), cyTop);
+  for (const l of cityLights) {
+    let x = Math.round(l.x - cx); if (x < -4) x += CITY_W; if (x > W + 4) continue;
+    const on = mod(l.k - beatNo * 3, 16) < 3, y = cyTop + l.y;
+    ctx.fillStyle = on ? hsl(hue + (l.kind === "pipe" ? 0 : 160), 100, 70, 0.35 + 0.65 * beatEnv) : "rgba(255,216,77,0.25)";
+    ctx.fillRect(x, y, l.kind === "pipe" ? 2 : 1, 1);
+    if (on && !reduceMotion) { ctx.fillStyle = hsl(hue, 100, 70, 0.18 * beatEnv); ctx.fillRect(x - 1, y - 1, 4, 3); }
+  }
+  g = ctx.createLinearGradient(0, 170, 0, H); g.addColorStop(0, "rgba(60,20,100,0)"); g.addColorStop(1, "rgba(60,20,100,0.55)");
+  ctx.fillStyle = g; ctx.fillRect(0, 170, W, H - 170);
+  // The score: a five-line stave drifting across the sky, its notes lighting as the music reaches them.
+  const so = scrollX * 0.5, base = (x) => Math.round(54 + 9 * Math.sin((x + so) * 0.006));
+  ctx.fillStyle = "rgba(205,180,255,0.16)";
+  for (let x = 0; x < W; x += 2) { const y = base(x); for (let i = 0; i < 5; i++) ctx.fillRect(x, y + i * 3, 1, 1); }
+  const n0 = Math.floor(so / 30);
+  for (let n = n0; n < n0 + W / 30 + 2; n++) {
+    const x = Math.round(n * 30 + hash(n) * 12 - so), pitch = Math.floor(hash(n + 77) * 9), y = base(x) + 12 - pitch * 1.5;
+    const lit = mod(n, 8) === mod(beatNo, 8);
+    ctx.fillStyle = lit ? hsl(hue + 40, 100, 75, 0.5 + 0.5 * beatEnv) : "rgba(205,180,255,0.28)";
+    ctx.fillRect(x, Math.round(y), 3, 2); ctx.fillRect(x + 2, Math.round(y) - 6, 1, 6);
+  }
+  for (const m of MOTES) { ctx.fillStyle = hsl(hue + 40 + m.z * 60, 100, 75, 0.25 + m.z * 0.3 + beatEnv * 0.4); ctx.fillRect(Math.round(m.x), Math.round(m.y), 1, 1); }
+}
+// The frame: the solid edges above and below, in the chosen style. Each style marks the edge with the brightest pixels
+// behind the action, so it reads by brightness, not hue.
+function edgeSweep(sx, side) {
+  // A pulse of light runs along both edges each beat: the floor's left to right, the ceiling's right to left.
+  if (reduceMotion) return 0;
+  const p = side > 0 ? beatFrac * (W + 80) - 40 : W + 40 - beatFrac * (W + 80);
+  return Math.max(0, 1 - Math.abs(sx - p) / 18) * (1 - beatFrac * 0.6);
+}
+function drawFrameEq(wx0) {
+  for (let c = Math.floor(wx0 / COL) - 1; c * COL < wx0 + W + COL; c++) {
+    const sx = c * COL - wx0;
+    for (const side of [1, -1]) {
+      const edge = side > 0 ? floorY(c * COL) : ceilY(c * COL), n = side > 0 ? (H - edge) / CELL : (edge - TOP) / CELL;
+      ctx.fillStyle = PAL.mass; ctx.fillRect(sx, side > 0 ? edge : TOP, COL, side > 0 ? H - edge : edge - TOP);
+      // Like a level meter: on each beat every column lights a few cells in from the edge, then they fade.
+      const level = reduceMotion ? 3 : 3 + Math.round(hash(c * 31 + beatNo * 7 + (side > 0 ? 0 : 999)) * 6 * beatEnv);
+      for (let i = 0; i < n; i++) {
+        const y = side > 0 ? edge + i * CELL : edge - (i + 1) * CELL + 1;
+        ctx.fillStyle = i === 0 ? "#e6dcff" : i < level ? hsl(hue + i * 18 + (side > 0 ? 0 : 180), 95, 68 - i * 6) : PAL.eqDim[Math.min(PAL.eqDim.length - 1, i - level)];
+        ctx.fillRect(sx, y, COL - 1, 2);
+      }
+      const sw = edgeSweep(sx + 2, side);
+      if (sw > 0) { ctx.fillStyle = `rgba(255,255,255,${sw})`; ctx.fillRect(sx - 1, side > 0 ? edge - 1 : edge - 2, COL + 1, 3); }
+    }
+  }
+}
+function drawFrameGrid(wx0) {
+  for (let x = -1; x <= W + 1; x++) {
+    const wx = wx0 + x;
+    for (const side of [1, -1]) {
+      const e = side > 0 ? floorY(wx) : ceilY(wx), depth = side > 0 ? H - e : e - TOP;
+      ctx.fillStyle = PAL.mass; ctx.fillRect(x, side > 0 ? e : TOP, 1, depth);
+      // Lines flow in from the edge, one step per beat, closer together near the edge like a road coming toward you.
+      ctx.fillStyle = PAL.grid;
+      for (let k = 0; k < 9; k++) {
+        const u = k + (reduceMotion ? 0 : beatFrac), d = Math.round(2 + 1.1 * u * u);
+        if (d >= depth) break;
+        ctx.globalAlpha = Math.max(0.12, 0.7 - u * 0.07) * (0.7 + 0.3 * beatEnv);
+        ctx.fillRect(x, e + side * d, 1, 1);
+      }
+      if (mod(wx, 14) === 0) { ctx.globalAlpha = 0.28; ctx.fillRect(x, side > 0 ? e + 2 : TOP, 1, depth - 2); }
+      ctx.globalAlpha = 1;
+      const sw = edgeSweep(x, side);
+      ctx.fillStyle = sw > 0.05 ? "#ffffff" : hsl(hue + 180, 100, 72); ctx.fillRect(x, e, 1, 1);
+      ctx.fillStyle = hsl(hue + 180, 100, 70, 0.3 + sw * 0.7); ctx.fillRect(x, e - side, 1, 1);
+    }
+  }
+}
+function drawFrameCircuit(wx0) {
+  for (let x = -1; x <= W + 1; x++) {
+    const wx = wx0 + x, fy = floorY(wx), cy = ceilY(wx);
+    let h = Math.min(CIRC_H, H - fy - 2); if (h > 0) ctx.drawImage(CIRC, mod(wx, CIRC_W), 0, 1, h, x, fy + 2, 1, h);
+    h = Math.min(CIRC_H, cy - 2 - TOP); if (h > 0) ctx.drawImage(CIRC_UP, mod(wx + 128, CIRC_W), CIRC_H - h, 1, h, x, cy - 2 - h, 1, h);
+    ctx.fillStyle = PAL.mass; ctx.fillRect(x, fy + 1, 1, 1); ctx.fillRect(x, cy - 2, 1, 1);
+    for (const [e, side] of [[fy, 1], [cy - 1, -1]]) {
+      const sw = edgeSweep(x, side);
+      ctx.fillStyle = sw > 0.05 ? "#ffffff" : hsl(hue + 40, 95, 66); ctx.fillRect(x, e, 1, 1);
+      ctx.fillStyle = hsl(hue + 40, 95, 66, 0.25 + sw * 0.6); ctx.fillRect(x, e - side, 1, 1);
+    }
+  }
+  // Light races along the traces: a different set of them on each beat.
+  if (reduceMotion) return;
+  for (const side of [1, -1]) {
+    const shift = side > 0 ? 0 : 128;
+    for (let tile = Math.floor((wx0 + shift) / CIRC_W) - 1; tile * CIRC_W - shift < wx0 + W + CIRC_W; tile++) {
+      for (const t of traces) {
+        if (hash(t.k * 17 + beatNo * 5 + (side > 0 ? 0 : 500)) > 0.4) continue;
+        const pwx = tile * CIRC_W - shift + t.x0 + Math.floor(beatFrac * t.len), x = pwx - wx0;
+        if (x < -2 || x > W + 2) continue;
+        const y = side > 0 ? floorY(pwx) + 2 + t.y : ceilY(pwx) - 3 - t.y;
+        if (side > 0 ? y >= H : y < TOP) continue;
+        ctx.fillStyle = hsl(hue + 160, 100, 75, 1 - beatFrac * 0.5); ctx.fillRect(x - 2, y, 3, 1); ctx.fillStyle = "#ffffff"; ctx.fillRect(x, y, 1, 1);
+      }
+    }
+  }
+}
+function drawGround() {
+  const f = scrollX - Math.floor(scrollX), wx0 = Math.floor(scrollX);
+  ctx.save(); ctx.translate(-f, 0);
+  if (frameStyle === "eq") drawFrameEq(wx0); else if (frameStyle === "grid") drawFrameGrid(wx0); else drawFrameCircuit(wx0);
+  ctx.restore();
+}
+function drawSparks(front) {
+  for (const p of sparks) {
+    if ((p.z >= 0) !== front) continue;
+    const k = 1 + p.z / 160, s = Math.max(0.5, 1.3 * k);
+    ctx.globalAlpha = Math.min(1, p.life / 0.3) * (front ? 1 : 0.7); ctx.fillStyle = hsl(p.h, 100, 64 + Math.max(0, p.z) * 0.2);
+    ctx.fillRect(p.x - s / 2, p.y + p.z * 0.25 - s / 2, s, s);
+  }
+  ctx.globalAlpha = 1;
+}
+function drawShots(front) {
+  for (const s of shots) {
+    if (s.kind === "helix") {
+      if ((s.z >= 0) !== front) continue;
+      const k = 1 + s.z / 24, r = 1.9 * k;
+      ctx.fillStyle = hsl(hue + (s.ph ? 160 : 0), 100, 60, 0.35); ctx.fillRect(s.x - 7 * Math.sign(s.vx), s.y - 0.5, 7 * Math.sign(s.vx), 1);
+      ctx.fillStyle = hsl(hue + (s.ph ? 160 : 0), 100, 60 + s.z * 1.5); ctx.beginPath(); ctx.arc(s.x, s.y, r, 0, TAU); ctx.fill();
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(s.x - 0.5, s.y - 0.5, 1, 1);
+      continue;
+    }
+    if (!front) continue;
+    if (s.kind === "quaver") { drawNote(ctx, Math.round(s.x) + 1, Math.round(s.y) + 1, "#000000"); drawNote(ctx, Math.round(s.x), Math.round(s.y), hsl(hue + 60, 100, 74)); ctx.fillStyle = "#ffffff"; ctx.fillRect(Math.round(s.x) - 1, Math.round(s.y), 1, 1); }
+    else if (s.kind === "note") { ctx.fillStyle = hsl(hue + 180, 100, 70); ctx.fillRect(s.x - 3, s.y - 0.75, 6, 1.5); ctx.fillStyle = "#fff"; ctx.fillRect(s.x - 1, s.y - 0.5, 3, 1); }
+    else if (s.kind === "prism") {
+      const a = Math.atan2(s.vy, s.vx), dx = Math.cos(a) * 6, dy = Math.sin(a) * 6, nx = -Math.sin(a), ny = Math.cos(a);
+      ctx.lineWidth = 0.75;
+      [-1, 0, 1].forEach((o, i) => { ctx.strokeStyle = i === 1 ? "#ffffff" : hsl(hue + i * 120, 100, 65); ctx.beginPath(); ctx.moveTo(s.x - dx + nx * o, s.y - dy + ny * o); ctx.lineTo(s.x + dx + nx * o, s.y + dy + ny * o); ctx.stroke(); });
+    } else if (s.kind === "sonar") {
+      for (const [o, a, w] of [[0, 1, 1.5], [-3, 0.5, 0.75], [-6, 0.25, 0.5]]) {
+        ctx.strokeStyle = hsl(hue + 120 - o * 10, 100, 66, a); ctx.lineWidth = w;
+        const fwd = Math.sign(s.vx) > 0;
+        ctx.beginPath(); ctx.ellipse(s.x + o * Math.sign(s.vx), s.y, s.r * 0.38, s.r, 0, fwd ? -Math.PI / 2 : Math.PI / 2, fwd ? Math.PI / 2 : Math.PI * 1.5); ctx.stroke();
+      }
+    } else if (s.kind === "grace") {
+      ctx.fillStyle = hsl(hue + 60, 100, 70); ctx.beginPath(); ctx.ellipse(s.x, s.y + 1, 1.5, 1.1, -0.4, 0, TAU); ctx.fill(); ctx.fillRect(s.x + 1, s.y - 3, 0.75, 4);
+    }
+  }
+}
+function drawBeams() {
+  for (const b of beams) {
+    const tail = b.tail ?? b.x0, len = b.head - tail; if (len <= 0) continue;
+    const h = b.w / 2;
+    ctx.fillStyle = hsl(hue + 180, 100, 60, 0.25); ctx.fillRect(tail, b.y - h, len, b.w);
+    ctx.fillStyle = hsl(hue + 180, 100, 75, 0.7); ctx.fillRect(tail, b.y - h * 0.45, len, h * 0.9);
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(tail, b.y - h * 0.18, len, h * 0.36);
+    // Two strands spiral round the core, the near one brighter, and rings stand across it every 14 px.
+    for (const [ph, a] of [[0, 1], [Math.PI, 0.45]]) {
+      ctx.strokeStyle = hsl(hue + 300 + ph * 30, 100, 70, a); ctx.lineWidth = 0.75; ctx.beginPath();
+      for (let x = tail; x <= b.head; x += 1.5) { const y = b.y + h * Math.sin(x * 0.18 - clock * 22 + ph); x === tail ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
+      ctx.stroke();
+    }
+    ctx.strokeStyle = hsl(hue + 60, 100, 75, 0.8); ctx.lineWidth = 0.5;
+    for (let x = tail + mod(-clock * 120, 14); x < b.head; x += 14) { ctx.beginPath(); ctx.ellipse(x, b.y, 1.6, h + 1, 0, 0, TAU); ctx.stroke(); }
+  }
+}
+function drawBullet(b) {
+  // Enemy notes are diamonds: a dark outline, a coloured edge and a white core, whatever the stage's hue.
+  ctx.fillStyle = "#000000"; ctx.beginPath(); ctx.moveTo(b.x, b.y - 3.2); ctx.lineTo(b.x + 3.2, b.y); ctx.lineTo(b.x, b.y + 3.2); ctx.lineTo(b.x - 3.2, b.y); ctx.fill();
+  ctx.fillStyle = blink(10) ? "#ffffff" : C.danger; ctx.beginPath(); ctx.moveTo(b.x, b.y - 2.4); ctx.lineTo(b.x + 2.4, b.y); ctx.lineTo(b.x, b.y + 2.4); ctx.lineTo(b.x - 2.4, b.y); ctx.fill();
+  ctx.fillStyle = "#ffffff"; ctx.fillRect(b.x - 0.75, b.y - 0.75, 1.5, 1.5);
+}
+function glyph(kind, x, y, color) {
+  ctx.strokeStyle = "#000"; ctx.lineWidth = 2.2;
+  const path = () => {
+    ctx.beginPath();
+    if (kind === "spiral") { for (const sgn of [1, -1]) for (let i = 0; i <= 12; i++) { const t = i / 12, xx = x - 4 + t * 8, yy = y + sgn * 2.4 * Math.sin(t * TAU); i ? ctx.lineTo(xx, yy) : ctx.moveTo(xx, yy); } }
+    else if (kind === "prism") { ctx.moveTo(x, y - 3.5); ctx.lineTo(x + 3.8, y + 3); ctx.lineTo(x - 3.8, y + 3); ctx.closePath(); }
+    else if (kind === "sonar") { ctx.ellipse(x - 2, y, 2.5, 4, 0, -Math.PI / 2, Math.PI / 2); ctx.moveTo(x + 1, y - 4.5); ctx.ellipse(x + 1, y, 2.5, 4.5, 0, -Math.PI / 2, Math.PI / 2); }
+    else if (kind === "speed") { ctx.moveTo(x - 3, y - 3); ctx.lineTo(x, y); ctx.lineTo(x - 3, y + 3); ctx.moveTo(x, y - 3); ctx.lineTo(x + 3, y); ctx.lineTo(x, y + 3); }
+    else if (kind === "fork") { ctx.moveTo(x - 2, y - 4); ctx.lineTo(x - 2, y + 1); ctx.lineTo(x + 2, y + 1); ctx.lineTo(x + 2, y - 4); ctx.moveTo(x, y + 1); ctx.lineTo(x, y + 4); }
+    else if (kind === "harmonic") { ctx.ellipse(x - 1, y + 2.5, 1.8, 1.3, -0.4, 0, TAU); ctx.moveTo(x + 0.7, y + 2.3); ctx.lineTo(x + 0.7, y - 4); ctx.lineTo(x + 3, y - 2.5); }
+  };
+  path(); ctx.stroke(); ctx.strokeStyle = color; ctx.lineWidth = 1; path(); ctx.stroke();
+}
+function drawWorld(ox, oy) {
+  ctx.save(); ctx.translate(ox, oy);
+  drawLandscapeBack();
+  drawGround();
+  if (landOnly) { ctx.restore(); return; }
+  drawSparks(false);
+  // Banners sit behind sprites.
+  for (const p of popups) { ctx.globalAlpha = Math.min(1, p.life * 2); text(p.text, p.x, p.y, p.color, "center", 6); }
+  ctx.globalAlpha = 1;
+  for (const p of pickups) { drawSprite(p.kind, p.x, p.y, { flipX: p.kind === "harmonic" }); glyph(p.kind === "crystal" ? crystalShape(p) : p.kind, p.x, p.y - 12, C.ink); }
+  for (const e of foes) {
+    const warn = e.every && mod(beatNo + 1 - e.phase, e.every) === 0 && beatFrac > 0.5 && e.x < W - 4;
+    const white = e.flash > 0 || (warn && blink(16));
+    if (e.kind === "eel") {
+      pdisc(e.x, e.y, 5, "#000000"); pdisc(e.x, e.y, 4, white ? "#ffffff" : hsl(hue + e.i * 40 + 30, 90, 30)); pdisc(e.x - 1, e.y - 1, 2, white ? "#ffffff" : hsl(hue + e.i * 40, 100, 62));
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(Math.round(e.x) - 2, Math.round(e.y) - 2, 1, 1);
+      continue;
+    }
+    const hop = Math.round(beatEnv * 1.2);
+    const opts = { white };
+    if (e.kind === "chirp") opts.sx = Math.floor(e.t * 8) % 2 ? 0.75 : 1;
+    if (e.kind === "cymbal") opts.rot = (Math.floor(e.spin) % 4) * (Math.PI / 2);
+    if (e.ground < 0) opts.flipY = true;
+    const bob = e.kind === "drummer" || e.kind === "horn" || e.kind === "metronome" || e.kind === "cymbal" ? 0 : hop;
+    drawSprite(e.kind === "eelhead" ? "eel" : e.kind, e.x, e.y - bob, opts);
+  }
+  drawShots(false);
+  // Speakers: a soft glow behind each so dark picks still read, and a 1 px kick back with every note.
+  const kick = harmPunch > 0 && !reduceMotion ? -1 : 0;
+  const speaker = (h, alpha) => { ctx.globalAlpha = 0.35 * alpha; pdisc(h.x, h.y, 5, hsl(hue + 60, 100, 70)); ctx.globalAlpha = 1; drawSprite("harmonic", h.x + kick, h.y, { alpha, flipX: true, sx: 0.5, sy: 0.5 }); };
+  for (const h of harmonics()) if (h.z < 0) speaker(h, 0.85);
+  const drawEcho = () => {
+    if (echo.state === "loose" && blink(4)) return;
+    if (!reduceMotion) { ctx.strokeStyle = hsl(hue + 60, 100, 70, 0.6 * beatEnv); ctx.lineWidth = 0.75; ctx.beginPath(); ctx.arc(echo.x, echo.y, 6 + beatEnv * 2, 0, TAU); ctx.stroke(); }
+    drawSprite("echo", echo.x, echo.y, { sx: 0.5, sy: 0.5 });
+  };
+  if (echo.state === "back") drawEcho();
+  if (!(player.invuln > 0 && blink(10))) {
+    if (!reduceMotion) { ctx.fillStyle = hsl(hue + 300, 100, 65, 0.8); ctx.fillRect(player.x - 11 - rand() * 2, player.y - 0.5, 3 + rand() * 2, 1); }
+    drawSprite("player", player.x, player.y, { rot: Math.PI / 2, sy: player.bank });
+  }
+  if (echo.state !== "back") drawEcho();
+  for (const h of harmonics()) if (h.z >= 0) speaker(h, 1);
+  drawShots(true);
+  drawBeams();
+  for (const b of bullets) drawBullet(b);
+  // Charge ring: three arcs that fill one by one; solid white when a release now would resonate.
+  if (player.charging) {
+    const t = tier(), solid = t >= 2 && onBeatWindow();
+    if (solid) { ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(player.x, player.y, 12, 0, TAU); ctx.stroke(); }
+    else for (let i = 0; i < 3; i++) {
+      ctx.strokeStyle = i < t ? hsl(hue + 180, 100, 70) : "rgba(241,235,255,0.25)"; ctx.lineWidth = i < t ? 1.5 : 0.75;
+      const a0 = -Math.PI / 2 + i * (TAU / 3) + 0.15; ctx.beginPath(); ctx.arc(player.x, player.y, 12, a0, a0 + TAU / 3 - 0.3); ctx.stroke();
+    }
+    const part = (player.charge % SPB) / SPB;
+    if (t < 3) { ctx.strokeStyle = hsl(hue + 180, 100, 70, 0.6); ctx.lineWidth = 0.5; ctx.beginPath(); ctx.arc(player.x, player.y, 12 + 6 * (1 - part), 0, TAU); ctx.stroke(); }
+  }
+  drawSparks(true);
+  for (const r of rings) {
+    ctx.globalAlpha = r.life / r.max; ctx.strokeStyle = hsl(r.h, 100, 66); ctx.lineWidth = r.w;
+    ctx.beginPath(); ctx.ellipse(r.x, r.y, Math.max(0.1, r.r), Math.max(0.1, r.r * Math.cos(r.tilt)), r.rot, 0, TAU); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  // Chevrons at the right edge a beat before something arrives.
+  for (const w of warns) if (blink(8)) { ctx.fillStyle = C.gold; for (let i = 0; i < 2; i++) { const x = W - 10 + i * 4; ctx.beginPath(); ctx.moveTo(x + 3, w.y - 4); ctx.lineTo(x, w.y); ctx.lineTo(x + 3, w.y + 4); ctx.lineTo(x + 4.5, w.y + 4); ctx.lineTo(x + 1.5, w.y); ctx.lineTo(x + 4.5, w.y - 4); ctx.fill(); } }
+  ctx.restore();
+}
+
+function pips(x, y, n, of, color) {
+  for (let i = 0; i < of; i++) { if (i < n) { ctx.fillStyle = color; ctx.fillRect(x + i * 4, y, 3, 4); } else { ctx.strokeStyle = C.dim; ctx.lineWidth = 0.5; ctx.strokeRect(x + i * 4 + 0.25, y + 0.25, 2.5, 3.5); } }
+}
+function drawHud() {
+  ctx.fillStyle = C.void; ctx.fillRect(0, 0, W, TOP);
+  ctx.fillStyle = hsl(hue, 95, 62, 0.6); ctx.fillRect(0, TOP - 0.5, W, 0.5);
+  text("SCORE", 4, 0.5, C.dim, "left", 5);
+  text(String(score).padStart(7, "0"), 4, 6, C.gold, "left", 9);
+  text("HI", 66, 0.5, C.dim, "left", 5);
+  text(String(Math.max(hi, score)).padStart(7, "0"), 66, 7.5, C.ink, "left", 6);
+  text("HARMONY", 108, 0.5, C.dim, "left", 5);
+  text(`x${mult}`, 108, 6, mult > 1 ? C.beam : C.ink, "left", 9);
+  // Beat lamp: four boxes, the current beat filled, the downbeat taller.
+  text("BEAT", 148, 0.5, C.dim, "left", 5);
+  for (let i = 0; i < 4; i++) {
+    const on = mod(beatNo, 4) === i, x = 148 + i * 7, h = i === 0 ? 7 : 5, y = 14 - h;
+    if (on) { ctx.fillStyle = hsl(hue, 95, 66); ctx.fillRect(x, y, 5, h); } else { ctx.strokeStyle = C.dim; ctx.lineWidth = 0.5; ctx.strokeRect(x + 0.25, y + 0.25, 4.5, h - 0.5); }
+  }
+  text("ECHO", 182, 0.5, C.dim, "left", 5);
+  glyph(player.weapon, 188, 10.5, echo.state === "loose" ? C.dim : C.beam);
+  pips(196, 8.5, player.level, 3, C.gold);
+  text("HARM", 214, 0.5, C.dim, "left", 5);
+  for (let i = 0; i < 2; i++) glyph("harmonic", 217 + i * 7, 10.5, i < player.harm ? C.beam : "#3a2d63");
+  text("SPD", 236, 0.5, C.dim, "left", 5);
+  pips(236, 8.5, player.speed, 3, C.ink);
+  text("SHIPS", 254, 0.5, C.dim, "left", 5);
+  const img = images[picks.player];
+  for (let i = 0; i < Math.min(lives, 5); i++) if (img?.complete) { ctx.save(); ctx.translate(258 + i * 9, 11); ctx.rotate(Math.PI / 2); ctx.drawImage(img, -4, -4, 8, 8); ctx.restore(); }
+  text("MOVEMENT I", 306, 0.5, C.dim, "left", 5);
+  text("PULSE", 306, 6.5, C.magenta, "left", 8);
+  // Pause (II) and sound, both tappable.
+  ctx.fillStyle = C.ink; ctx.fillRect(385, 4, 2, 8); ctx.fillRect(390, 4, 2, 8);
+  ctx.fillStyle = muted ? C.dim : C.ink;
+  ctx.fillRect(401, 6, 2, 3); ctx.fillRect(403, 5, 1, 5); ctx.fillRect(404, 4, 1, 7);
+  if (muted) { for (let i = 0; i < 4; i++) { ctx.fillRect(406 + i, 5 + i, 1, 1); ctx.fillRect(409 - i, 5 + i, 1, 1); } }
+  else { ctx.fillRect(406, 6, 1, 3); ctx.fillRect(408, 5, 1, 5); ctx.fillRect(410, 4, 1, 7); }
+
+  const demo = performance.now() - lastInput > 3500;
+  const hint = landOnly ? "LANDSCAPE ONLY" : demo ? "DEMO  ·  CLICK THE SCREEN TO FLY"
+    : lastDevice === "pad" ? "STICK FLY  ·  A FIRE  ·  X CHARGE  ·  B ECHO  ·  START PAUSE"
+    : lastDevice === "touch" ? "STICK FLY  ·  HOLD CHARGE  ·  TAP ECHO"
+    : "ARROWS FLY  ·  Z FIRE  ·  X CHARGE  ·  C ECHO  ·  P PAUSE  ·  M SOUND";
+  ctx.font = "900 5px Doto, monospace"; const hw = ctx.measureText(hint).width + 8;
+  ctx.fillStyle = "rgba(7,4,15,0.8)"; ctx.fillRect(Math.round(W / 2 - hw / 2), H - 8, Math.round(hw), 8);
+  text(hint, W / 2, H - 7, C.ink, "center", 5);
+  if (paused) {
+    ctx.fillStyle = "rgba(7,4,15,0.7)"; ctx.fillRect(0, TOP, W, H - TOP);
+    text("PAUSED", W / 2, 88, C.gold, "center", 18);
+    text("CLICK, P OR START TO RESUME", W / 2, 116, C.ink, "center", 6);
+  }
+}
+function drawTouch() {
+  if (!touch.shown || landOnly) return;
+  const st = TOUCH.stick;
+  ctx.fillStyle = "rgba(241,235,255,0.10)"; ctx.beginPath(); ctx.arc(st.x, st.y, st.r, 0, TAU); ctx.fill();
+  ctx.strokeStyle = "rgba(241,235,255,0.35)"; ctx.lineWidth = 0.75; ctx.stroke();
+  ctx.fillStyle = touch.mx || touch.my ? "rgba(255,216,77,0.6)" : "rgba(241,235,255,0.3)";
+  ctx.beginPath(); ctx.arc(st.x + touch.mx * st.r * 0.7, st.y + touch.my * st.r * 0.7, 9, 0, TAU); ctx.fill();
+  for (const [key, label] of [["charge", "CHARGE"], ["echo", "ECHO"]]) {
+    const b = TOUCH[key], on = key === "charge" && touch.charge;
+    ctx.fillStyle = on ? "rgba(95,243,255,0.45)" : "rgba(241,235,255,0.12)";
+    ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, TAU); ctx.fill();
+    ctx.strokeStyle = "rgba(241,235,255,0.4)"; ctx.stroke();
+    text(label, b.x, b.y - 2.5, C.ink, "center", 5);
+  }
+}
+
+// ---- Sound: a procedural band. Nothing starts until you click or press a key in the screen. ----
+let ac = null, master = null, chargeOsc = null;
+const SCALE = [0, 3, 5, 7, 10];
+const noteHz = (deg, base = 220) => base * 2 ** ((SCALE[mod(deg, 5)] + 12 * Math.floor(deg / 5)) / 12);
+function audioOn() {
+  if (muted) return;
+  if (!ac) { try { ac = new AudioContext(); master = ac.createGain(); master.gain.value = 0.22; master.connect(ac.destination); } catch (e) { return; } }
+  if (ac.state === "suspended") ac.resume();
+}
+const live = () => ac && !muted && ac.state === "running";
+function voice(type, f0, f1, dur, vol, when = 0) {
+  const t = ac.currentTime + when, o = ac.createOscillator(), g = ac.createGain();
+  o.type = type; o.frequency.setValueAtTime(f0, t); if (f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g).connect(master); o.start(t); o.stop(t + dur + 0.02);
+}
+let noiseBuf = null;
+function hat(vol, when) {
+  if (!noiseBuf) { noiseBuf = ac.createBuffer(1, ac.sampleRate * 0.1, ac.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+  const t = ac.currentTime + when, s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
+  s.buffer = noiseBuf; f.type = "highpass"; f.frequency.value = 7000; g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+  s.connect(f).connect(g).connect(master); s.start(t); s.stop(t + 0.06);
+}
+const BASS = [0, 0, 3, 2];
+function sfxBeat(b) {
+  if (!live()) return;
+  voice("sine", 130, 42, 0.16, 0.9);
+  hat(0.25, SPB / 2);
+  const root = BASS[mod(Math.floor(b / 4), 4)];
+  voice("triangle", noteHz(root, 55), noteHz(root, 55), SPB * 0.8, 0.35);
+  if (mod(b, 4) === 0) for (const d of [0, 2, 4]) voice("sine", noteHz(root + d, 220), noteHz(root + d, 220), SPB * 3.5, 0.05);
+}
+let lastShotSound = 0;
+function sfxShot(y) { if (!live() || clock - lastShotSound < 0.24) return; lastShotSound = clock; const deg = Math.round(((H - y) / (H - TOP)) * 9); voice("square", noteHz(deg, 440), noteHz(deg, 440), 0.06, 0.03); }
+function sfxKill(y) { if (!live()) return; const deg = Math.round(((H - y) / (H - TOP)) * 7); for (const d of [0, 2, 4]) voice("triangle", noteHz(deg + d, 330), noteHz(deg + d, 330), 0.25, 0.08); voice("sine", 400, 60, 0.18, 0.2); }
+function sfxBlip(f) { if (live()) voice("sine", f, f * 1.5, 0.08, 0.12); }
+function sfxBeam(t, res) { if (!live()) return; voice("sawtooth", 880, 110, 0.35 + t * 0.1, 0.12); if (res) for (const d of [0, 2, 4, 5]) voice("triangle", noteHz(d, 440), noteHz(d, 440), 0.5, 0.08); }
+function sfxChargeStart() { if (!live()) return; chargeOsc = ac.createOscillator(); const g = ac.createGain(); g.gain.value = 0.04; chargeOsc.type = "sine"; chargeOsc.frequency.value = 220; chargeOsc.connect(g).connect(master); chargeOsc.start(); }
+function sfxChargeTo(t) { if (chargeOsc) chargeOsc.frequency.setTargetAtTime(220 * 2 ** (t / 2) * (1 + (player.charge % SPB) / SPB * 0.5), ac.currentTime, 0.05); }
+function sfxChargeStop() { if (chargeOsc) { try { chargeOsc.stop(); } catch (e) {} chargeOsc = null; } }
+document.addEventListener("visibilitychange", () => { if (document.hidden) { paused = true; sfxChargeStop(); } });
+
+// The Harmonic card's picture: the picked speaker playing notes on every half-beat.
+const harmHero = document.querySelector("canvas[data-anim=harmonic]"), hctx = harmHero?.getContext("2d");
+const heroNotes = []; let heroStep = -1;
+function drawHarmHero(now) {
+  if (!hctx) return;
+  const t = now / 1000, half = SPB / 2, step = Math.floor(t / half), kick = t / half - step < 0.15;
+  if (step !== heroStep) { heroStep = step; heroNotes.push({ born: t, ph: rand() * TAU }); }
+  hctx.setTransform(3, 0, 0, 3, 0, 0); hctx.imageSmoothingEnabled = false;
+  hctx.fillStyle = C.void; hctx.fillRect(0, 0, 32, 32);
+  const img = images[picks.harmonic];
+  if (img?.complete && img.naturalWidth) { hctx.save(); hctx.translate(kick && !reduceMotion ? 17 : 18, 8); hctx.scale(-1, 1); hctx.drawImage(img, 0, 0, 16, 16); hctx.restore(); }
+  for (let i = heroNotes.length - 1; i >= 0; i--) {
+    const n = heroNotes[i], age = t - n.born, x = Math.round(18 + age * 26), y = Math.round(17 + 2.5 * Math.sin(n.ph + age * 10));
+    if (x > 36) { heroNotes.splice(i, 1); continue; }
+    drawNote(hctx, x + 1, y + 1, "#000000"); drawNote(hctx, x, y, hsl(hue + 60, 100, 74));
+  }
+}
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now; frameDt = paused ? 0 : dt;
+  update(dt, now);
+  ctx.setTransform(S, 0, 0, S, 0, 0);
+  ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = C.void; ctx.fillRect(0, 0, W, H);
+  const mag = shake > 0 ? shakeMax * Math.min(1, shake / 0.2) : 0;
+  drawWorld(Math.round((rand() - 0.5) * 2 * mag), Math.round((rand() - 0.5) * 2 * mag));
+  if (flash > 0) { ctx.fillStyle = `rgba(255,255,255,${Math.min(0.5, flash * 3)})`; ctx.fillRect(0, TOP, W, H - TOP); }
+  drawHud();
+  drawTouch();
+  drawHarmHero(now);
+  requestAnimationFrame(frame);
+}
+function syncSeg() {
+  document.getElementById("touch-on").setAttribute("aria-pressed", String(touch.shown));
+  document.getElementById("touch-off").setAttribute("aria-pressed", String(!touch.shown));
+}
+function syncWeaponSeg() { document.querySelectorAll("[data-weapon]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.weapon === player.weapon))); }
+document.querySelectorAll("[data-touch]").forEach((b) => b.addEventListener("click", () => { touch.shown = b.dataset.touch === "on"; syncSeg(); }));
+document.querySelectorAll("[data-weapon]").forEach((b) => b.addEventListener("click", () => { player.weapon = b.dataset.weapon; if (echo.state === "loose") echo.state = "front"; syncWeaponSeg(); }));
+document.querySelectorAll("[data-show]").forEach((b, _, all) => b.addEventListener("click", () => { landOnly = b.dataset.show === "land"; all.forEach((x) => x.setAttribute("aria-pressed", String(x === b))); }));
+function syncFrameSeg() { document.querySelectorAll("[data-frame]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.frame === frameStyle))); }
+document.querySelectorAll("[data-frame]").forEach((b) => b.addEventListener("click", () => {
+  frameStyle = b.dataset.frame; player.invuln = Math.max(player.invuln, 1); syncFrameSeg();
+  try { localStorage.setItem("overtone-frame", frameStyle); } catch (e) {}
+}));
+syncSeg(); syncWeaponSeg(); syncFrameSeg();
+document.fonts?.load("900 8px Doto").catch(() => {});
+requestAnimationFrame(frame);
+</script>

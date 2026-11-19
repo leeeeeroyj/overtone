@@ -1,0 +1,279 @@
+{
+ "player": {
+  "subjects": [
+   "starfighter",
+   "fighter jet",
+   "rocket ship"
+  ],
+  "picks": [
+   1196896,
+   1196877,
+   1196883,
+   440106,
+   440144,
+   440155,
+   440164,
+   440109
+  ],
+  "browse": 64,
+  "chosen": 440106
+ },
+ "echo": {
+  "subjects": [
+   "energy orb",
+   "cosmic orb",
+   "dream orb",
+   "light orb"
+  ],
+  "picks": [
+   415791,
+   375266,
+   289452,
+   716865,
+   415789,
+   415793,
+   415794,
+   375254
+  ],
+  "browse": 36,
+  "chosen": 415794
+ },
+ "harmonic": {
+  "subjects": [
+   "loudspeaker",
+   "speaker icon",
+   "megaphone",
+   "guitar amplifier"
+  ],
+  "picks": [
+   733568,
+   733569,
+   733553,
+   1159862,
+   733558,
+   1159860,
+   771764,
+   733541
+  ],
+  "browse": 32,
+  "chosen": 733568
+ },
+ "chirp": {
+  "subjects": [
+   "luna moth",
+   "butterfly",
+   "dragonfly",
+   "firefly"
+  ],
+  "picks": [
+   736489,
+   736509,
+   170556,
+   170561,
+   170573,
+   373519,
+   450806,
+   450797
+  ],
+  "browse": 36,
+  "chosen": 736509
+ },
+ "jelly": {
+  "subjects": [
+   "jellyfish",
+   "ghost jellyfish",
+   "sky jellyfish"
+  ],
+  "picks": [
+   659976,
+   659980,
+   659995,
+   1122519,
+   1122521,
+   1122537,
+   659975,
+   660005
+  ],
+  "chosen": 659976
+ },
+ "drummer": {
+  "subjects": [
+   "laser turret",
+   "sentry turret",
+   "cannon turret"
+  ],
+  "picks": [
+   699897,
+   699878,
+   699902,
+   699904,
+   699877,
+   699876,
+   1078136,
+   1078122
+  ],
+  "browse": 32,
+  "chosen": 699876
+ },
+ "horn": {
+  "subjects": [
+   "carnivorous plant monster",
+   "venus flytrap"
+  ],
+  "picks": [
+   197837,
+   197838,
+   197836,
+   197832,
+   197828,
+   197842,
+   197856,
+   1333465
+  ],
+  "browse": 48,
+  "chosen": 197837
+ },
+ "metronome": {
+  "subjects": [
+   "mech walker"
+  ],
+  "picks": [
+   767530,
+   767498,
+   767500,
+   767510,
+   767502,
+   767496,
+   767519,
+   767516
+  ],
+  "browse": 48,
+  "chosen": 767502
+ },
+ "eel": {
+  "subjects": [
+   "eel",
+   "sea snake",
+   "moray eel"
+  ],
+  "picks": [
+   397391,
+   397393,
+   397396,
+   397397,
+   397401,
+   397407,
+   798766,
+   798769
+  ],
+  "chosen": 397397
+ },
+ "cymbal": {
+  "subjects": [
+   "circular saw blade",
+   "saw blade trap",
+   "shuriken"
+  ],
+  "picks": [
+   1057811,
+   247140,
+   247147,
+   1103365,
+   1103364,
+   1103376,
+   1057830,
+   247152
+  ],
+  "browse": 32,
+  "chosen": 1057811
+ },
+ "carrier": {
+  "subjects": [
+   "satellite",
+   "drone",
+   "flying saucer"
+  ],
+  "picks": [
+   474241,
+   378902,
+   474239,
+   1056017,
+   1056042,
+   474237,
+   378901,
+   474258
+  ],
+  "browse": 32,
+  "chosen": 474241
+ },
+ "core": {
+  "subjects": [
+   "eye orb",
+   "eyeball monster",
+   "crystal skull"
+  ],
+  "picks": [
+   424178,
+   424188,
+   424219,
+   424210,
+   424643,
+   424660,
+   424673,
+   315470
+  ],
+  "chosen": 424178
+ },
+ "crystal": {
+  "subjects": [
+   "crystal prism",
+   "data crystal",
+   "cube crystal"
+  ],
+  "picks": [
+   314965,
+   314972,
+   314979,
+   314980,
+   314992,
+   334304,
+   334331,
+   316713
+  ],
+  "chosen": 314992
+ },
+ "speed": {
+  "subjects": [
+   "shooting star",
+   "comet"
+  ],
+  "picks": [
+   1097009,
+   1097016,
+   1097043,
+   274168,
+   274173,
+   1097050,
+   1097010,
+   1097036
+  ],
+  "chosen": 1097009
+ },
+ "fork": {
+  "subjects": [
+   "tuning fork"
+  ],
+  "picks": [
+   1316672,
+   1316673,
+   1316686,
+   1316688,
+   1316690,
+   1316721,
+   1316723,
+   1316705
+  ],
+  "browse": 96,
+  "chosen": 1316672
+ }
+}
