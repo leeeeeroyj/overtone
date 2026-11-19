@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { COLORS, HUD_SCALE, TEXT, TOP, WIDTH, HEIGHT } from '../config';
+import { toggleMute } from '../synth';
 import { label } from '../text';
 import { fitCamera } from '../view';
 import type { HudState } from './StageScene';
@@ -11,8 +12,8 @@ const W = WIDTH * U;
 const H = HEIGHT * U;
 
 const HINTS = {
-  kbm: 'ARROWS OR WASD FLY  ·  ESC TITLE',
-  pad: 'STICK OR D-PAD FLY  ·  BACK TITLE',
+  kbm: 'ARROWS FLY  ·  Z FIRE  ·  X CHARGE  ·  C ECHO  ·  M SOUND  ·  ESC TITLE',
+  pad: 'STICK FLY  ·  A FIRE  ·  X CHARGE  ·  B ECHO  ·  Y SOUND  ·  BACK TITLE',
   touch: 'TOUCH CONTROLS ARRIVE SOON',
 };
 
@@ -43,12 +44,16 @@ export class HudScene extends Phaser.Scene {
     t(216, 1, 'HARMONY', 10, TEXT.dim);
     this.mult = t(216, 11, '', 18, TEXT.ink);
     t(296, 1, 'BEAT', 10, TEXT.dim);
-    t(360, 1, 'SPD', 10, TEXT.dim);
-    t(408, 1, 'SHIPS', 10, TEXT.dim);
+    t(364, 1, 'ECHO', 10, TEXT.dim);
+    t(428, 1, 'HARM', 10, TEXT.dim);
+    t(472, 1, 'SPD', 10, TEXT.dim);
+    t(508, 1, 'SHIPS', 10, TEXT.dim);
     this.numeral = t(612, 1, '', 10, TEXT.dim);
     this.movement = t(612, 12, '', 16, TEXT.magenta);
     this.hint = t(W / 2, H - 14, '', 10, TEXT.ink, 'center');
-    this.ships = Array.from({ length: 5 }, (_, i) => this.add.image(418 + i * 18, 22, 'player').setAngle(90).setDepth(2));
+    // The speaker toggles sound.
+    this.add.zone(810, 16, 28, 28).setInteractive({ useHandCursor: true }).on('pointerdown', () => toggleMute(this));
+    this.ships = Array.from({ length: 5 }, (_, i) => this.add.image(516 + i * 18, 22, 'player').setAngle(90).setDepth(2));
   }
 
   update() {
@@ -71,10 +76,14 @@ export class HudScene extends Phaser.Scene {
       if (on) g.fillStyle(hueColor(s.hue, 0.66)).fillRect(x, y, 10, h);
       else g.lineStyle(1, COLORS.dim).strokeRect(x + 0.5, y + 0.5, 9, h - 1);
     }
-    for (let i = 0; i < 3; i++) {
-      if (i < s.speed) g.fillStyle(COLORS.ink).fillRect(360 + i * 8, 17, 6, 8);
-      else g.lineStyle(1, COLORS.dim).strokeRect(360 + i * 8 + 0.5, 17.5, 5, 7);
-    }
+    // ECHO: the weapon's glyph and its level. Loose, the glyph dims and blinks.
+    const loose = s.echo === 'loose';
+    if (!(loose && Math.floor(this.time.now / 250) % 2)) spiral(g, 376, 21, loose ? COLORS.dim : COLORS.beam);
+    pips(g, 392, 17, s.level, 3, COLORS.gold);
+    // HARM: a note per Harmonic, bright when you have it.
+    for (let i = 0; i < 2; i++) note(g, 434 + i * 14, 21, i < s.harm ? COLORS.beam : COLORS.off);
+    pips(g, 472, 17, s.speed, 3, COLORS.ink);
+    speaker(g, 802, 8, s.muted);
     this.ships.forEach((img, i) => img.setVisible(i < s.ships));
     this.numeral.setText(`MOVEMENT ${s.numeral}`);
     this.movement.setText(s.movement);
@@ -84,6 +93,54 @@ export class HudScene extends Phaser.Scene {
       const w = this.hint.width + 16;
       g.fillStyle(COLORS.void, 0.8).fillRect(Math.round(W / 2 - w / 2), H - 16, Math.round(w), 16);
     }
+  }
+}
+
+/** Filled pips for what you have, outlined for the rest. */
+function pips(g: Phaser.GameObjects.Graphics, x: number, y: number, n: number, of: number, color: number) {
+  for (let i = 0; i < of; i++) {
+    if (i < n) g.fillStyle(color).fillRect(x + i * 8, y, 6, 8);
+    else g.lineStyle(1, COLORS.dim).strokeRect(x + i * 8 + 0.5, y + 0.5, 5, 7);
+  }
+}
+
+/** SPIRAL's glyph: two strands crossing, outlined in black. */
+function spiral(g: Phaser.GameObjects.Graphics, x: number, y: number, color: number) {
+  for (const [w, c] of [[4.4, 0x000000], [2, color]] as const) {
+    g.lineStyle(w, c);
+    for (const sgn of [1, -1]) {
+      const pts: Phaser.Types.Math.Vector2Like[] = [];
+      for (let i = 0; i <= 12; i++) pts.push({ x: x - 8 + (i / 12) * 16, y: y + sgn * 4.8 * Math.sin((i / 12) * Math.PI * 2) });
+      g.strokePoints(pts as Phaser.Math.Vector2[]);
+    }
+  }
+}
+
+/** A quaver at HUD scale, its head's centre near (x, y). */
+function note(g: Phaser.GameObjects.Graphics, x: number, y: number, color: number) {
+  g.fillStyle(0x000000).fillRect(x - 5, y - 13, 12, 18);
+  g.fillStyle(color);
+  g.fillRect(x - 4, y + 0, 6, 4);
+  g.fillRect(x, y - 10, 2, 12);
+  g.fillRect(x + 2, y - 10, 2, 2);
+  g.fillRect(x + 4, y - 8, 2, 4);
+}
+
+/** The sound icon: a speaker with waves, or with a cross when muted (shape, not colour, tells them apart). */
+function speaker(g: Phaser.GameObjects.Graphics, x: number, y: number, muted: boolean) {
+  g.fillStyle(muted ? COLORS.dim : COLORS.ink);
+  g.fillRect(x, y + 4, 4, 6);
+  g.fillRect(x + 4, y + 2, 2, 10);
+  g.fillRect(x + 6, y, 2, 14);
+  if (muted) {
+    for (let i = 0; i < 8; i += 2) {
+      g.fillRect(x + 12 + i, y + 3 + i, 2, 2);
+      g.fillRect(x + 18 - i, y + 3 + i, 2, 2);
+    }
+  } else {
+    g.fillRect(x + 12, y + 4, 2, 6);
+    g.fillRect(x + 16, y + 2, 2, 10);
+    g.fillRect(x + 20, y, 2, 14);
   }
 }
 

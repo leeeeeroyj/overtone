@@ -10,7 +10,7 @@ import { artMovementI, CITY_H, CITY_W, hash, hsl, mod, PAL } from './bake';
 /** How fast each layer scrolls, as a share of the play layer's speed. */
 export const PARALLAX = { moon: 0.02, spectrum: 0.12, city: 0.3, stave: 0.5, motes: 0.7 };
 
-const REDUCED = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+export const REDUCED = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 const CANVAS_W = WIDTH + 2;
 
 export class Landscape {

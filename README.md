@@ -14,7 +14,7 @@ A side-scrolling shooter through a neon cosmos where everything moves to the bea
 ![Vite](https://img.shields.io/badge/Vite-8-646cff?logo=vite&logoColor=white)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-![Overtone: the craft flies between an LED-meter floor and ceiling under a speaker-cone moon, with spectrum-analyser mountains and a skyline of instruments behind it](docs/screenshot.png)
+![Overtone: the craft, with the Echo orb on its nose and a small speaker above and below it, dodges diamond-shaped notes fired by Sentries on the LED-meter floor and ceiling, under a speaker-cone moon](docs/screenshot.png)
 
 </div>
 
@@ -23,19 +23,36 @@ A side-scrolling shooter through a neon cosmos where everything moves to the bea
 Overtone is an original arcade game inspired by the mechanics of Irem's 1987 arcade game *R-Type*. The game is being built in the open; this is how it plays today.
 
 - **Movement I, Pulse.** A dusk over a city of instruments at 128 beats a minute. A speaker-cone moon ripples on every kick, spectrum-analyser mountains bounce with the music, and the city's lights play in turn through each bar.
-- **A frame that keeps time.** The floor and ceiling are walls of LED cells that jump on every beat, with a pulse of light running along both edges. They're solid: touch one and it bounces you off.
-- **Direct flight.** Eight directions, no drift. The craft banks as it climbs and dives.
-- **Drawn in code.** Every layer of the landscape is pixel art generated when the game loads; nothing is a background image.
+- **Charge on the beat.** Hold CHARGE for a beat per tier, then let go for a piercing beam. Let go right on the beat and it's **resonant**: wider, harder, worth double and it raises your Harmony.
+- **The Echo.** A living orb of sound rides on your nose. It blocks shots, hurts whatever it touches and fires a spiralling double helix. Send it out ahead and it hovers there, repeating your shots, until you call it back.
+- **Hits cost power, not lives.** A hit knocks the Echo loose before it costs you a ship, and you can fly back and grab it.
+- **A frame that keeps time.** The floor and ceiling are walls of LED cells that jump on every beat. They're solid: touch one and it bounces you off, and that counts as a hit.
+- **Drawn and played in code.** Every layer of the landscape is pixel art generated when the game loads, and the music and sound effects are synthesised as you play, in a minor key.
 
 ## How to play
 
-Fly through Movement I and keep off the walls. Touching the floor or the ceiling bounces you back and makes you blink for a moment. The beat lamp in the top bar shows where you are in the bar: the current beat is filled, and the first beat of the bar is the tall one.
+Fly through Movement I, shoot what's in your way and keep off the walls. The beat lamp in the top bar shows where you are in the bar: the current beat is filled, and the first beat of the bar is the tall one.
+
+- **FIRE** (hold) streams notes from the craft, and the Echo fires its double helix from whichever end it's on.
+- **CHARGE** (hold) stops your fire and fills a tier for each beat you hold it, up to three: a ring of three arcs round the craft fills as you go. Let go for a beam that sweeps across the screen and pierces everything in its path. Let go at tier 2 or 3 within 0.09 s of a beat (the ring turns solid white) and the beam is **resonant**: half as wide again, half as strong again, and each kill pays double and adds one to your Harmony.
+- **Harmony** multiplies every point, from ×1 up to ×8. Any hit drops it back to ×1.
+- **ECHO** sends the Echo out ahead (or behind, if it's on your tail). It hovers there, drifting toward your height and repeating your shots. Press ECHO again to call it back. It attaches to whichever end of the craft touches it.
+- **Getting hit.** A shot, an enemy or the floor or ceiling knocks the Echo loose: it drifts and blinks until you fly into it. Hit again without it and you lose a ship, respawn on the spot with the Echo back on your nose, and blink for 2 seconds. You start with 3 ships and earn another every 50,000 points. Lose the last and it's game over.
+- **Anything about to fire flashes white** for the half-beat before it does.
+
+| Enemy | Points | Hits | Behaviour |
+| --- | ---: | ---: | --- |
+| Sentry | 200 | 3 | Sits on the floor or ceiling and fires a note at you every two beats. |
 
 ## Controls
 
 | | Keyboard + mouse | Controller |
 | --- | --- | --- |
 | Fly | Arrows or W A S D | Left stick or D-pad |
+| Fire | Hold Z, Space, J or left click | Hold A |
+| Charge | Hold X, K or right click, then let go | Hold X or RT, then let go |
+| Echo: send out or call back | C, L, Shift or middle click | B or RB |
+| Sound on / off | M, or click the speaker (top right) | Y |
 | Start | Enter or Space, or click **START** | A or Start |
 | Back to the title | Esc | Back |
 
@@ -61,6 +78,12 @@ src/
   config.ts          tunables: sizes, tempo, scroll speed, flight, colours
   beat.ts            the beat clock everything keeps time to
   terrain.ts         the floor and ceiling, as functions of distance
+  script.ts          what arrives on which beat
+  entities/          the Echo, enemies, shots, beams and enemy notes
+  effects.ts         sparks, rings, score popups, shake and flash
+  synth.ts           oscillator voices and the sound switch
+  music.ts           the band, scheduled ahead on the audio clock
+  sfx.ts             shots, kills, the charge and the beam
   land/bake.ts       sky and instrument city, baked once as pixel art
   land/Landscape.ts  every layer, drawn each frame in time with the beat
   controls.ts        keyboard, mouse and gamepad input

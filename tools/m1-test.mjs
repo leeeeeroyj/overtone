@@ -16,6 +16,8 @@ check('Doto and Monoton loaded', await evaluate(`document.fonts.check('900 8px D
 await tap('Enter');
 await until(() => evaluate(`__overtone.scene.isActive('stage') && __overtone.scene.isActive('hud')`));
 await sleep(800);
+// Milestone 1 tests flight and the landscape alone: no enemies.
+await evaluate(`${stage}.clearField()`);
 const state = () => evaluate(`(() => { const s = ${stage}; return { ...s.craft, scrollX: s.scrollX, hits: s.frameHits, beat: s.beat.beat, time: s.beat.time }; })()`);
 const s0 = await state();
 check('stage and HUD start, craft at its start', Math.abs(s0.x - 90) < 1 && s0.scrollX > 0, JSON.stringify(s0));
@@ -99,7 +101,7 @@ check('the ceiling is a hit and bounces the craft', sc.hits > sf.hits && sc.y >=
 await evaluate(centre);
 await sleep(1600);
 await shot('3-play-mid');
-await evaluate(`(() => { ${stage}.ship.setVisible(false); __overtone.scene.getScene('hud').cameras.main.setVisible(false); })()`);
+await evaluate(`(() => { ${stage}.landOnly = true; __overtone.scene.getScene('hud').cameras.main.setVisible(false); })()`);
 await sleep(300);
 await shot('4-landscape');
 await evaluate(`__overtone.scene.getScene('hud').cameras.main.setVisible(true)`);

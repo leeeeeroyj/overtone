@@ -6,6 +6,7 @@ import { Controls } from '../controls';
 import { loadHi } from '../hi';
 import { Landscape } from '../land/Landscape';
 import { MOVEMENT_I } from '../terrain';
+import { restoreMute, toggleMute } from '../synth';
 import { label } from '../text';
 import { fitCamera } from '../view';
 
@@ -34,6 +35,7 @@ export class TitleScene extends Phaser.Scene {
     this.padStatus = undefined;
     this.scrollX = 0;
     fitCamera(this, RENDER_SCALE);
+    restoreMute(this);
     this.controls = new Controls(this);
     this.beat = new BeatClock(MOVEMENTS[0].bpm);
     this.land = new Landscape(this, MOVEMENT_I, 'title-landscape');
@@ -59,8 +61,8 @@ export class TitleScene extends Phaser.Scene {
       label(this, x - 3, 150, keys, 6, TEXT.ink, { align: 'right' }).setLineSpacing(1).setDepth(5);
       label(this, x + 3, 150, actions, 6, TEXT.dim).setLineSpacing(1).setDepth(5);
     };
-    column(120, 'KEYBOARD + MOUSE', 'ARROWS / WASD\nZ / SPACE / CLICK\nX / RIGHT-CLICK\nC / SHIFT\nP\nM', 'FLY\nFIRE\nCHARGE\nECHO\nPAUSE\nSOUND');
-    column(300, 'CONTROLLER', 'L-STICK / D-PAD\nA\nX / RT\nB / RB\nSTART\nY', 'FLY\nFIRE\nCHARGE\nECHO\nPAUSE\nSOUND');
+    column(120, 'KEYBOARD + MOUSE', 'ARROWS / WASD\nZ / SPACE / CLICK\nX / RIGHT-CLICK\nC / SHIFT\nM', 'FLY\nFIRE\nCHARGE\nECHO\nSOUND');
+    column(300, 'CONTROLLER', 'L-STICK / D-PAD\nA\nX / RT\nB / RB\nY', 'FLY\nFIRE\nCHARGE\nECHO\nSOUND');
     this.padStatus = text(cx, 214, '', 6, TEXT.dim);
   }
 
@@ -75,6 +77,7 @@ export class TitleScene extends Phaser.Scene {
     this.craft.setY(94 + 4 * Math.sin(phase)).setScale(Math.abs(vy) > 0.35 ? 0.75 : 1, 1);
     const input = this.controls.read();
     if (input.confirm) this.begin();
+    if (input.mute) toggleMute(this);
     this.start.setAlpha(this.beat.frac < 0.5 ? 1 : 0.55);
     const pad = this.controls.pad();
     this.padStatus?.setText(pad ? 'CONTROLLER CONNECTED' : 'USING A CONTROLLER? PRESS ANY BUTTON ON IT').setColor(pad ? TEXT.beam : TEXT.dim);
