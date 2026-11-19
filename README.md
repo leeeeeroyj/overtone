@@ -100,6 +100,8 @@ Controllers show up once you press a button. The game pauses itself when you swi
 
 On a phone, play it sideways. Starting a run goes full screen and holds the screen sideways where the browser allows it (Android). Turn the phone upright and the game pauses and asks you to turn it back. A touch anywhere on the right of the screen takes the nearer of CHARGE and ECHO, and you can slide your thumb between them.
 
+Add `?attract` to the address and the game plays itself, silently, one 40-second demo after another: a movement, a point in its script or its boss, and a weapon picked by `?seed=<n>` (or at random). It's the mode the [Arcadia](https://leeeeeroyj.github.io/arcadia/) cabinets show.
+
 If your system asks for reduced motion, the screen doesn't shake or flash, the glows keep one colour, and the landscape and enemies stop bouncing to the beat.
 
 ## Run it locally
@@ -136,6 +138,7 @@ src/
   text.ts            crisp text in the game's fonts
   hi.ts              the high score, kept in localStorage
   attract.ts         the ?attract demo mode's settings
+  pilot.ts           the demo's pilot, and what each demo seed plays
   scenes/            title screen, the stage and the HUD
 assets/sprites/      the game's 16 × 16 sprites
 assets/fonts/        Doto and Monoton, with their licences

@@ -186,6 +186,9 @@ Pure modules (`beat.ts`, `script.ts`, `terrain.ts`, `land/bake.ts`) are tested b
 - **2026-11-18 Fire is automatic while the touch controls are up;** CHARGE stops it, as it does with keys.
 - **2026-11-18 Landscape on phones:** starting a run on a touch screen asks for full screen and a landscape lock (Android allows both; an iPhone ignores them). Upright, the page shows TURN YOUR PHONE SIDEWAYS TO PLAY and the run pauses. The II and speaker tap targets now fill the top-right corner (18 × 16 and 20 × 16 design px, about 31 × 27 CSS px on an 844×390 phone, so still under the usual 44 px; the phone test will say if that's a problem).
 - **2026-11-18 The test harness lifts one finger with a `touchEnd` listing just that finger.** Leaving a finger out of a `touchMove`, as before, doesn't release it in Chrome, so a two-thumb test (stick held, CHARGE let go) never let go.
+- **2026-11-18 Each demo seed picks a movement, a start and some power:** movement = seed mod 3, an ENCORE one time in five, the boss one time in four (otherwise a bar from 4 to 59), a random weapon at level 2–3, up to two Harmonics, speed 2 and sometimes grace notes, so a demo shows the game at its best. The next demo takes the next seed.
+- **2026-11-18 Demos play the first 2.5 s unseen** (behind the fade-in), so enemies are on screen when the demo appears; they last 40 s on the wall clock (headless runs slower than real time, so game time would have stretched them past a minute). A demo that beats its boss, or loses its last ship, makes way for the next one. A demo boss starts at half health, so there's time to see it fall.
+- **2026-11-18 The demo pilot leads the boss's core,** as the m5 test pilot does; aiming at where the core is, it couldn't kill the Great Eel in a demo.
 - **2026-11-17 Information never depends on hue** (the user is colour blind). Enemy notes are white-cored diamonds; player shots are dashes, beads, triangles of lines and arcs. Pickups carry glyphs; the beat lamp is filled vs outlined, with a taller downbeat; the charge ring counts segments and goes solid to say "now".
 
 ## Open questions
@@ -193,7 +196,7 @@ Pure modules (`beat.ts`, `script.ts`, `terrain.ts`, `land/bake.ts`) are tested b
 - **Craft sprite.** All eight craft candidates are drawn from above, nose up, and turned to face right. If that reads wrong, the slot can be re-searched for side-view ships.
 - **Boss balance.** A test pilot with starting power kills the bosses in about 17, 33 and 38 seconds. The user's play decides whether that's right.
 
-## Status (2026-11-18: milestone 7 built and verified in emulation; the phone test is the user's)
+## Status (2026-11-18: milestone 8 built and verified; milestone 7's phone test is the user's)
 
 - **Done:** Part A (concept sheet v0.3 and this plan, approved by the user). Live at https://leeeeeroyj.github.io/overtone/, every deploy green.
   - **Milestone 1** `3b83749`: title, scrolling landscape, Equalizer frame and flight. Repo settings per C3 and C5 applied and verified.
@@ -209,7 +212,7 @@ Pure modules (`beat.ts`, `script.ts`, `terrain.ts`, `land/bake.ts`) are tested b
     - Losing a ship takes speed and grace notes too.
     - Sparks and rings under the craft, the Echo and enemy notes; a beat halo on enemy notes; no hops under reduced motion.
     - Controls keep key presses until the next frame; menus step on `nav`.
-  - **Milestone 7** (`touch.ts`):
+  - **Milestone 7** `1651b1d` (`touch.ts`):
     - The floating stick on the left, CHARGE and ECHO on the right, drawn as page elements so they can sit in the bars beside the game. Held buttons fill and get a bold outline.
     - Fire is automatic while they're up; they hide on the title, while paused, at game over and after a movement ends.
     - Bigger II and speaker tap targets; a TOUCH column on the title on touch screens; touch hints in the HUD.
@@ -239,6 +242,14 @@ Pure modules (`beat.ts`, `script.ts`, `terrain.ts`, `land/bake.ts`) are tested b
   - Upright (390×844), the page asks to be turned and the run pauses.
   - Screenshots looked at: the title, flying, charging (the ring where the thumb landed, CHARGE filled), paused.
   - Still passing: `m1-test` 27/27, `m2-test` 23/23, `m3-test` 31/31, `m4-test` 37/37, `m5-test` 23/23, `pause-hi-test` 22/22, `m6-test` 25/25.
+  - **Milestone 8** (`pilot.ts`):
+    - The concept sheet's pilot, driving the real game through the same inputs: it grabs pickups and a loose Echo, lines up with the nearest enemy (leading the boss's core), sidesteps the note that will pass closest soonest and enemies about to ram it, keeps off the frame, weaves so it never sits still, launches the Echo on beat 18 of every 32 and recalls it on beat 26, and charges on beats 4–5 of every 8 to let go on the beat (resonant).
+    - Seeded demos (above), restarting with the next seed; no speaker or II in the HUD during a demo.
+- **Verified (milestone 8):** `npx tsc` clean. `attract-test` 14/14 (`?attract&seed=7`): gameplay at 1.0 s; shots near an enemy at 2.4 s; never still more than 0.75 s; a new demo after the first; no sound and no AudioContext; keys, a click and a gamepad change nothing and the pad is never read; focus stays on the body; nothing written to storage; heap 22.5 → 23.2 MB from 10 s to 60 s; the full game area at 320 × 176 and 832 × 456.
+  - Demo probe, about 4 minutes each from seeds 3 and 11 (14 demos: all three movements, ENCOREs and all three bosses): no ships lost; 0–4 hits a demo; the first kill within 0.3–5.3 s except two boss demos (22 and 29 s, where the body's armour pays nothing until the core falls); the longest still spell 1.25 s (once 3.75 s, in the first demo of a run while the page was still loading; it didn't recur).
+  - Screenshots looked at: demos in Movements II and III and the Great Eel ENCORE.
+  - Still passing: `m4-test` 37/37, `m1-test` 27/27 and `pause-hi-test` 22/22 (the finish and leave flows changed).
 - **Next:**
   - The real-phone test (the user): the controls, how it feels, the tap targets, and the frame rate.
-  - Milestone 8: attract mode.
+  - Arcadia: the Overtone cabinet (`games.json` with `"attract": true` and `"hiKey": "overtone-hi"`, a still, and a loop recorded from the live build).
+  - Milestone 9: polish, balance from the user's play, the hero screenshot.

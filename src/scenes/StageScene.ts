@@ -14,7 +14,9 @@ import { drawBeams, drawNotes, drawShots, makeShot, updateNotes, updateShots, ty
 import { loadHi, saveHi } from '../hi';
 import { clamp } from '../land/bake';
 import { Landscape, REDUCED } from '../land/Landscape';
+import { DEMO, DEMO_SECS } from '../attract';
 import { Band } from '../music';
+import { demoFor, Pilot } from '../pilot';
 import { pinnedSpots, runPattern, scriptBars, wavesAt, type Pattern } from '../script';
 import { Sfx } from '../sfx';
 import { Synth, toggleMute } from '../synth';
@@ -167,7 +169,13 @@ export class StageScene extends Phaser.Scene {
   private ending = -1;
   private banner: Phaser.GameObjects.Text[] = [];
   private bannerTime = 0;
+  /** The demo's seed, in attract mode. */
   private attract: number | undefined;
+  /** Attract mode's pilot, and how long this demo has run, s. */
+  private pilot: Pilot | undefined;
+  private demoTime = 0;
+  /** Demos started since the page loaded (the attract test counts them). */
+  static demos = 0;
   private leaving = false;
   private readonly onHidden = () => {
     if (document.hidden) this.setPaused(true);
@@ -184,7 +192,9 @@ export class StageScene extends Phaser.Scene {
 
   create(data: { attract?: number; run?: Run } = {}) {
     this.attract = data.attract;
-    const run = data.run ?? newRun();
+    // A demo picks its own movement, start and power from its seed (a movement it finishes carries on as usual).
+    const demo = this.attract !== undefined && !data.run ? demoFor(this.attract) : undefined;
+    const run = data.run ?? demo?.run ?? newRun();
     this.movement = run.movement;
     this.loop = run.loop;
     this.eligible = run.eligible && this.attract === undefined;
@@ -217,6 +227,21 @@ export class StageScene extends Phaser.Scene {
     this.speakers = Array.from({ length: HARMONIC.max }, () => this.add.image(0, 0, 'harmonic').setScale(HARMONIC.scale).setFlipX(true));
     this.echo = new Echo(this);
     this.controls = this.attract === undefined ? new Controls(this) : undefined;
+    this.pilot = this.attract === undefined ? undefined : new Pilot(this);
+    this.demoTime = 0;
+    if (this.attract !== undefined) StageScene.demos++;
+    if (demo) {
+      // Start from the demo's bar, or just before the boss; the scroll goes with the beat so the terrain lines up.
+      const bar = demo.boss ? scriptBars(this.movement) + PLAY.outro - 0.25 : demo.bar;
+      this.beat.time = bar * 4 * this.beat.spb;
+      this.scrollX = this.scrollSpeed * this.beat.time;
+      // Play the first moments unseen (behind the fade-in), so enemies are already on screen when it appears.
+      for (let t = 0; t < DEMO.preroll; t += MAX_STEP) {
+        const b = this.beat.update(MAX_STEP);
+        if (b !== null) this.onBeat(b);
+        this.step(MAX_STEP, this.pilot!.read());
+      }
+    }
     // A phone call, a tab switch or the screen locking pauses the run.
     if (this.attract === undefined) {
       document.addEventListener('visibilitychange', this.onHidden);
@@ -237,7 +262,9 @@ export class StageScene extends Phaser.Scene {
   update(_time: number, delta: number) {
     const dt = Math.min(0.05, delta / 1000);
     touchControls.show(this.attract === undefined && !this.paused && !this.leaving && this.gameOver < 0 && this.ending < 0);
-    const input = this.controls?.read() ?? IDLE;
+    const input = this.controls?.read() ?? this.pilot?.read() ?? IDLE;
+    // A demo is timed on the wall clock: it's about how long someone watches.
+    if (this.attract !== undefined && (this.demoTime += delta / 1000) > DEMO_SECS) return this.leave();
     if (input.mute) toggleMute(this);
     if (this.paused) {
       if (input.back) return this.leave();
@@ -333,6 +360,8 @@ export class StageScene extends Phaser.Scene {
     this.arrive((TOP + HEIGHT) / 2, () => {
       if (this.gameOver >= 0 || this.leaving) return;
       this.boss = new Boss(this, this.movement);
+      // A demo joins the fight halfway, so there's time to see the boss fall.
+      if (this.attract !== undefined) this.boss.core.hp = Math.ceil(this.boss.maxHp / 2);
       this.band.boss = this.boss;
       this.sfx.bossArrive();
       this.showBanner(`MOVEMENT ${MOVEMENTS[this.movement].numeral}  ·  FINALE`, this.boss.name);
@@ -362,7 +391,8 @@ export class StageScene extends Phaser.Scene {
   /** The script has run out: the movement is complete, and the next one (or an ENCORE) follows. */
   finish() {
     if (this.ending >= 0 || this.gameOver >= 0) return;
-    this.ending = 2.5;
+    // In a demo the COMPLETE banner shows for a moment only.
+    this.ending = this.attract === undefined ? 2.5 : 1;
     this.scripted = false;
     this.band.quiet = true;
     this.sfx.complete();
@@ -377,6 +407,8 @@ export class StageScene extends Phaser.Scene {
   }
 
   private nextMovement() {
+    // A demo that beats its boss makes way for the next demo.
+    if (this.attract !== undefined) return this.leave();
     const last = this.movement === MOVEMENTS.length - 1;
     this.restartWith({
       movement: last ? 0 : this.movement + 1, loop: last ? this.loop + 1 : this.loop, score: this.score,
@@ -951,6 +983,12 @@ export class StageScene extends Phaser.Scene {
   leave() {
     if (this.leaving) return;
     this.leaving = true;
+    if (this.attract !== undefined) {
+      // The next demo, with the next seed: no title, no panel.
+      this.cameras.main.fadeOut(200);
+      this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => this.scene.restart({ attract: this.attract! + 1 }));
+      return;
+    }
     if (this.gameOver < 0 && this.eligible) saveHi(this.score);
     this.sfx.chargeStop();
     this.cameras.main.fadeOut(250);

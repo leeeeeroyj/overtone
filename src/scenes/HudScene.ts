@@ -166,13 +166,14 @@ export class HudScene extends Phaser.Scene {
     // HARM: a note per Harmonic, bright when you have it.
     for (let i = 0; i < 2; i++) note(g, 434 + i * 14, 21, i < s.harm ? COLORS.beam : COLORS.off);
     pips(g, 472, 17, s.speed, 3, COLORS.ink);
-    speaker(g, 802, 8, s.muted);
+    // Attract mode shows neither the speaker nor the II: there's nothing to press.
+    if (!s.attract) speaker(g, 802, 8, s.muted);
     this.ships.forEach((img, i) => img.setVisible(i < s.ships));
     this.numeral.setText(`MOVEMENT ${s.numeral}`);
     this.movement.setText(s.movement);
 
     // II: pause.
-    g.fillStyle(s.over || s.attract ? COLORS.dim : COLORS.ink).fillRect(770, 8, 4, 16).fillRect(780, 8, 4, 16);
+    if (!s.attract) g.fillStyle(s.over ? COLORS.dim : COLORS.ink).fillRect(770, 8, 4, 16).fillRect(780, 8, 4, 16);
     this.pauseTap.input!.enabled = !s.attract && !s.over && !s.paused;
 
     this.panelG.clear();

@@ -10,5 +10,8 @@ export function attractSeed(): number {
   return params.has('seed') && Number.isFinite(n) ? Math.floor(Math.abs(n)) : Math.floor(Math.random() * 2 ** 31);
 }
 
-/** A demo ends after this long, if it hasn't ended itself, s. */
-export const DEMO_SECS = 45;
+/** A demo ends after this long on the wall clock, if it hasn't ended itself, s. */
+export const DEMO_SECS = 40;
+
+/** Seconds of each demo played unseen before it shows, so it opens mid-action. */
+export const DEMO = { preroll: 2.5 };
